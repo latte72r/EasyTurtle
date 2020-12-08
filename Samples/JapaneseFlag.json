@@ -1,0 +1,136 @@
+{
+  "version": [
+    4,
+    4
+  ],
+  "body": [
+    {
+      "_name": "VarNumber",
+      "name": "num",
+      "value": "60"
+    },
+    {
+      "_name": "Title",
+      "title": "JapaneseFlag"
+    },
+    {
+      "_name": "Geometry",
+      "width": "[num]*8",
+      "height": "[num]*6"
+    },
+    {
+      "_name": "PenUp"
+    },
+    {
+      "_name": "Right",
+      "angle": "90"
+    },
+    {
+      "_name": "Forward",
+      "distance": "[num]//2"
+    },
+    {
+      "_name": "Left",
+      "angle": "90"
+    },
+    {
+      "_name": "PenDown"
+    },
+    {
+      "_name": "Color",
+      "color": "red"
+    },
+    {
+      "_name": "BeginFill"
+    },
+    {
+      "_name": "Circle",
+      "radius": "[num]",
+      "extent": "360"
+    },
+    {
+      "_name": "EndFill"
+    },
+    {
+      "_name": "PenUp"
+    },
+    {
+      "_name": "PenSize",
+      "width": "1"
+    },
+    {
+      "_name": "Color",
+      "color": "black"
+    },
+    {
+      "_name": "Right",
+      "angle": "90"
+    },
+    {
+      "_name": "Forward",
+      "distance": "[num]"
+    },
+    {
+      "_name": "PenDown"
+    },
+    {
+      "_name": "Left",
+      "angle": "90"
+    },
+    {
+      "_name": "Forward",
+      "distance": "[num]*3"
+    },
+    {
+      "_name": "Left",
+      "angle": "90"
+    },
+    {
+      "_name": "Forward",
+      "distance": "[num]*4"
+    },
+    {
+      "_name": "Left",
+      "angle": "90"
+    },
+    {
+      "_name": "Forward",
+      "distance": "[num]*6"
+    },
+    {
+      "_name": "Left",
+      "angle": "90"
+    },
+    {
+      "_name": "Forward",
+      "distance": "[num]*4"
+    },
+    {
+      "_name": "Left",
+      "angle": "90"
+    },
+    {
+      "_name": "Forward",
+      "distance": "[num]*3"
+    },
+    {
+      "_name": "PenUp"
+    },
+    {
+      "_name": "Right",
+      "angle": "90"
+    },
+    {
+      "_name": "Forward",
+      "distance": "[num]"
+    },
+    {
+      "_name": "Write",
+      "text": "Japan",
+      "size": "[num]//2"
+    },
+    {
+      "_name": "HideTurtle"
+    }
+  ]
+}
