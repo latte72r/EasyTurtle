@@ -19,7 +19,7 @@ from datetime import datetime
 import shutil
 import traceback
 
-# TODO: Linux
+# TODO: TransParent
 
 SIZE = 8
 HEIGHT = 80
@@ -136,7 +136,7 @@ def EXPAND(num): return int(round(num * WIN_MAG))
 
 FONT = (FONT_TYPE, EXPAND(12), "bold")
 
-__version__ = (4, 6, 7)
+__version__ = (4, 7, 0)
 
 
 class EasyTurtle:
@@ -413,6 +413,8 @@ class EasyTurtle:
         self.win = tk.Toplevel(self.root)
         self.win.tk.call('wm', 'iconphoto', self.win._w, self.icon)
         self.win.protocol("WM_DELETE_WINDOW", self.kill_runner)
+        if SYSTEM == "Windows":
+            self.win.wm_attributes("-transparentcolor", "snow")
         self.killed_runner = False
         try:
             self.win.grab_set()
@@ -420,7 +422,7 @@ class EasyTurtle:
             messagebox.showerror("エラー", "\
 すでに実行中のプログラムがないか確認してください。")
             self.win.destroy()
-        canvas = tk.Canvas(self.win, width=0, height=0)
+        canvas = tk.Canvas(self.win, width=0, height=0, bg="snow")
         canvas.pack()
         tur = turtle.RawTurtle(canvas)
         tur.shape("turtle")
@@ -1844,6 +1846,66 @@ line: {self.p.widgets.index(self)+1}, {self.__class__.__name__}\n\
 "{self.color}"を色として認識できませんでした。', parent=self.p.root)
 
 
+class BGColor(Widget):
+    TEXT = "BGColor       背景色をｃに変更する"
+    OPTION = True
+    TYPE = "normal"
+    VALUES = {"color": "white"}
+
+    def set_data(self, data):
+        if data is None:
+            self.color = self.VALUES["color"]
+        else:
+            if "color" in data:
+                self.color = data["color"]
+            else:
+                self.color = self.VALUES["color"]
+        self.set_check(data)
+
+    def get_data(self, more=True):
+        self.redraw()
+        return self.get_class_data({"color": self.color}, more)
+
+    def draw(self):
+        self.draw_cv()
+        lab2 = tk.Label(self.cv, text="c = ", font=FONT, bg=self.background)
+        self.binder(lab2)
+        lab2.place(x=EXPAND(50), y=EXPAND(HEIGHT//2+8))
+        self.ent1 = tk.Entry(self.cv, font=FONT, width=12, justify=tk.RIGHT)
+        self.ent1.insert(tk.END, self.color)
+        self.binder(self.ent1)
+        self.ent1.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent1))
+        self.ent1.place(x=EXPAND(90), y=EXPAND(HEIGHT//2+8))
+        self.redraw()
+
+    def option(self):
+        color = self.ent1.get()
+        try:
+            color = colorchooser.askcolor(
+                color=self.stos(color), parent=self.p.root)
+        except tk.TclError:
+            color = colorchooser.askcolor(parent=self.p.root)
+        if color != (None, None):
+            self.ent1.delete(0, tk.END)
+            self.ent1.insert(0, color[1].upper())
+
+    def save_data(self):
+        self.color = self.ent1.get()
+        if self.color == "":
+            self.color = "black"
+            self.ent1.delete(0, tk.END)
+            self.ent1.insert(0, self.color)
+
+    def do(self, tur):
+        self.save_data()
+        try:
+            tur.getscreen().bgcolor(self.stos(self.color))
+        except turtle.TurtleGraphicsError:
+            messagebox.showerror("エラー", f'\
+line: {self.p.widgets.index(self)+1}, {self.__class__.__name__}\n\
+"{self.color}"を色として認識できませんでした。', parent=self.p.root)
+
+
 class BeginFill(Widget):
     TEXT = "BeginFill     塗りつぶしを始める"
     OPTION = False
@@ -2396,10 +2458,11 @@ class VarString(Widget):
 Widgets = (
     VarNumber, VarString, Title, Geometry,
     Forward, Backward, Right, Left, GoTo,
-    SetX, SetY, SetHeading, Home, Circle, Dot,
-    Stamp, Speed, PenDown, PenUp, PenSize, Color,
-    BeginFill, EndFill, ShowTurtle, HideTurtle,
-    TurtleSize, Write, Sleep, Comment)
+    SetX, SetY, SetHeading, Home, Circle,
+    Dot, Stamp, Speed, PenDown, PenUp, PenSize,
+    Color, BGColor, BeginFill, EndFill,
+    ShowTurtle, HideTurtle, TurtleSize,
+    Write, Sleep, Comment)
 Texts = tuple([c.TEXT for c in Widgets])
 Names = tuple([c.__name__ for c in Widgets])
 
