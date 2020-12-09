@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <title>EasyTurtle</title>
+    <link rel="stylesheet" href="stylesheet.css">
+    <link href='https://fonts.googleapis.com/css?family=Lobster' rel='stylesheet' type='text/css'>
+</head>
+
+<body>
+
+    <header>
+        <h1>EasyTurtle</h1>
+    </header>
+
+    <nav>
+        <ul>
+            <li><a href="Readme.html">EasyTurtle</a></li>
+            <li><a href="Licence.html">ライセンス</a></li>
+            <li><a href="Install.html">ダウンロード</a></li>
+            <li><a href="Tutorial.html">使い方</a></li>
+            <li><a href="Samples.html">サンプル</a></li>
+            <li><a href="ChangeLog.html">更新履歴</a></li>
+        </ul>
+    </nav>
+
+    <section class="home" id="home">
+        <h2 class="title">使い方</h2>
+        <div>
+            <article>
+                <p><a href="./Photos/photo1.png"><img src="./Photos/photo1.png" alt="photo" width="400" height="200"></a></p>
+                <h2>基本説明</h2>
+                <h3>ウィジェットを追加する</h3>
+                <p>右側のリストでウィジェットを選択すると左側のリストにウィジェットが追加されます。</p>
+                <p><img src="./Photos/photo2.png" alt="photo" width="400" height="200"></p>
+                <h3>ウィジェット内のボタン</h3>
+                <p>追加されたウィジェットにはそれぞれ６つずつボタンが付いています。　※注１・注２</p>
+                <p><img src="./Photos/photo13.png" alt="photo" width="400" height="60"></p>
+                <p>※注１：WriteウィジェットやColorウィジェットにはオプションボタンもついています。</p>
+                <p><img src="./Photos/photo14.png" alt="photo" width="400" height="60"></p>
+                <p>※注２：TitleウィジェットやGeometryウィジェットにはボタンはありません。</p>
+                <p><img src="./Photos/photo15.png" alt="photo" width="400" height="60"></p>
+                <table border="1">
+                    <thead>
+                        <tr>
+                            <th>ボタン</th>
+                            <th>説明</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Ｃ</strong></td>
+                            <td>ウィジェットをコピーする</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Ｘ</strong></td>
+                            <td>ウィジェットを削除する</td>
+                        </tr>
+                        <tr>
+                            <td><strong>▲</strong></td>
+                            <td>ウィジェットを１つ上げる</td>
+                        </tr>
+                        <tr>
+                            <td><strong>▼</strong></td>
+                            <td>ウィジェットを１つ下げる</td>
+                        </tr>
+                        <tr>
+                            <td><strong>△</strong></td>
+                            <td>ウィジェットを１番上に上げる</td>
+                        </tr>
+                        <tr>
+                            <td><strong>▽</strong></td>
+                            <td>ウィジェットを１番下に下げる</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <h3>コピー＆ペースト</h3>
+                <h4>複数のウィジェットのコピー</h4>
+                <p>「Copy Selectedボタン」を押すことでコピーすることができます。</p>
+                <h4>複数のウィジェットのペースト</h4>
+                <p>「Paste Widgetsボタン」を押すことで左側のリストにコピーしたウィジェットを追加できます。</p>
+                <h3>実行する</h3>
+                <p>「Run Programボタン」を押すと新しいウィンドウが作られ実行されます。</p>
+                <p><img src="./Photos/photo3.png" alt="photo" width="400" height="200"></p>
+                <h3>データを保存する</h3>
+                <p>保存ボタンを押すと保存用ウィンドウが作られファイル名を入れると保存できます。</p>
+                <p><img src="./Photos/photo6.png" alt="photo" width="400" height="200"></p>
+                <h3>保存したデータを開く</h3>
+                <p>開くボタンを押すと開く用ウィンドウが作られファイルを選択すると開くことができます。</p>
+                <p><img src="./Photos/photo7.png" alt="photo" width="400" height="200"></p>
+                <h2>ウィジェットの説明</h2>
+                <table border="1">
+                    <thead>
+                        <tr>
+                            <th>　　ウィジェット　　</th>
+                            <th>　　　　説明　　　　</th>
+                            <th>　　ドキュメント　　</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>VarNumber</td>
+                            <td>変数ｖを数値ｎにする</td>
+                            <td>オリジナル</td>
+                        </tr>
+                        <tr>
+                            <td>VarString</td>
+                            <td>変数ｖを文字列ｎにする</td>
+                            <td>オリジナル</td>
+                        </tr>
+                        <tr>
+                            <td>Forward</td>
+                            <td>前方向にｄ移動する</td>
+                            <td><a href="https://docs.python.org/ja/3/library/turtle.html#turtle.forward">turtle.forward</a></td>
+                        </tr>
+                        <tr>
+                            <td>Backward</td>
+                            <td>後方向にｄ移動する</td>
+                            <td><a href="https://docs.python.org/ja/3/library/turtle.html#turtle.backward">turtle.backward</a></td>
+                        </tr>
+                        <tr>
+                            <td>Right</td>
+                            <td>右方向にａ度曲げる</td>
+                            <td><a href="https://docs.python.org/ja/3/library/turtle.html#turtle.right">turtle.right</a></td>
+                        </tr>
+                        <tr>
+                            <td>Left</td>
+                            <td>左方向にａ度曲げる</td>
+                            <td><a href="https://docs.python.org/ja/3/library/turtle.html#turtle.left">turtle.left</a></td>
+                        </tr>
+                        <tr>
+                            <td>GoTo</td>
+                            <td>座標ｘ，ｙに移動する</td>
+                            <td><a href="https://docs.python.org/ja/3/library/turtle.html#turtle.goto">turtle.goto</a></td>
+                        </tr>
+                        <tr>
+                            <td>SetX</td>
+                            <td>座標ｘに移動する</td>
+                            <td><a href="https://docs.python.org/ja/3/library/turtle.html#turtle.setx">turtle.setx</a></td>
+                        </tr>
+                        <tr>
+                            <td>SetY</td>
+                            <td>座標ｙに移動する</td>
+                            <td><a href="https://docs.python.org/ja/3/library/turtle.html#turtle.sety">turtle.sety</a></td>
+                        </tr>
+                        <tr>
+                            <td>SetHeading</td>
+                            <td>角度をａ度に変更する</td>
+                            <td><a href="https://docs.python.org/ja/3/library/turtle.html#turtle.setheading">turtle.setheading</a></td>
+                        </tr>
+                        <tr>
+                            <td>Home</td>
+                            <td>初期座標・角度に戻る</td>
+                            <td><a href="https://docs.python.org/ja/3/library/turtle.html#turtle.home">turtle.home</a></td>
+                        </tr>
+                        <tr>
+                            <td>Circle</td>
+                            <td>半径ｒの円をｅ度描く</td>
+                            <td><a href="https://docs.python.org/ja/3/library/turtle.html#turtle.circle">turtle.circle</a></td>
+                        </tr>
+                        <tr>
+                            <td>Dot</td>
+                            <td>直径ｒの円を描く</td>
+                            <td><a href="https://docs.python.org/ja/3/library/turtle.html#turtle.dot">turtle.dot</a></td>
+                        </tr>
+                        <tr>
+                            <td>Stamp</td>
+                            <td>亀のスタンプを押す</td>
+                            <td><a href="https://docs.python.org/ja/3/library/turtle.html#turtle.stamp">turtle.stamp</a></td>
+                        </tr>
+                        <tr>
+                            <td>Speed</td>
+                            <td>速度ｓに変更する</td>
+                            <td><a href="https://docs.python.org/ja/3/library/turtle.html#turtle.speed">turtle.speed</a></td>
+                        </tr>
+                        <tr>
+                            <td>PenDown</td>
+                            <td>動いた線を引く</td>
+                            <td><a href="https://docs.python.org/ja/3/library/turtle.html#turtle.pendown">turtle.pendown</a></td>
+                        </tr>
+                        <tr>
+                            <td>PenUp</td>
+                            <td>動いた線を引かない</td>
+                            <td><a href="https://docs.python.org/ja/3/library/turtle.html#turtle.penup">turtle.penup</a></td>
+                        </tr>
+                        <tr>
+                            <td>PenSize</td>
+                            <td>先の太さをｗにする</td>
+                            <td><a href="https://docs.python.org/ja/3/library/turtle.html#turtle.pensize">turtle.pensize</a></td>
+                        </tr>
+                        <tr>
+                            <td>Color</td>
+                            <td>色をｃに変更する</td>
+                            <td><a href="https://docs.python.org/ja/3/library/turtle.html#turtle.color">turtle.color</a></td>
+                        </tr>
+                        <tr>
+                            <td>BeginFill</td>
+                            <td>塗りつぶしを始める</td>
+                            <td><a href="https://docs.python.org/ja/3/library/turtle.html#turtle.begin_fill">turtle.begin_fill</a></td>
+                        </tr>
+                        <tr>
+                            <td>EndFill</td>
+                            <td>塗りつぶしを終える</td>
+                            <td><a href="https://docs.python.org/ja/3/library/turtle.html#turtle.end_fill">turtle.end_fill</a></td>
+                        </tr>
+                        <tr>
+                            <td>ShowTurtle</td>
+                            <td>亀を表示にする</td>
+                            <td><a href="https://docs.python.org/ja/3/library/turtle.html#turtle.showturtle">turtle.showturtle</a></td>
+                        </tr>
+                        <tr>
+                            <td>HideTurtle</td>
+                            <td>亀を非表示にする</td>
+                            <td><a href="https://docs.python.org/ja/3/library/turtle.html#turtle.hideturtle">turtle.hideturtle</a></td>
+                        </tr>
+                        <tr>
+                            <td>TurtleSize</td>
+                            <td>亀の大きさをｓにする</td>
+                            <td><a href="https://docs.python.org/ja/3/library/turtle.html#turtle.turtlesize">turtle.turtlesize</a></td>
+                        </tr>
+                        <tr>
+                            <td>Write</td>
+                            <td>サイズｓの文字列ｔを書く</td>
+                            <td><a href="https://docs.python.org/ja/3/library/turtle.html#turtle.write">turtle.write</a></td>
+                        </tr>
+                        <tr>
+                            <td>Sleep</td>
+                            <td>操作をｄ秒停止する</td>
+                            <td><a href="https://docs.python.org/ja/3/library/time.html#time.sleep">time.sleep</a></td>
+                        </tr>
+                        <tr>
+                            <td>Comment　　※１</td>
+                            <td>実行されないコメント文</td>
+                            <td>オリジナル</td>
+                        </tr>
+                        <tr>
+                            <td>Undefined　　※２</td>
+                            <td>情報のない不明なクラス</td>
+                            <td>オリジナル</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <p>※１：このウィジェットはコメント用です。</p>
+                <p>※２：このウィジェットが表示されたときにはJsonファイルが破損していないか確認してください。</p>
+                <p>2020/09/13 v3.4 Ryo Fujinami.</p>
+            </article>
+        </div>
+    </section>
+
+    <footer>Copyright ©2020 Ryo Fujinami. All rights reserved.</footer>
+</body>
+
+</html>
