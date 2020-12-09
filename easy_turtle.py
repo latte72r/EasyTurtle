@@ -136,7 +136,7 @@ def EXPAND(num): return int(round(num * WIN_MAG))
 
 FONT = (FONT_TYPE, EXPAND(12), "bold")
 
-__version__ = (4, 7, 0)
+__version__ = (4, 7, 1)
 
 
 class EasyTurtle:
@@ -409,10 +409,11 @@ class EasyTurtle:
         self.all_redraw()
         self.variable_datas = {}
         self.runner_size = (600, 600)
-        self.runner_speed = 6
+        self.runner_speed = 3
         self.win = tk.Toplevel(self.root)
         self.win.tk.call('wm', 'iconphoto', self.win._w, self.icon)
         self.win.protocol("WM_DELETE_WINDOW", self.kill_runner)
+        self.win.wait_visibility(self.win)
         if SYSTEM == "Windows":
             self.win.wm_attributes("-transparentcolor", "snow")
         self.killed_runner = False
@@ -1655,7 +1656,7 @@ class Speed(Widget):
     TEXT = "Speed         速度ｓに変更する"
     OPTION = False
     TYPE = "normal"
-    VALUES = {"speed": "6"}
+    VALUES = {"speed": "3"}
 
     def set_data(self, data):
         if data is None:
