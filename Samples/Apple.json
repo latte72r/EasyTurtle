@@ -1,13 +1,13 @@
 {
   "version": [
     4,
-    6
+    7
   ],
   "body": [
     {
       "_name": "VarNumber",
       "name": "size",
-      "value": "16"
+      "value": "8"
     },
     {
       "_name": "Title",
@@ -15,8 +15,8 @@
     },
     {
       "_name": "Geometry",
-      "width": "[size]*40",
-      "height": "[size]*40"
+      "width": "[size]*28",
+      "height": "[size]*28"
     },
     {
       "_name": "PenUp"

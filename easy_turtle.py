@@ -22,7 +22,7 @@ import traceback
 # TODO: TransParent
 
 SIZE = 8
-HEIGHT = 80
+HEIGHT = 72
 WIDTH = 480
 
 def GET_CONFIG():
@@ -136,7 +136,7 @@ def EXPAND(num): return int(round(num * WIN_MAG))
 
 FONT = (FONT_TYPE, EXPAND(12), "bold")
 
-__version__ = (4, 7, 1)
+__version__ = (4, 7, 2)
 
 
 class EasyTurtle:
@@ -614,8 +614,8 @@ class EasyTurtle:
         """セットアップ"""
         self.root = tk.Tk()
         self.root.title("EasyTurtle - untitled")
-        self.root.geometry(f"{EXPAND(1260)}x{EXPAND(660)}")
-        self.root.minsize(EXPAND(1260), EXPAND(640))
+        self.root.geometry(f"{EXPAND(1240)}x{EXPAND(600)}")
+        self.root.minsize(EXPAND(1240), EXPAND(600))
         self.root.protocol("WM_DELETE_WINDOW", self.closing)
         self.icon = tk.PhotoImage(file=ICON_FILE)
         self.root.tk.call('wm', 'iconphoto', self.root._w, self.icon)
@@ -625,11 +625,11 @@ class EasyTurtle:
         frame2.pack(side=tk.LEFT, padx=(10, 0))
         frame2.bind("<MouseWheel>", self.scroll1)
         self.cv1 = tk.Canvas(frame2, width=EXPAND(
-            WIDTH), height=EXPAND(640), bg="#E6E6E6")
+            WIDTH), height=EXPAND(HEIGHT*SIZE), bg="#E6E6E6")
         self.cv1.pack(side=tk.LEFT)
         self.cv1.bind("<MouseWheel>", self.scroll1)
         self.cv1.create_rectangle(EXPAND(4), EXPAND(4),
-                                  EXPAND(WIDTH), EXPAND(640),
+                                  EXPAND(WIDTH), EXPAND(HEIGHT*SIZE),
                                   width=EXPAND(2))
         self.scr2 = ttk.Scrollbar(frame2, orient=tk.VERTICAL,
                                   command=self.scroll2)
@@ -665,61 +665,61 @@ class EasyTurtle:
         lab5.bind("<Button-1>", self.show_browser)
         lab5.pack(side=tk.LEFT, padx=EXPAND(10))
         frame9 = tk.Frame(frame3)
-        frame9.pack(fill="x", side=tk.BOTTOM, pady=(0, EXPAND(10)))
+        frame9.pack(side=tk.BOTTOM, pady=(0, EXPAND(10)))
         but1 = tk.Button(frame9, text="Run Program", bg="#F7DFDF",
                          font=(FONT_TYPE, EXPAND(18)),
                          width=22, command=self.runner)
-        but1.pack(side=tk.LEFT, padx=(0, EXPAND(16)))
+        but1.pack(side=tk.LEFT, padx=(0, EXPAND(18)))
         but2 = tk.Button(frame9, text="Initialize", bg="#DFEFF7",
                          font=(FONT_TYPE, EXPAND(18)),
-                         width=23, command=self.initialize)
+                         width=22, command=self.initialize)
         but2.pack(side=tk.RIGHT)
         frame8 = tk.Frame(frame3)
-        frame8.pack(fill="x", side=tk.BOTTOM, pady=(0, EXPAND(10)))
+        frame8.pack(side=tk.BOTTOM, pady=(0, EXPAND(10)))
         but3 = tk.Button(frame8, text="Save Program",
                          width=22, font=(FONT_TYPE, EXPAND(18)),
                          bg="#E7F7CF", command=self.saver)
-        but3.pack(side=tk.LEFT, padx=(0, EXPAND(16)))
+        but3.pack(side=tk.LEFT, padx=(0, EXPAND(18)))
         but4 = tk.Button(frame8, text="Open Program",
-                         width=23, font=(FONT_TYPE, EXPAND(18)),
+                         width=22, font=(FONT_TYPE, EXPAND(18)),
                          bg="#E7F7CF", command=self.opener)
         but4.pack(side=tk.RIGHT)
         frame4 = tk.Frame(frame3)
-        frame4.pack(fill="x", side=tk.BOTTOM, pady=(0, EXPAND(10)))
+        frame4.pack(side=tk.BOTTOM, pady=(0, EXPAND(10)))
         but5 = tk.Button(frame4, text="Copy Selected",
                          width=22, font=(FONT_TYPE, EXPAND(18)),
                          bg="#DFEFF7", command=self.copy_selected)
-        but5.pack(side=tk.LEFT, padx=(0, EXPAND(16)))
+        but5.pack(side=tk.LEFT, padx=(0, EXPAND(18)))
         but0 = tk.Button(frame4, text="Paste Widgets",
-                         width=23, font=(FONT_TYPE, EXPAND(18)),
+                         width=22, font=(FONT_TYPE, EXPAND(18)),
                          bg="#DFEFF7", command=self.paste)
         but0.pack(side=tk.RIGHT)
         frame5 = tk.Frame(frame3)
-        frame5.pack(fill="x", side=tk.BOTTOM, pady=(0, EXPAND(10)))
+        frame5.pack(side=tk.BOTTOM, pady=(0, EXPAND(10)))
         but9 = tk.Button(frame5, text="Undo",
                          width=22, font=(FONT_TYPE, EXPAND(18)),
                          bg="#E7F7CF", command=self.undo)
-        but9.pack(side=tk.LEFT, padx=(0, EXPAND(16)))
+        but9.pack(side=tk.LEFT, padx=(0, EXPAND(18)))
         but6 = tk.Button(frame5, text="All Select",
-                         width=23, font=(FONT_TYPE, EXPAND(18)),
+                         width=22, font=(FONT_TYPE, EXPAND(18)),
                          bg="#E7F7CF", command=self.all_select)
         but6.pack(side=tk.RIGHT)
         frame6 = tk.Frame(frame3)
-        frame6.pack(fill="x", side=tk.BOTTOM, pady=(0, EXPAND(10)))
+        frame6.pack(side=tk.BOTTOM, pady=(0, EXPAND(10)))
         but7 = tk.Button(frame6, text="Clear Selected",
                          width=22, font=(FONT_TYPE, EXPAND(18)),
                          bg="#DFEFF7", command=self.clear_selected)
-        but7.pack(side=tk.LEFT, padx=(0, EXPAND(16)))
+        but7.pack(side=tk.LEFT, padx=(0, EXPAND(18)))
         but8 = tk.Button(frame6, text="Delete Selected",
-                         width=23, font=(FONT_TYPE, EXPAND(18)),
+                         width=22, font=(FONT_TYPE, EXPAND(18)),
                          bg="#F7DFDF", command=self.delete_selected)
         but8.pack(side=tk.RIGHT)
         frame7 = tk.Frame(frame3)
-        frame7.pack(fill="x", side=tk.TOP, pady=(0, EXPAND(10)))
+        frame7.pack(side=tk.TOP, pady=(0, EXPAND(10)))
         var1 = tk.StringVar(self.root, value=Texts)
-        height = 11 if SYSTEM == "Linux" else 9
+        height = 8 if SYSTEM == "Windows" else 10
         self.lsb1 = tk.Listbox(frame7, listvariable=var1, height=height,
-                               width=39, selectmode='single',
+                               width=37, selectmode='single',
                                bg="#FFEFD7", font=(FONT_TYPE, EXPAND(22)),
                                selectbackground="#2F4FAF",
                                selectforeground="#FFFFFF")
