@@ -19,7 +19,7 @@ from datetime import datetime
 import shutil
 import traceback
 
-# TODO: TransParent
+# TODO: Delete "ask_save_end" key
 
 SIZE = 8
 HEIGHT = 72
@@ -85,7 +85,6 @@ if SYSTEM == "Windows":
 
     DEFAULT_CONFIG = {
         "save_more_info": False,
-        "ask_save_end": True,
         "tolerate_danger": False,
         "expand_window": True,
         "delete_cache": True,
@@ -114,7 +113,6 @@ elif SYSTEM == "Linux":
 
     DEFAULT_CONFIG = {
         "save_more_info": False,
-        "ask_save_end": True,
         "tolerate_danger": False,
         "expand_window": True,
         "delete_cache": True,
@@ -136,7 +134,7 @@ def EXPAND(num): return int(round(num * WIN_MAG))
 
 FONT = (FONT_TYPE, EXPAND(12), "bold")
 
-__version__ = (4, 7, 2)
+__version__ = (4, 8, 0)
 
 
 class EasyTurtle:
@@ -164,59 +162,6 @@ class EasyTurtle:
         data = self.get_data()
         return f"EasyTurtle(self, data={data})"
 
-    def configure(self, event):
-        """設定を編集"""
-        self.all_redraw()
-        GET_CONFIG()
-        self.win = tk.Toplevel(self.root)
-        self.win.tk.call('wm', 'iconphoto', self.win._w, self.icon)
-        self.win.wait_visibility()
-        self.win.grab_set()
-        lab1 = tk.Label(self.win, text="Configure",
-                        font=("Georgia", EXPAND(30)))
-        lab1.pack(padx=EXPAND(20), pady=EXPAND(10))
-        self.var1 = tk.BooleanVar()
-        self.var1.set(CONFIG["save_more_info"])
-        text = "より多くの情報を保存する"
-        chb1 = tk.Checkbutton(self.win, text=text,
-                              font=FONT, variable=self.var1)
-        chb1.pack(padx=EXPAND(10), pady=(0, EXPAND(10)), anchor=tk.NW)
-        self.var2 = tk.BooleanVar()
-        self.var2.set(CONFIG["ask_save_end"])
-        text = "終了時に保存するかを確認する"
-        chb2 = tk.Checkbutton(self.win, text=text,
-                              font=FONT, variable=self.var2)
-        chb2.pack(padx=EXPAND(10), pady=(0, EXPAND(10)), anchor=tk.NW)
-        self.var3 = tk.BooleanVar()
-        self.var3.set(CONFIG["delete_cache"])
-        text = "ファイルのキャッシュを削除する"
-        chb3 = tk.Checkbutton(self.win, text=text,
-                              font=FONT, variable=self.var3)
-        chb3.pack(padx=EXPAND(10), pady=(0, EXPAND(10)), anchor=tk.NW)
-        self.var4 = tk.BooleanVar()
-        self.var4.set(CONFIG["ask_save_new"])
-        text = "古いファイルを変更するか確認する"
-        chb4 = tk.Checkbutton(self.win, text=text,
-                              font=FONT, variable=self.var4)
-        chb4.pack(padx=EXPAND(10), pady=(0, EXPAND(10)), anchor=tk.NW)
-        self.var5 = tk.BooleanVar()
-        self.var5.set(CONFIG["tolerate_danger"])
-        text = "危険なプログラムを許容する"
-        chb5 = tk.Checkbutton(self.win, text=text,
-                              font=FONT, variable=self.var5)
-        chb5.pack(padx=EXPAND(10), pady=(0, EXPAND(10)), anchor=tk.NW)
-        self.var6 = tk.BooleanVar()
-        self.var6.set(CONFIG["expand_window"])
-        text = "画面の大きさをを調整する"
-        chb6 = tk.Checkbutton(self.win, text=text,
-                              font=FONT, variable=self.var6)
-        chb6.pack(padx=EXPAND(10), pady=(0, EXPAND(10)), anchor=tk.NW)
-        but1 = tk.Button(self.win, text="決定", width=20,
-                         font=FONT, command=self.decide)
-        but1.pack(padx=EXPAND(10), pady=(0, EXPAND(20)))
-        self.win.resizable(0, 0)
-        self.win.mainloop()
-
     def version_info(self, event):
         """設定を編集"""
         self.all_redraw()
@@ -242,34 +187,79 @@ class EasyTurtle:
         self.win.resizable(0, 0)
         self.win.mainloop()
 
+    def configure(self, event):
+        """設定を編集"""
+        self.all_redraw()
+        GET_CONFIG()
+        self.win = tk.Toplevel(self.root)
+        self.win.tk.call('wm', 'iconphoto', self.win._w, self.icon)
+        self.win.wait_visibility()
+        self.win.grab_set()
+        lab1 = tk.Label(self.win, text="Configure",
+                        font=("Georgia", EXPAND(30)))
+        lab1.pack(padx=EXPAND(20), pady=EXPAND(10))
+        self.var1 = tk.BooleanVar()
+        self.var1.set(CONFIG["save_more_info"])
+        text = "より多くの情報を保存する"
+        chb1 = tk.Checkbutton(self.win, text=text,
+                              font=FONT, variable=self.var1)
+        chb1.pack(padx=EXPAND(10), pady=(0, EXPAND(10)), anchor=tk.NW)
+        self.var2 = tk.BooleanVar()
+        self.var2.set(CONFIG["delete_cache"])
+        text = "ファイルのキャッシュを削除する"
+        chb2 = tk.Checkbutton(self.win, text=text,
+                              font=FONT, variable=self.var2)
+        chb2.pack(padx=EXPAND(10), pady=(0, EXPAND(10)), anchor=tk.NW)
+        self.var3 = tk.BooleanVar()
+        self.var3.set(CONFIG["ask_save_new"])
+        text = "古いファイルを変更するか確認する"
+        chb3 = tk.Checkbutton(self.win, text=text,
+                              font=FONT, variable=self.var3)
+        chb3.pack(padx=EXPAND(10), pady=(0, EXPAND(10)), anchor=tk.NW)
+        self.var4 = tk.BooleanVar()
+        self.var4.set(CONFIG["tolerate_danger"])
+        text = "危険なプログラムを許容する"
+        chb4 = tk.Checkbutton(self.win, text=text,
+                              font=FONT, variable=self.var4)
+        chb4.pack(padx=EXPAND(10), pady=(0, EXPAND(10)), anchor=tk.NW)
+        self.var5 = tk.BooleanVar()
+        self.var5.set(CONFIG["expand_window"])
+        text = "画面の大きさをを調整する"
+        chb5 = tk.Checkbutton(self.win, text=text,
+                              font=FONT, variable=self.var5)
+        chb5.pack(padx=EXPAND(10), pady=(0, EXPAND(10)), anchor=tk.NW)
+        but1 = tk.Button(self.win, text="決定", width=20,
+                         font=FONT, command=self.decide)
+        but1.pack(padx=EXPAND(10), pady=(0, EXPAND(20)))
+        self.win.resizable(0, 0)
+        self.win.mainloop()
+
     def decide(self):
         """設定を決定"""
         global CONFIG
         CONFIG = {
             "save_more_info": self.var1.get(),
-            "ask_save_end": self.var2.get(),
-            "delete_cache": self.var3.get(),
-            "ask_save_new": self.var4.get(),
-            "tolerate_danger": self.var5.get(),
-            "expand_window": self.var6.get()}
+            "delete_cache": self.var2.get(),
+            "ask_save_new": self.var3.get(),
+            "tolerate_danger": self.var4.get(),
+            "expand_window": self.var5.get()}
         with open(CONFIG_FILE, "w", encoding="UTF-8")as f:
             json.dump(CONFIG, f, indent=4)
         self.win.destroy()
 
     def closing(self):
         """終了時の定義"""
-        if CONFIG["ask_save_end"] is True:
-            data = [d.get_data(more=False) for d in self.widgets]
-            if self.default_data == data:
-                self.root.destroy()
-                sys.exit()
-            else:
-                res = messagebox.askyesnocancel("確認", "保存しますか？")
-                if res is None:
+        data = [d.get_data(more=False) for d in self.widgets]
+        if self.default_data == data:
+            self.root.destroy()
+            sys.exit()
+        else:
+            res = messagebox.askyesnocancel("確認", "保存しますか？")
+            if res is None:
+                return
+            elif res is True:
+                if self.saver() == 1:
                     return
-                elif res is True:
-                    if self.saver() == 1:
-                        return
         self.root.destroy()
         sys.exit()
 
@@ -483,11 +473,20 @@ class EasyTurtle:
             json.dump(data, f, indent=2)
         self.default_data = [d.get_data(more=False)
                              for d in self.widgets]
-        self.root.title("EasyTurtle - " + os.path.basename(file))
+        self.program_name = file
+        self.basename = os.path.basename(self.program_name)
         self.all_redraw()
 
     def opener(self, file=None):
         """開く動作"""
+        data = [d.get_data(more=False) for d in self.widgets]
+        if self.default_data != data:
+            res = messagebox.askyesno("確認", "保存しますか？")
+            if res is None:
+                return
+            elif res is True:
+                if self.saver() == 1:
+                    return
         now = datetime.now().__str__()
         deletes = ["-", " ", ".", ":"]
         for delete in deletes:
@@ -639,7 +638,7 @@ class EasyTurtle:
         lab0 = tk.Label(self.cv1, text="EasyTurtle",
                         fg="#D8D8D8", bg="#E6E6E6",
                         font=("Georgia", EXPAND(48), "bold", "italic"))
-        lab0.place(x=EXPAND(50), y=EXPAND(280))
+        lab0.place(x=EXPAND(50), y=EXPAND(260))
         frame4 = tk.Frame(frame3)
         frame4.pack(fill="x", side=tk.BOTTOM, pady=0)
         lab1 = tk.Label(frame4, text='©2020 Ryo Fujinami.',
