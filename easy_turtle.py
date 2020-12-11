@@ -13,6 +13,7 @@ import webbrowser
 from tkinter import colorchooser
 from tkinter import messagebox
 from tkinter import filedialog
+from tkinter import font
 from tkinter import ttk
 import tkinter as tk
 from datetime import datetime
@@ -47,7 +48,8 @@ SYSTEM = platform.system()
 if SYSTEM == "Windows":
     from ctypes import windll
 
-    FONT_TYPE = "Courier New"
+    FONT_TYPE1 = "Courier New"
+    FONT_TYPE2 = "Times New Roman"
 
     os.chdir(os.path.dirname(sys.argv[0]))
     
@@ -98,7 +100,8 @@ if SYSTEM == "Windows":
 elif SYSTEM == "Linux":
     import subprocess
 
-    FONT_TYPE = "FreeMono"
+    FONT_TYPE1 = "FreeMono"
+    FONT_TYPE2 = "FreeSerif"
 
     os.chdir(os.getcwd())
 
@@ -132,9 +135,9 @@ else:
 def EXPAND(num): return int(round(num * WIN_MAG))
 
 
-FONT = (FONT_TYPE, EXPAND(12), "bold")
+FONT = (FONT_TYPE1, EXPAND(12), "bold")
 
-__version__ = (4, 8, 0)
+__version__ = (4, 8, 1)
 
 
 class EasyTurtle:
@@ -151,6 +154,10 @@ class EasyTurtle:
         self.setup()
         if file is not None:
             self.opener(file)
+        if (SYSTEM == "Linux") and ("FreeMono" not in font.families()):
+            messagebox.showwarning("警告", "\
+EasyTurtleを安定してご利用いただくために\n\
+GNU FreeFontのインストールをおすすめします。")
         self.root.mainloop()
 
     def __str__(self):
@@ -170,7 +177,7 @@ class EasyTurtle:
         self.win.wait_visibility()
         self.win.grab_set()
         lab1 = tk.Label(self.win, text="Version",
-                        font=("Georgia", EXPAND(30)))
+                        font=(FONT_TYPE2, EXPAND(30)))
         lab1.pack(padx=EXPAND(20), pady=EXPAND(10))
         py_version = '.'.join(platform.python_version_tuple())
         et_version = '.'.join([str(v) for v in __version__])
@@ -196,7 +203,7 @@ class EasyTurtle:
         self.win.wait_visibility()
         self.win.grab_set()
         lab1 = tk.Label(self.win, text="Configure",
-                        font=("Georgia", EXPAND(30)))
+                        font=(FONT_TYPE2, EXPAND(30)))
         lab1.pack(padx=EXPAND(20), pady=EXPAND(10))
         self.var1 = tk.BooleanVar()
         self.var1.set(CONFIG["save_more_info"])
@@ -637,80 +644,80 @@ class EasyTurtle:
         frame3.pack(side=tk.RIGHT, padx=EXPAND(10))
         lab0 = tk.Label(self.cv1, text="EasyTurtle",
                         fg="#D8D8D8", bg="#E6E6E6",
-                        font=("Georgia", EXPAND(48), "bold", "italic"))
-        lab0.place(x=EXPAND(50), y=EXPAND(260))
+                        font=(FONT_TYPE2, EXPAND(56), "bold", "italic"))
+        lab0.place(x=EXPAND(70), y=EXPAND(250))
         frame4 = tk.Frame(frame3)
         frame4.pack(fill="x", side=tk.BOTTOM, pady=0)
         lab1 = tk.Label(frame4, text='©2020 Ryo Fujinami.',
-                        font=("Georgia", EXPAND(10), "italic"))
+                        font=(FONT_TYPE2, EXPAND(10), "italic"))
         lab1.pack(side=tk.RIGHT, padx=EXPAND(20))
         joined_version = ".".join([str(n) for n in __version__])
         lab2 = tk.Label(frame4, text="v"+joined_version,
-                        font=(FONT_TYPE, EXPAND(12)))
+                        font=(FONT_TYPE1, EXPAND(12)))
         lab2.pack(side=tk.RIGHT, padx=EXPAND(10))
         lab3 = tk.Label(frame4, text="バージョン情報",
                         width=14, fg="blue", cursor="hand2",
-                        font=(FONT_TYPE, EXPAND(10), "underline"))
+                        font=(FONT_TYPE1, EXPAND(10), "underline"))
         lab3.bind("<Button-1>", self.version_info)
         lab3.pack(side=tk.LEFT, padx=EXPAND(10))
         lab4 = tk.Label(frame4, text="ユーザー設定",
                         width=14, fg="blue", cursor="hand2",
-                        font=(FONT_TYPE, EXPAND(10), "underline"))
+                        font=(FONT_TYPE1, EXPAND(10), "underline"))
         lab4.bind("<Button-1>", self.configure)
         lab4.pack(side=tk.LEFT, padx=EXPAND(10))
         lab5 = tk.Label(frame4, text="ヘルプ情報",
                         width=14, fg="blue", cursor="hand2",
-                        font=(FONT_TYPE, EXPAND(10), "underline"))
+                        font=(FONT_TYPE1, EXPAND(10), "underline"))
         lab5.bind("<Button-1>", self.show_browser)
         lab5.pack(side=tk.LEFT, padx=EXPAND(10))
         frame9 = tk.Frame(frame3)
         frame9.pack(side=tk.BOTTOM, pady=(0, EXPAND(10)))
         but1 = tk.Button(frame9, text="Run Program", bg="#F7DFDF",
-                         font=(FONT_TYPE, EXPAND(18)),
+                         font=(FONT_TYPE1, EXPAND(18)),
                          width=22, command=self.runner)
         but1.pack(side=tk.LEFT, padx=(0, EXPAND(18)))
         but2 = tk.Button(frame9, text="Initialize", bg="#DFEFF7",
-                         font=(FONT_TYPE, EXPAND(18)),
+                         font=(FONT_TYPE1, EXPAND(18)),
                          width=22, command=self.initialize)
         but2.pack(side=tk.RIGHT)
         frame8 = tk.Frame(frame3)
         frame8.pack(side=tk.BOTTOM, pady=(0, EXPAND(10)))
         but3 = tk.Button(frame8, text="Save Program",
-                         width=22, font=(FONT_TYPE, EXPAND(18)),
+                         width=22, font=(FONT_TYPE1, EXPAND(18)),
                          bg="#E7F7CF", command=self.saver)
         but3.pack(side=tk.LEFT, padx=(0, EXPAND(18)))
         but4 = tk.Button(frame8, text="Open Program",
-                         width=22, font=(FONT_TYPE, EXPAND(18)),
+                         width=22, font=(FONT_TYPE1, EXPAND(18)),
                          bg="#E7F7CF", command=self.opener)
         but4.pack(side=tk.RIGHT)
         frame4 = tk.Frame(frame3)
         frame4.pack(side=tk.BOTTOM, pady=(0, EXPAND(10)))
         but5 = tk.Button(frame4, text="Copy Selected",
-                         width=22, font=(FONT_TYPE, EXPAND(18)),
+                         width=22, font=(FONT_TYPE1, EXPAND(18)),
                          bg="#DFEFF7", command=self.copy_selected)
         but5.pack(side=tk.LEFT, padx=(0, EXPAND(18)))
         but0 = tk.Button(frame4, text="Paste Widgets",
-                         width=22, font=(FONT_TYPE, EXPAND(18)),
+                         width=22, font=(FONT_TYPE1, EXPAND(18)),
                          bg="#DFEFF7", command=self.paste)
         but0.pack(side=tk.RIGHT)
         frame5 = tk.Frame(frame3)
         frame5.pack(side=tk.BOTTOM, pady=(0, EXPAND(10)))
         but9 = tk.Button(frame5, text="Undo",
-                         width=22, font=(FONT_TYPE, EXPAND(18)),
+                         width=22, font=(FONT_TYPE1, EXPAND(18)),
                          bg="#E7F7CF", command=self.undo)
         but9.pack(side=tk.LEFT, padx=(0, EXPAND(18)))
         but6 = tk.Button(frame5, text="All Select",
-                         width=22, font=(FONT_TYPE, EXPAND(18)),
+                         width=22, font=(FONT_TYPE1, EXPAND(18)),
                          bg="#E7F7CF", command=self.all_select)
         but6.pack(side=tk.RIGHT)
         frame6 = tk.Frame(frame3)
         frame6.pack(side=tk.BOTTOM, pady=(0, EXPAND(10)))
         but7 = tk.Button(frame6, text="Clear Selected",
-                         width=22, font=(FONT_TYPE, EXPAND(18)),
+                         width=22, font=(FONT_TYPE1, EXPAND(18)),
                          bg="#DFEFF7", command=self.clear_selected)
         but7.pack(side=tk.LEFT, padx=(0, EXPAND(18)))
         but8 = tk.Button(frame6, text="Delete Selected",
-                         width=22, font=(FONT_TYPE, EXPAND(18)),
+                         width=22, font=(FONT_TYPE1, EXPAND(18)),
                          bg="#F7DFDF", command=self.delete_selected)
         but8.pack(side=tk.RIGHT)
         frame7 = tk.Frame(frame3)
@@ -719,7 +726,7 @@ class EasyTurtle:
         height = 8 if SYSTEM == "Windows" else 10
         self.lsb1 = tk.Listbox(frame7, listvariable=var1, height=height,
                                width=37, selectmode='single',
-                               bg="#FFEFD7", font=(FONT_TYPE, EXPAND(22)),
+                               bg="#FFEFD7", font=(FONT_TYPE1, EXPAND(22)),
                                selectbackground="#2F4FAF",
                                selectforeground="#FFFFFF")
         self.lsb1.bind('<<ListboxSelect>>', self.listbox_selected)
@@ -2151,7 +2158,7 @@ class Write(Widget):
         self.win.resizable(0, 0)
         self.win.wait_visibility()
         self.win.grab_set()
-        font = (FONT_TYPE, EXPAND(16), "bold")
+        font = (FONT_TYPE1, EXPAND(16), "bold")
         lab0 = tk.Label(self.win, text="Options",
                         font=("", EXPAND(30), "bold"))
         lab0.place(x=EXPAND(80), y=EXPAND(20))
@@ -2297,7 +2304,7 @@ class Comment(Widget):
 
     def draw(self):
         self.draw_cv()
-        self.ent1 = tk.Entry(self.cv, font=(FONT_TYPE, EXPAND(16), "bold"),
+        self.ent1 = tk.Entry(self.cv, font=(FONT_TYPE1, EXPAND(16), "bold"),
                              fg="#B40404", width=27, justify=tk.LEFT)
         self.ent1.insert(tk.END, self.comment)
         self.binder(self.ent1)
