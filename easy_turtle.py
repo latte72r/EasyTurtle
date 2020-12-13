@@ -20,7 +20,7 @@ from datetime import datetime
 import shutil
 import traceback
 
-# TODO: Delete "ask_save_end" key
+# TODO: Delete "ask_save_end" key; Config reboot
 
 SIZE = 8
 HEIGHT = 72
@@ -137,7 +137,7 @@ def EXPAND(num): return int(round(num * WIN_MAG))
 
 FONT = (FONT_TYPE1, EXPAND(12), "bold")
 
-__version__ = (4, 8, 1)
+__version__ = (4, 8, 2)
 
 
 class EasyTurtle:
@@ -174,6 +174,7 @@ GNU FreeFontのインストールをおすすめします。")
         self.all_redraw()
         self.win = tk.Toplevel(self.root)
         self.win.tk.call('wm', 'iconphoto', self.win._w, self.icon)
+        self.win.title("EasyTurtle - Version")
         self.win.wait_visibility()
         self.win.grab_set()
         lab1 = tk.Label(self.win, text="Version",
@@ -200,6 +201,7 @@ GNU FreeFontのインストールをおすすめします。")
         GET_CONFIG()
         self.win = tk.Toplevel(self.root)
         self.win.tk.call('wm', 'iconphoto', self.win._w, self.icon)
+        self.win.title("EasyTurtle - Configure")
         self.win.wait_visibility()
         self.win.grab_set()
         lab1 = tk.Label(self.win, text="Configure",
@@ -238,6 +240,11 @@ GNU FreeFontのインストールをおすすめします。")
         but1 = tk.Button(self.win, text="決定", width=20,
                          font=FONT, command=self.decide)
         but1.pack(padx=EXPAND(10), pady=(0, EXPAND(20)))
+        lab1 = tk.Label(self.win, text="\
+※画面サイズなどの一部の変更は　\n\
+　次回起動時より有効になります。",
+                        font=(FONT_TYPE1, EXPAND(10), "bold"), fg="red")
+        lab1.pack(padx=EXPAND(20), pady=(0, EXPAND(10)))
         self.win.resizable(0, 0)
         self.win.mainloop()
 
@@ -649,7 +656,7 @@ GNU FreeFontのインストールをおすすめします。")
         frame4 = tk.Frame(frame3)
         frame4.pack(fill="x", side=tk.BOTTOM, pady=0)
         lab1 = tk.Label(frame4, text='©2020 Ryo Fujinami.',
-                        font=(FONT_TYPE2, EXPAND(10), "italic"))
+                        font=(FONT_TYPE2, EXPAND(12), "italic"))
         lab1.pack(side=tk.RIGHT, padx=EXPAND(20))
         joined_version = ".".join([str(n) for n in __version__])
         lab2 = tk.Label(frame4, text="v"+joined_version,
