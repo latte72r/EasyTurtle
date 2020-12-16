@@ -10,19 +10,20 @@ import json
 import time
 import turtle
 import webbrowser
+import tkinter as tk
 from tkinter import colorchooser
 from tkinter import messagebox
 from tkinter import filedialog
 from tkinter import font
 from tkinter import ttk
 from tkinter import scrolledtext
-import tkinter as tk
 from datetime import datetime
 import shutil
 import pprint
+import getpass
 import traceback
 
-# ChangePoint: Undefined, Bell
+# ChangePoint: Undefined, Bell, Documents
 
 SIZE = 8
 HEIGHT = 72
@@ -67,19 +68,6 @@ if SYSTEM == "Windows":
     except PermissionError:
         PROGRA = True
 
-    if os.path.exists(os.path.join("C:/Users", os.getlogin(),
-                                   "onedrive/ドキュメント")) is True:
-        DOCUMENTS = os.path.join("C:/Users", os.getlogin(),
-                                 "onedrive/ドキュメント/EasyTurtle")
-    else:
-        DOCUMENTS = os.path.join("C:/Users", os.getlogin(),
-                                 "Documents/EasyTurtle")
-    os.makedirs(DOCUMENTS, exist_ok=True)
-
-    samples = os.path.join(DOCUMENTS, "Samples")
-    if os.path.exists(samples) is False:
-        shutil.copytree('./Samples', samples)
-
     if PROGRA is False:
         CONFIG_FILE = os.path.abspath("./config.json")
         os.makedirs("./cache", exist_ok=True)
@@ -93,9 +81,27 @@ if SYSTEM == "Windows":
         "tolerate_danger": False,
         "expand_window": True,
         "delete_cache": True,
-        "ask_save_new": True}
+        "ask_save_new": True,
+        "user_document": True}
 
     GET_CONFIG()
+
+    if CONFIG["user_document"] is True:
+        if os.path.exists(os.path.join("C:/Users", getpass.getuser(),
+                                       "onedrive/ドキュメント/")) is True:
+            DOCUMENTS = os.path.join("C:/Users", getpass.getuser(),
+                                     "onedrive/ドキュメント/EasyTurtle/")
+        else:
+            DOCUMENTS = os.path.join("C:/Users", getpass.getuser(),
+                                     "Documents/EasyTurtle/")
+    else:
+        DOCUMENTS = os.path.abspath("./")
+    os.makedirs(DOCUMENTS, exist_ok=True)
+
+    samples = os.path.join(DOCUMENTS, "Samples")
+    if os.path.exists(samples) is False:
+        shutil.copytree('./Samples', samples)
+    
     if CONFIG["expand_window"] is True:
         WIN_MAG = windll.user32.GetSystemMetrics(0) / 1280
     else:
@@ -115,7 +121,6 @@ elif SYSTEM == "Linux":
 
     PROGRA = False
 
-    DOCUMENTS = os.path.abspath("./")
     CONFIG_FILE = os.path.abspath("./config.json")
     os.makedirs("./cache", exist_ok=True)
 
@@ -124,8 +129,26 @@ elif SYSTEM == "Linux":
         "tolerate_danger": False,
         "expand_window": True,
         "delete_cache": True,
-        "ask_save_new": True}
+        "ask_save_new": True,
+        "user_document": False}
+
     GET_CONFIG()
+
+    if CONFIG["user_document"] is True:
+        if os.path.exists(os.path.join("/home/", getpass.getuser(),
+                                       "/ドキュメント/")) is True:
+            DOCUMENTS = os.path.join("/home/", getpass.getuser(),
+                                     "/ドキュメント/EasyTurtle/")
+        else:
+            DOCUMENTS = os.path.join("/home/", getpass.getuser(),
+                                     "/Documents/EasyTurtle/")
+    else:
+        DOCUMENTS = os.path.abspath("./")
+    os.makedirs(DOCUMENTS, exist_ok=True)
+
+    samples = os.path.join(DOCUMENTS, "Samples")
+    if os.path.exists(samples) is False:
+        shutil.copytree('./Samples', samples)
 
     if CONFIG["expand_window"] is True:
         response = subprocess.check_output("xrandr | fgrep '*'", shell=True)
@@ -144,7 +167,7 @@ def EXPAND(num): return int(round(num * WIN_MAG))
 
 FONT = (FONT_TYPE1, EXPAND(12), "bold")
 
-__version__ = (4, 9, 0)
+__version__ = (4, 9, 1)
 
 
 class EasyTurtle:
@@ -244,6 +267,12 @@ GNU FreeFontのインストールをおすすめします。")
         chb5 = tk.Checkbutton(self.win, text=text,
                               font=FONT, variable=self.var5)
         chb5.pack(padx=EXPAND(10), pady=(0, EXPAND(10)), anchor=tk.NW)
+        self.var6 = tk.BooleanVar()
+        self.var6.set(CONFIG["user_document"])
+        text = "ユーザードキュメントを使用する"
+        chb6 = tk.Checkbutton(self.win, text=text,
+                              font=FONT, variable=self.var6)
+        chb6.pack(padx=EXPAND(10), pady=(0, EXPAND(10)), anchor=tk.NW)
         but1 = tk.Button(self.win, text="決定", width=20,
                          font=FONT, command=self.decide)
         but1.pack(padx=EXPAND(10), pady=(0, EXPAND(20)))
@@ -263,7 +292,8 @@ GNU FreeFontのインストールをおすすめします。")
             "delete_cache": self.var2.get(),
             "ask_save_new": self.var3.get(),
             "tolerate_danger": self.var4.get(),
-            "expand_window": self.var5.get()}
+            "expand_window": self.var5.get(),
+            "user_document": self.var6.get()}
         with open(CONFIG_FILE, "w", encoding="UTF-8")as f:
             json.dump(CONFIG, f, indent=4)
         self.win.destroy()
@@ -529,6 +559,8 @@ GNU FreeFontのインストールをおすすめします。")
                 file = filedialog.askopenfilename(
                     parent=self.root, initialdir=DOCUMENTS,
                     filetypes=[("Jsonファイル", "*.json")])
+        if file == "":
+            return 1
         data = converter.converter(
             file, cache, ask=CONFIG["ask_save_new"])
         if data is None:
