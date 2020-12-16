@@ -697,7 +697,7 @@ GNU FreeFontのインストールをおすすめします。")
         self.root.bind("<Control-Key-z>", self.undo_change)
         self.root.bind("<Control-Key-o>", self.open_program)
         self.root.bind("<Control-Key-s>", self.save_program)
-        self.root.bind("<Key-F2>", self.show_information)
+        self.root.bind("<Key-F1>", self.show_information)
         self.root.bind("<Key-F5>", self.run_program)
 
         # 画面の左側を作成
