@@ -168,7 +168,7 @@ def EXPAND(num): return int(round(num * WIN_MAG))
 
 FONT = (FONT_TYPE1, EXPAND(12), "bold")
 
-__version__ = (4, 10, 0)
+__version__ = (4, 10, 1)
 
 
 class EasyTurtle:
@@ -184,7 +184,7 @@ class EasyTurtle:
         self.basename = "untitled"
         self.setup()
         if file is not None:
-            self.opener(file)
+            self.open_program(file)
         if (SYSTEM == "Linux") and ("FreeMono" not in font.families()):
             messagebox.showwarning("警告", "\
 EasyTurtleを安定してご利用いただくために\n\
@@ -310,7 +310,7 @@ GNU FreeFontのインストールをおすすめします。")
             if res is None:
                 return
             elif res is True:
-                if self.saver() == 1:
+                if self.save_program() == 1:
                     return
         self.root.destroy()
         sys.exit()
@@ -343,7 +343,7 @@ GNU FreeFontのインストールをおすすめします。")
         elif self.backed_up[-1]["body"] != data["body"]:
             self.backed_up.append(data)
 
-    def undo(self):
+    def undo_change(self, event=None):
         """一回戻る"""
         data = self.get_data()
         if (len(self.backed_up) > 0) and \
@@ -446,7 +446,7 @@ GNU FreeFontのインストールをおすすめします。")
         self.killed_runner = True
         self.win.destroy()
 
-    def runner(self):
+    def run_program(self):
         """実行"""
         self.all_redraw()
         self.variable_datas = {}
@@ -494,9 +494,11 @@ GNU FreeFontのインストールをおすすめします。")
             d.delete(back_up=False)
         self.all_redraw()
 
-    def saver(self, file=None):
+    def save_program(self, file=None):
         """保存動作"""
         self.all_redraw()
+        if type(file) == tk.Event:
+            file = None
         if file is None:
             if self.program_name is not None:
                 directory = os.path.dirname(self.program_name)
@@ -530,15 +532,18 @@ GNU FreeFontのインストールをおすすめします。")
         self.basename = os.path.basename(self.program_name)
         self.all_redraw()
 
-    def opener(self, file=None):
+    def open_program(self, file=None):
         """開く動作"""
+        self.all_redraw()
+        if type(file) == tk.Event:
+            file = None
         data = [d.get_data(more=False) for d in self.widgets]
         if self.default_data != data:
             res = messagebox.askyesno("確認", "保存しますか？")
             if res is None:
                 return
             elif res is True:
-                if self.saver() == 1:
+                if self.save_program() == 1:
                     return
         now = datetime.now().__str__()
         deletes = ["-", " ", ".", ":"]
@@ -635,7 +640,7 @@ GNU FreeFontのインストールをおすすめします。")
                 selected.append(d)
         return selected
 
-    def all_select(self):
+    def select_all(self, event=None):
         """すべて選択"""
         for d in self.widgets:
             d.bln1.set(True)
@@ -645,7 +650,7 @@ GNU FreeFontのインストールをおすすめします。")
         for d in self.get_selected():
             d.bln1.set(False)
 
-    def delete_selected(self):
+    def delete_selected(self, event=None):
         """選択されたデータを削除"""
         for d in self.get_selected():
             d.delete(back_up=False)
@@ -673,6 +678,7 @@ GNU FreeFontのインストールをおすすめします。")
 
     def setup(self):
         """セットアップ"""
+        # 基本ウィンドウを作成
         self.root = tk.Tk()
         self.root.title("EasyTurtle - untitled")
         self.root.geometry(f"{EXPAND(1240)}x{EXPAND(600)}")
@@ -681,16 +687,21 @@ GNU FreeFontのインストールをおすすめします。")
         self.icon = tk.PhotoImage(file=ICON_FILE)
         self.root.tk.call('wm', 'iconphoto', self.root._w, self.icon)
 
+        # コントロールキーをバインド
         self.root.bind("<Control-Key-x>", self.cut_selected)
         self.root.bind("<Control-Key-c>", self.copy_selected)
         self.root.bind("<Control-Key-v>", self.paste_widgets)
+        self.root.bind("<Control-Key-d>", self.delete_selected)
+        self.root.bind("<Control-Key-z>", self.undo_change)
+        self.root.bind("<Control-Key-o>", self.open_program)
+        self.root.bind("<Control-Key-s>", self.save_program)
 
         frame1 = tk.Frame(self.root)
         frame1.pack()
+
         frame2 = tk.Frame(frame1)
         frame2.pack(side=tk.LEFT, padx=(10, 0))
         frame2.bind("<MouseWheel>", self.scroll1)
-
         self.cv1 = tk.Canvas(frame2, width=EXPAND(
             WIDTH), height=EXPAND(HEIGHT*SIZE), bg="#E6E6E6")
         self.cv1.pack(side=tk.LEFT)
@@ -739,7 +750,7 @@ GNU FreeFontのインストールをおすすめします。")
         frame9.pack(side=tk.BOTTOM, pady=(0, EXPAND(10)))
         but1 = tk.Button(frame9, text="Run Program", bg="#F7DFDF",
                          font=(FONT_TYPE1, EXPAND(18)),
-                         width=22, command=self.runner)
+                         width=22, command=self.run_program)
         but1.pack(side=tk.LEFT, padx=(0, EXPAND(18)))
         but2 = tk.Button(frame9, text="Initialize", bg="#DFEFF7",
                          font=(FONT_TYPE1, EXPAND(18)),
@@ -750,11 +761,11 @@ GNU FreeFontのインストールをおすすめします。")
         frame8.pack(side=tk.BOTTOM, pady=(0, EXPAND(10)))
         but3 = tk.Button(frame8, text="Save Program",
                          width=22, font=(FONT_TYPE1, EXPAND(18)),
-                         bg="#E7F7CF", command=self.saver)
+                         bg="#E7F7CF", command=self.save_program)
         but3.pack(side=tk.LEFT, padx=(0, EXPAND(18)))
         but4 = tk.Button(frame8, text="Open Program",
                          width=22, font=(FONT_TYPE1, EXPAND(18)),
-                         bg="#E7F7CF", command=self.opener)
+                         bg="#E7F7CF", command=self.open_program)
         but4.pack(side=tk.RIGHT)
 
         frame4 = tk.Frame(frame3)
@@ -772,11 +783,11 @@ GNU FreeFontのインストールをおすすめします。")
         frame5.pack(side=tk.BOTTOM, pady=(0, EXPAND(10)))
         but9 = tk.Button(frame5, text="Undo",
                          width=22, font=(FONT_TYPE1, EXPAND(18)),
-                         bg="#E7F7CF", command=self.undo)
+                         bg="#E7F7CF", command=self.undo_change)
         but9.pack(side=tk.LEFT, padx=(0, EXPAND(18)))
         but6 = tk.Button(frame5, text="All Select",
                          width=22, font=(FONT_TYPE1, EXPAND(18)),
-                         bg="#E7F7CF", command=self.all_select)
+                         bg="#E7F7CF", command=self.select_all)
         but6.pack(side=tk.RIGHT)
 
         frame6 = tk.Frame(frame3)
