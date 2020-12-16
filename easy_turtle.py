@@ -23,7 +23,7 @@ import pprint
 import getpass
 import traceback
 
-# ChangePoint: Control
+# ChangePoint: Ctrl+A, Ctrl+Q
 # ConfirmedBug: Undo
 
 SIZE = 8
@@ -168,7 +168,7 @@ def EXPAND(num): return int(round(num * WIN_MAG))
 
 FONT = (FONT_TYPE1, EXPAND(12), "bold")
 
-__version__ = (4, 10, 2)
+__version__ = (4, 10, 3)
 
 
 class EasyTurtle:
@@ -181,6 +181,7 @@ class EasyTurtle:
         self.backed_up = []
         self.warning_ignore = False
         self.program_name = None
+        self.listbox_already = False
         self.basename = "untitled"
         self.setup()
         if file is not None:
@@ -299,7 +300,7 @@ GNU FreeFontのインストールをおすすめします。")
             json.dump(CONFIG, f, indent=4)
         self.win.destroy()
 
-    def closing(self):
+    def close_window(self, event=None):
         """終了時の定義"""
         data = [d.get_data(more=False) for d in self.widgets]
         if self.default_data == data:
@@ -394,6 +395,7 @@ GNU FreeFontのインストールをおすすめします。")
 
     def listbox_selected(self, event):
         """リストボックス選択時の動作"""
+        self.listbox_already = True
         index = -1
         for i in self.lsb1.curselection():
             index = Texts.index(self.lsb1.get(i))
@@ -627,6 +629,7 @@ GNU FreeFontのインストールをおすすめします。")
             self.backed_up = []
             self.warning_ignore = False
             self.program_name = None
+            self.listbox_already = False
             self.basename = "untitled"
         self.all_redraw()
         self.default_data = [d.get_data(more=False)
@@ -642,6 +645,8 @@ GNU FreeFontのインストールをおすすめします。")
 
     def select_all(self, event=None):
         """すべて選択"""
+        if (type(event) == tk.Event) and (self.listbox_already is True):
+            self.widgets[-1].delete()
         for d in self.widgets:
             d.bln1.set(True)
 
@@ -683,7 +688,7 @@ GNU FreeFontのインストールをおすすめします。")
         self.root.title("EasyTurtle - untitled")
         self.root.geometry(f"{EXPAND(1240)}x{EXPAND(600)}")
         self.root.minsize(EXPAND(1240), EXPAND(600))
-        self.root.protocol("WM_DELETE_WINDOW", self.closing)
+        self.root.protocol("WM_DELETE_WINDOW", self.close_window)
         self.icon = tk.PhotoImage(file=ICON_FILE)
         self.root.tk.call('wm', 'iconphoto', self.root._w, self.icon)
         frame1 = tk.Frame(self.root)
@@ -697,6 +702,8 @@ GNU FreeFontのインストールをおすすめします。")
         self.root.bind("<Control-Key-z>", self.undo_change)
         self.root.bind("<Control-Key-o>", self.open_program)
         self.root.bind("<Control-Key-s>", self.save_program)
+        self.root.bind("<Control-Key-a>", self.select_all)
+        self.root.bind("<Control-Key-q>", self.close_window)
         self.root.bind("<Key-F1>", self.show_information)
         self.root.bind("<Key-F5>", self.run_program)
 
