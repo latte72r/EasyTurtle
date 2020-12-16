@@ -168,7 +168,7 @@ def EXPAND(num): return int(round(num * WIN_MAG))
 
 FONT = (FONT_TYPE1, EXPAND(12), "bold")
 
-__version__ = (4, 10, 1)
+__version__ = (4, 10, 2)
 
 
 class EasyTurtle:
@@ -446,7 +446,7 @@ GNU FreeFontのインストールをおすすめします。")
         self.killed_runner = True
         self.win.destroy()
 
-    def run_program(self):
+    def run_program(self, event=None):
         """実行"""
         self.all_redraw()
         self.variable_datas = {}
@@ -610,11 +610,11 @@ GNU FreeFontのインストールをおすすめします。")
             self.make_match_class(d)
         self.all_redraw()
 
-    def show_browser(self, event):
+    def show_information(self, event=None):
         """詳しい情報の表示"""
         webbrowser.open_new(README_FILE)
 
-    def initialize(self):
+    def initialize_data(self):
         """データを初期化"""
         res = messagebox.askokcancel(
             "警告", "情報を初期化しますか？", parent=self.root)
@@ -686,6 +686,8 @@ GNU FreeFontのインストールをおすすめします。")
         self.root.protocol("WM_DELETE_WINDOW", self.closing)
         self.icon = tk.PhotoImage(file=ICON_FILE)
         self.root.tk.call('wm', 'iconphoto', self.root._w, self.icon)
+        frame1 = tk.Frame(self.root)
+        frame1.pack()
 
         # コントロールキーをバインド
         self.root.bind("<Control-Key-x>", self.cut_selected)
@@ -695,10 +697,10 @@ GNU FreeFontのインストールをおすすめします。")
         self.root.bind("<Control-Key-z>", self.undo_change)
         self.root.bind("<Control-Key-o>", self.open_program)
         self.root.bind("<Control-Key-s>", self.save_program)
+        self.root.bind("<Key-F2>", self.show_information)
+        self.root.bind("<Key-F5>", self.run_program)
 
-        frame1 = tk.Frame(self.root)
-        frame1.pack()
-
+        # 画面の左側を作成
         frame2 = tk.Frame(frame1)
         frame2.pack(side=tk.LEFT, padx=(10, 0))
         frame2.bind("<MouseWheel>", self.scroll1)
@@ -709,11 +711,9 @@ GNU FreeFontのインストールをおすすめします。")
         self.cv1.create_rectangle(EXPAND(4), EXPAND(4),
                                   EXPAND(WIDTH), EXPAND(HEIGHT*SIZE),
                                   width=EXPAND(2))
-
         self.scr2 = ttk.Scrollbar(frame2, orient=tk.VERTICAL,
                                   command=self.scroll2)
         self.scr2.pack(fill='y', side=tk.RIGHT)
-
         frame3 = tk.Frame(frame1)
         frame3.pack(side=tk.RIGHT, padx=EXPAND(10))
         lab0 = tk.Label(self.cv1, text="EasyTurtle",
@@ -721,6 +721,7 @@ GNU FreeFontのインストールをおすすめします。")
                         font=(FONT_TYPE2, EXPAND(56), "bold", "italic"))
         lab0.place(x=EXPAND(70), y=EXPAND(250))
 
+        # 画面右側下段を作成
         frame4 = tk.Frame(frame3)
         frame4.pack(fill="x", side=tk.BOTTOM, pady=0)
         lab1 = tk.Label(frame4, text='©2020 Ryo Fujinami.',
@@ -743,9 +744,10 @@ GNU FreeFontのインストールをおすすめします。")
         lab5 = tk.Label(frame4, text="ヘルプ情報",
                         width=14, fg="blue", cursor="hand2",
                         font=(FONT_TYPE1, EXPAND(10), "underline"))
-        lab5.bind("<Button-1>", self.show_browser)
+        lab5.bind("<Button-1>", self.show_information)
         lab5.pack(side=tk.LEFT, padx=EXPAND(10))
 
+        # 画面右側中段を作成
         frame9 = tk.Frame(frame3)
         frame9.pack(side=tk.BOTTOM, pady=(0, EXPAND(10)))
         but1 = tk.Button(frame9, text="Run Program", bg="#F7DFDF",
@@ -754,9 +756,8 @@ GNU FreeFontのインストールをおすすめします。")
         but1.pack(side=tk.LEFT, padx=(0, EXPAND(18)))
         but2 = tk.Button(frame9, text="Initialize", bg="#DFEFF7",
                          font=(FONT_TYPE1, EXPAND(18)),
-                         width=22, command=self.initialize)
+                         width=22, command=self.initialize_data)
         but2.pack(side=tk.RIGHT)
-
         frame8 = tk.Frame(frame3)
         frame8.pack(side=tk.BOTTOM, pady=(0, EXPAND(10)))
         but3 = tk.Button(frame8, text="Save Program",
@@ -767,7 +768,6 @@ GNU FreeFontのインストールをおすすめします。")
                          width=22, font=(FONT_TYPE1, EXPAND(18)),
                          bg="#E7F7CF", command=self.open_program)
         but4.pack(side=tk.RIGHT)
-
         frame4 = tk.Frame(frame3)
         frame4.pack(side=tk.BOTTOM, pady=(0, EXPAND(10)))
         but5 = tk.Button(frame4, text="Copy Selected",
@@ -778,7 +778,6 @@ GNU FreeFontのインストールをおすすめします。")
                          width=22, font=(FONT_TYPE1, EXPAND(18)),
                          bg="#DFEFF7", command=self.paste_widgets)
         but0.pack(side=tk.RIGHT)
-
         frame5 = tk.Frame(frame3)
         frame5.pack(side=tk.BOTTOM, pady=(0, EXPAND(10)))
         but9 = tk.Button(frame5, text="Undo",
@@ -789,7 +788,6 @@ GNU FreeFontのインストールをおすすめします。")
                          width=22, font=(FONT_TYPE1, EXPAND(18)),
                          bg="#E7F7CF", command=self.select_all)
         but6.pack(side=tk.RIGHT)
-
         frame6 = tk.Frame(frame3)
         frame6.pack(side=tk.BOTTOM, pady=(0, EXPAND(10)))
         but7 = tk.Button(frame6, text="Clear Selected",
@@ -801,6 +799,7 @@ GNU FreeFontのインストールをおすすめします。")
                          bg="#F7DFDF", command=self.delete_selected)
         but8.pack(side=tk.RIGHT)
 
+        # 画面右側上段を作成
         frame7 = tk.Frame(frame3)
         frame7.pack(side=tk.TOP, pady=(0, EXPAND(10)))
         var1 = tk.StringVar(self.root, value=Texts)
