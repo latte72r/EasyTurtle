@@ -23,7 +23,8 @@ import pprint
 import getpass
 import traceback
 
-# ChangePoint: Undefined, Bell, Documents
+# ChangePoint: Control
+# ConfirmedBug: Undo
 
 SIZE = 8
 HEIGHT = 72
@@ -167,7 +168,7 @@ def EXPAND(num): return int(round(num * WIN_MAG))
 
 FONT = (FONT_TYPE1, EXPAND(12), "bold")
 
-__version__ = (4, 9, 1)
+__version__ = (4, 10, 0)
 
 
 class EasyTurtle:
@@ -317,9 +318,9 @@ GNU FreeFontのインストールをおすすめします。")
     def all_redraw(self, back_up=True):
         """全部描き直し"""
         data = self.widgets
-        if self.index < 0:
+        if (self.index < 0) or (len(data) < SIZE):
             self.index = 0
-        elif (self.index > len(data) - SIZE) and (len(data) >= SIZE):
+        elif self.index > len(data) - SIZE:
             self.index = len(data) - SIZE
         for d in data:
             d.redraw()
@@ -335,7 +336,7 @@ GNU FreeFontのインストールをおすすめします。")
     def back_up(self):
         """バックアップ"""
         data = self.get_data()
-        if len(self.widgets) < 2:
+        if len(self.widgets) < 1:
             return
         elif len(self.backed_up) == 0:
             self.backed_up.append(data)
@@ -598,7 +599,7 @@ GNU FreeFontのインストールをおすすめします。")
         else:
             Undefined(self, {"_name": name, **data}, index)
 
-    def paste(self):
+    def paste_widgets(self, event=None):
         """ペースト時の動作"""
         for d in self.copied_widgets:
             self.make_match_class(d)
@@ -650,14 +651,21 @@ GNU FreeFontのインストールをおすすめします。")
             d.delete(back_up=False)
         self.all_redraw()
 
-    def copy_selected(self):
+    def copy_selected(self, event=None):
         """選択されたデータをコピー"""
         copy = []
+        if len(self.get_selected()) == 0:
+            return
         for d in self.get_selected():
             data = d.get_data()
             data["_check"] = False
             copy.append(data)
         self.copied_widgets = copy
+
+    def cut_selected(self, event=None):
+        """選択されたデータをカット"""
+        self.copy_selected()
+        self.delete_selected()
 
     def destroy(self):
         """ウィンドウを削除"""
@@ -672,11 +680,17 @@ GNU FreeFontのインストールをおすすめします。")
         self.root.protocol("WM_DELETE_WINDOW", self.closing)
         self.icon = tk.PhotoImage(file=ICON_FILE)
         self.root.tk.call('wm', 'iconphoto', self.root._w, self.icon)
+
+        self.root.bind("<Control-Key-x>", self.cut_selected)
+        self.root.bind("<Control-Key-c>", self.copy_selected)
+        self.root.bind("<Control-Key-v>", self.paste_widgets)
+
         frame1 = tk.Frame(self.root)
         frame1.pack()
         frame2 = tk.Frame(frame1)
         frame2.pack(side=tk.LEFT, padx=(10, 0))
         frame2.bind("<MouseWheel>", self.scroll1)
+
         self.cv1 = tk.Canvas(frame2, width=EXPAND(
             WIDTH), height=EXPAND(HEIGHT*SIZE), bg="#E6E6E6")
         self.cv1.pack(side=tk.LEFT)
@@ -684,15 +698,18 @@ GNU FreeFontのインストールをおすすめします。")
         self.cv1.create_rectangle(EXPAND(4), EXPAND(4),
                                   EXPAND(WIDTH), EXPAND(HEIGHT*SIZE),
                                   width=EXPAND(2))
+
         self.scr2 = ttk.Scrollbar(frame2, orient=tk.VERTICAL,
                                   command=self.scroll2)
         self.scr2.pack(fill='y', side=tk.RIGHT)
+
         frame3 = tk.Frame(frame1)
         frame3.pack(side=tk.RIGHT, padx=EXPAND(10))
         lab0 = tk.Label(self.cv1, text="EasyTurtle",
                         fg="#D8D8D8", bg="#E6E6E6",
                         font=(FONT_TYPE2, EXPAND(56), "bold", "italic"))
         lab0.place(x=EXPAND(70), y=EXPAND(250))
+
         frame4 = tk.Frame(frame3)
         frame4.pack(fill="x", side=tk.BOTTOM, pady=0)
         lab1 = tk.Label(frame4, text='©2020 Ryo Fujinami.',
@@ -717,6 +734,7 @@ GNU FreeFontのインストールをおすすめします。")
                         font=(FONT_TYPE1, EXPAND(10), "underline"))
         lab5.bind("<Button-1>", self.show_browser)
         lab5.pack(side=tk.LEFT, padx=EXPAND(10))
+
         frame9 = tk.Frame(frame3)
         frame9.pack(side=tk.BOTTOM, pady=(0, EXPAND(10)))
         but1 = tk.Button(frame9, text="Run Program", bg="#F7DFDF",
@@ -727,6 +745,7 @@ GNU FreeFontのインストールをおすすめします。")
                          font=(FONT_TYPE1, EXPAND(18)),
                          width=22, command=self.initialize)
         but2.pack(side=tk.RIGHT)
+
         frame8 = tk.Frame(frame3)
         frame8.pack(side=tk.BOTTOM, pady=(0, EXPAND(10)))
         but3 = tk.Button(frame8, text="Save Program",
@@ -737,6 +756,7 @@ GNU FreeFontのインストールをおすすめします。")
                          width=22, font=(FONT_TYPE1, EXPAND(18)),
                          bg="#E7F7CF", command=self.opener)
         but4.pack(side=tk.RIGHT)
+
         frame4 = tk.Frame(frame3)
         frame4.pack(side=tk.BOTTOM, pady=(0, EXPAND(10)))
         but5 = tk.Button(frame4, text="Copy Selected",
@@ -745,8 +765,9 @@ GNU FreeFontのインストールをおすすめします。")
         but5.pack(side=tk.LEFT, padx=(0, EXPAND(18)))
         but0 = tk.Button(frame4, text="Paste Widgets",
                          width=22, font=(FONT_TYPE1, EXPAND(18)),
-                         bg="#DFEFF7", command=self.paste)
+                         bg="#DFEFF7", command=self.paste_widgets)
         but0.pack(side=tk.RIGHT)
+
         frame5 = tk.Frame(frame3)
         frame5.pack(side=tk.BOTTOM, pady=(0, EXPAND(10)))
         but9 = tk.Button(frame5, text="Undo",
@@ -757,6 +778,7 @@ GNU FreeFontのインストールをおすすめします。")
                          width=22, font=(FONT_TYPE1, EXPAND(18)),
                          bg="#E7F7CF", command=self.all_select)
         but6.pack(side=tk.RIGHT)
+
         frame6 = tk.Frame(frame3)
         frame6.pack(side=tk.BOTTOM, pady=(0, EXPAND(10)))
         but7 = tk.Button(frame6, text="Clear Selected",
@@ -767,6 +789,7 @@ GNU FreeFontのインストールをおすすめします。")
                          width=22, font=(FONT_TYPE1, EXPAND(18)),
                          bg="#F7DFDF", command=self.delete_selected)
         but8.pack(side=tk.RIGHT)
+
         frame7 = tk.Frame(frame3)
         frame7.pack(side=tk.TOP, pady=(0, EXPAND(10)))
         var1 = tk.StringVar(self.root, value=Texts)
@@ -782,6 +805,7 @@ GNU FreeFontのインストールをおすすめします。")
                              command=self.lsb1.yview)
         self.lsb1['yscrollcommand'] = scr1.set
         scr1.pack(fill='y', side=tk.RIGHT)
+
         self.all_redraw()
 
 
@@ -876,6 +900,7 @@ class Widget:
         index = self.p.widgets.index(self)
         for d in reversed(self.p.copied_widgets):
             self.p.make_match_class(d, index=index)
+        self.p.index = index
         self.p.all_redraw()
 
     def paste2(self):
@@ -883,6 +908,7 @@ class Widget:
         index = self.p.widgets.index(self)
         for d in reversed(self.p.copied_widgets):
             self.p.make_match_class(d, index=index+1)
+        self.p.index = index + 1
         self.p.all_redraw()
 
     def show_popup2(self, event):
