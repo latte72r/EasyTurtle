@@ -23,7 +23,7 @@ import pprint
 import getpass
 import traceback
 
-# ChangePoint: Ctrl+A, Ctrl+Q
+# ChangePoint: Ctrl+Shift
 # ConfirmedBug: Undo
 
 SIZE = 8
@@ -168,7 +168,7 @@ def EXPAND(num): return int(round(num * WIN_MAG))
 
 FONT = (FONT_TYPE1, EXPAND(12), "bold")
 
-__version__ = (4, 10, 3)
+__version__ = (4, 10, 4)
 
 
 class EasyTurtle:
@@ -181,7 +181,6 @@ class EasyTurtle:
         self.backed_up = []
         self.warning_ignore = False
         self.program_name = None
-        self.listbox_already = False
         self.basename = "untitled"
         self.setup()
         if file is not None:
@@ -227,7 +226,7 @@ GNU FreeFontのインストールをおすすめします。")
         self.win.resizable(0, 0)
         self.win.mainloop()
 
-    def configure(self, event):
+    def edit_config(self, event):
         """設定を編集"""
         self.all_redraw()
         GET_CONFIG()
@@ -276,7 +275,7 @@ GNU FreeFontのインストールをおすすめします。")
                               font=FONT, variable=self.var6)
         chb6.pack(padx=EXPAND(10), pady=(0, EXPAND(10)), anchor=tk.NW)
         but1 = tk.Button(self.win, text="決定", width=20,
-                         font=FONT, command=self.decide)
+                         font=FONT, command=self.decide_config)
         but1.pack(padx=EXPAND(10), pady=(0, EXPAND(20)))
         lab1 = tk.Label(self.win, text="\
 ※画面サイズなどの一部の変更は　\n\
@@ -286,7 +285,7 @@ GNU FreeFontのインストールをおすすめします。")
         self.win.resizable(0, 0)
         self.win.mainloop()
 
-    def decide(self):
+    def decide_config(self):
         """設定を決定"""
         global CONFIG
         CONFIG = {
@@ -395,7 +394,6 @@ GNU FreeFontのインストールをおすすめします。")
 
     def listbox_selected(self, event):
         """リストボックス選択時の動作"""
-        self.listbox_already = True
         index = -1
         for i in self.lsb1.curselection():
             index = Texts.index(self.lsb1.get(i))
@@ -629,7 +627,6 @@ GNU FreeFontのインストールをおすすめします。")
             self.backed_up = []
             self.warning_ignore = False
             self.program_name = None
-            self.listbox_already = False
             self.basename = "untitled"
         self.all_redraw()
         self.default_data = [d.get_data(more=False)
@@ -645,8 +642,6 @@ GNU FreeFontのインストールをおすすめします。")
 
     def select_all(self, event=None):
         """すべて選択"""
-        if (type(event) == tk.Event) and (self.listbox_already is True):
-            self.widgets[-1].delete()
         for d in self.widgets:
             d.bln1.set(True)
 
@@ -694,16 +689,16 @@ GNU FreeFontのインストールをおすすめします。")
         frame1 = tk.Frame(self.root)
         frame1.pack()
 
-        # コントロールキーをバインド
-        self.root.bind("<Control-Key-x>", self.cut_selected)
-        self.root.bind("<Control-Key-c>", self.copy_selected)
-        self.root.bind("<Control-Key-v>", self.paste_widgets)
-        self.root.bind("<Control-Key-d>", self.delete_selected)
-        self.root.bind("<Control-Key-z>", self.undo_change)
-        self.root.bind("<Control-Key-o>", self.open_program)
-        self.root.bind("<Control-Key-s>", self.save_program)
-        self.root.bind("<Control-Key-a>", self.select_all)
-        self.root.bind("<Control-Key-q>", self.close_window)
+        # キーをバインド
+        self.root.bind("<Control-Shift-Key-X>", self.cut_selected)
+        self.root.bind("<Control-Shift-Key-C>", self.copy_selected)
+        self.root.bind("<Control-Shift-Key-V>", self.paste_widgets)
+        self.root.bind("<Control-Shift-Key-Z>", self.undo_change)
+        self.root.bind("<Control-Shift-Key-A>", self.select_all)
+        self.root.bind("<Control-Key-D>", self.delete_selected)
+        self.root.bind("<Control-Key-O>", self.open_program)
+        self.root.bind("<Control-Key-S>", self.save_program)
+        self.root.bind("<Control-Key-Q>", self.close_window)
         self.root.bind("<Key-F1>", self.show_information)
         self.root.bind("<Key-F5>", self.run_program)
 
@@ -746,7 +741,7 @@ GNU FreeFontのインストールをおすすめします。")
         lab4 = tk.Label(frame4, text="ユーザー設定",
                         width=14, fg="blue", cursor="hand2",
                         font=(FONT_TYPE1, EXPAND(10), "underline"))
-        lab4.bind("<Button-1>", self.configure)
+        lab4.bind("<Button-1>", self.edit_config)
         lab4.pack(side=tk.LEFT, padx=EXPAND(10))
         lab5 = tk.Label(frame4, text="ヘルプ情報",
                         width=14, fg="blue", cursor="hand2",
@@ -947,7 +942,7 @@ class Widget:
         menu.add_command(label=' Delete', command=self.delete, state=states[5])
         if self.OPTION is True:
             menu.add_separator()
-            menu.add_command(label=' Option', command=self.option)
+            menu.add_command(label=' Option', command=self.show_option)
         if self.TYPE == "undefined":
             menu.add_separator()
             menu.add_command(label=' Details', command=self.details)
@@ -967,8 +962,7 @@ class Widget:
         index = self.p.widgets.index(self) - self.p.index
         if 0 <= index < SIZE:
             self.cv.place(x=0, y=EXPAND(HEIGHT*index))
-            self.lab4.configure(
-                text=f"{self.p.widgets.index(self)+1:03}")
+            self.lab4.config(text=f"{self.p.widgets.index(self)+1:03}")
         else:
             self.cv.place_forget()
 
@@ -2032,7 +2026,7 @@ class Color(Widget):
         self.ent1.place(x=EXPAND(90), y=EXPAND(HEIGHT//2+8))
         self.redraw()
 
-    def option(self):
+    def show_option(self):
         color = self.ent1.get()
         try:
             color = colorchooser.askcolor(
@@ -2092,7 +2086,7 @@ class BGColor(Widget):
         self.ent1.place(x=EXPAND(90), y=EXPAND(HEIGHT//2+8))
         self.redraw()
 
-    def option(self):
+    def show_option(self):
         color = self.ent1.get()
         try:
             color = colorchooser.askcolor(
@@ -2356,7 +2350,7 @@ class Write(Widget):
         self.ent2.place(x=EXPAND(280), y=EXPAND(HEIGHT//2+8))
         self.redraw()
 
-    def option(self):
+    def show_option(self):
         self.text = self.ent1.get()
         self.size = self.ent2.get()
         self.win = tk.Toplevel(self.p.root)
@@ -2413,11 +2407,11 @@ class Write(Widget):
         ent7.place(x=EXPAND(150), y=EXPAND(270))
         entries = (ent1, ent2, ent3, ent4, ent5, ent6, ent7)
         but1 = tk.Button(self.win, text="決定", font=font, width=8,
-                         command=lambda: self.decide(entries))
+                         command=lambda: self.decide_option(entries))
         but1.place(x=100, y=310)
         self.win.mainloop()
 
-    def decide(self, entries):
+    def decide_option(self, entries):
         self.text = entries[0].get()
         self.move = entries[1].get()
         self.align = entries[2].get()
