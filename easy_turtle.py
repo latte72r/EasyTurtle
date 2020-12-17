@@ -21,8 +21,7 @@ import pprint
 import getpass
 import traceback
 
-# ChangePoint: ChangeSize
-# ConfirmedBug: Undo
+# ChangePoint: Undo
 
 SIZE = 8
 HEIGHT = 72
@@ -167,7 +166,7 @@ def EXPAND(num): return int(round(num * WIN_MAG))
 
 FONT = (FONT_TYPE1, EXPAND(12), "bold")
 
-__version__ = (4, 11, 3)
+__version__ = (4, 11, 4)
 
 
 class EasyTurtle:
@@ -338,9 +337,11 @@ GNU FreeFontのインストールをおすすめします。")
     def back_up(self):
         """バックアップ"""
         data = self.get_data()
-        if len(self.widgets) < 1:
+        """
+        if len(self.widgets) == 0:
             return
-        elif len(self.backed_up) == 0:
+        el"""
+        if len(self.backed_up) == 0:
             self.backed_up.append(data)
         elif self.backed_up[-1]["body"] != data["body"]:
             self.backed_up.append(data)
@@ -358,6 +359,7 @@ GNU FreeFontのインストールをおすすめします。")
              (self.backed_up[-2]["body"] != data["body"]):
             self.set_data(self.backed_up[-2])
             self.backed_up = self.backed_up[:-2]
+        self.all_redraw()
 
     def get_data(self):
         """データを取得"""
@@ -370,11 +372,10 @@ GNU FreeFontのインストールをおすすめします。")
         self.all_delete()
         self.index = data["index"]
         self.copied_widgets = data["copy"]
-        self.data = []
+        self.widgets = []
         for d in data["body"]:
             self.make_match_class(d)
         self.index = data["index"]
-        self.all_redraw()
 
     def check_length(self):
         """データの大きさをチェック"""
