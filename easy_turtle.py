@@ -1,7 +1,6 @@
 
 # ©2020 Ryo Fujinami.
 
-import converter
 import re
 import platform
 import sys
@@ -17,13 +16,12 @@ from tkinter import filedialog
 from tkinter import font
 from tkinter import ttk
 from tkinter import scrolledtext
-from datetime import datetime
 import shutil
 import pprint
 import getpass
 import traceback
 
-# ChangePoint: Ctrl+Shift
+# ChangePoint: converter
 # ConfirmedBug: Undo
 
 SIZE = 8
@@ -168,7 +166,7 @@ def EXPAND(num): return int(round(num * WIN_MAG))
 
 FONT = (FONT_TYPE1, EXPAND(12), "bold")
 
-__version__ = (4, 10, 4)
+__version__ = (4, 11, 0)
 
 
 class EasyTurtle:
@@ -403,8 +401,8 @@ GNU FreeFontのインストールをおすすめします。")
         Widgets[index](parent=self)
         self.all_redraw()
 
-    def scroll1(self, event):
-        """スクロール時の動作①"""
+    def windows_scroll(self, event):
+        """Windowsでのスクロール時の動作"""
         data = self.widgets
         index = self.index - (event.delta // 120)
         max_size = (len(data) - SIZE)
@@ -414,15 +412,10 @@ GNU FreeFontのインストールをおすすめします。")
                       if len(data) <= SIZE else index)
         self.all_redraw(back_up=False)
 
-    def scroll2(self, *event):
-        """スクロール時のデータ②"""
+    def linux_scroll(self, event):
+        """Linuxでのスクロール時の動作"""
         data = self.widgets
-        if event[0] == "scroll":
-            index = self.index + int(event[1])
-        elif event[0] == "moveto":
-            index = int(float(event[1]) * len(data))
-        else:
-            return
+        index = self.index - (1 if event.num == 4 else -1)
         max_size = (len(data) - SIZE)
         self.index = (0 if index <= 0 else max_size
                       if (index > max_size) and (len(data) > SIZE)
@@ -430,10 +423,15 @@ GNU FreeFontのインストールをおすすめします。")
                       if len(data) <= SIZE else index)
         self.all_redraw(back_up=False)
 
-    def scroll3(self, event):
-        """スクロール時の動作③"""
+    def scroll_button(self, *event):
+        """スクロールバーボタンが押された時の動作"""
         data = self.widgets
-        index = self.index - (1 if event.num == 4 else -1)
+        if event[0] == "scroll":
+            index = self.index + int(event[1])
+        elif event[0] == "moveto":
+            index = int(float(event[1]) * len(data))
+        else:
+            return
         max_size = (len(data) - SIZE)
         self.index = (0 if index <= 0 else max_size
                       if (index > max_size) and (len(data) > SIZE)
@@ -497,8 +495,12 @@ GNU FreeFontのインストールをおすすめします。")
     def save_program(self, file=None):
         """保存動作"""
         self.all_redraw()
+
+        # キーバインドから実行された場合
         if type(file) == tk.Event:
             file = None
+
+        # ファイル名を質問する
         if file is None:
             if self.program_name is not None:
                 directory = os.path.dirname(self.program_name)
@@ -510,12 +512,20 @@ GNU FreeFontのインストールをおすすめします。")
                 file = filedialog.asksaveasfilename(
                     parent=self.root, initialdir=DOCUMENTS,
                     filetypes=[("Jsonファイル", "*.json")])
+
+        # ファイルが選択されていなければ終了
         if file == "":
             return 1
+
+        # 拡張子をつける
         elif file[-5:] != ".json":
             file += ".json"
+
+        # データを取得
         body = [d.get_data(more=CONFIG["save_more_info"])
                 for d in self.widgets]
+
+        # データを決定
         if CONFIG["save_more_info"] is True:
             data = {
                 "version": __version__[:2],
@@ -524,19 +534,29 @@ GNU FreeFontのインストールをおすすめします。")
                 "body": body}
         else:
             data = {"version": __version__[:2], "body": body}
+
+        # データを書き込み
         with open(file, "w")as f:
             json.dump(data, f, indent=2)
-        self.default_data = [d.get_data(more=False)
-                             for d in self.widgets]
+
+        # 基本データを設定
+        self.default_data = [d.get_data(more=False) for d in self.widgets]
+
+        # プログラムの名称設定
         self.program_name = file
         self.basename = os.path.basename(self.program_name)
+
         self.all_redraw()
 
     def open_program(self, file=None):
         """開く動作"""
         self.all_redraw()
+
+        # キーバインドから実行された場合
         if type(file) == tk.Event:
             file = None
+
+        # データが変更されていれば保存するか確認する
         data = [d.get_data(more=False) for d in self.widgets]
         if self.default_data != data:
             res = messagebox.askyesno("確認", "保存しますか？")
@@ -545,15 +565,8 @@ GNU FreeFontのインストールをおすすめします。")
             elif res is True:
                 if self.save_program() == 1:
                     return
-        now = datetime.now().__str__()
-        deletes = ["-", " ", ".", ":"]
-        for delete in deletes:
-            now = now.replace(delete, "")
-        if PROGRA is False:
-            cache = os.path.join("./cache", now + ".json")
-        else:
-            cache = os.path.join(
-                "C:/ProgramData/EasyTurtle/cache", now + ".json")
+
+        # ファイル名を質問する
         if file is None:
             if self.program_name is not None:
                 directory = os.path.dirname(self.program_name)
@@ -565,33 +578,58 @@ GNU FreeFontのインストールをおすすめします。")
                 file = filedialog.askopenfilename(
                     parent=self.root, initialdir=DOCUMENTS,
                     filetypes=[("Jsonファイル", "*.json")])
+
+        # ファイルが選択されていなければ終了
         if file == "":
             return 1
-        data = converter.converter(
-            file, cache, ask=CONFIG["ask_save_new"])
-        if data is None:
-            return
-        if CONFIG["delete_cache"] is True:
-            os.remove(cache)
+
+        # ファイルを開く
+        with open(file, "r")as f:
+            data = json.load(f)
+
+        # すべてのウィジェットを削除
         self.all_delete()
         try:
-            backed_cp = self.backed_up[-1] if len(self.backed_up) > 0 \
-                else self.get_data()
+            # データを複製
+            if len(self.backed_up) > 0:
+                backed_cp = self.backed_up[-1]
+            else:
+                backed_cp = self.get_data()
+
+            # データを空にする
             self.data = []
+
+            # サイズ警告を初期化
             self.warning_ignore = False
+
+            # ウィジェットを作成
             for d in data["body"]:
                 self.make_match_class(d)
+
+            # インデックスを変更
             self.index = data["index"] if "index" in data else 0
+
+            # コピーされたウィジェットを設定
             self.copied_widgets = data["copy"] if "copy" in data else []
+
             self.all_redraw()
-            self.default_data = [d.get_data(more=False)
-                                 for d in self.widgets]
+
+            # 基本データを設定
+            self.default_data = [d.get_data(more=False) for d in self.widgets]
+
+            # プログラムの名称設定
             self.program_name = file
             self.basename = os.path.basename(self.program_name)
+
+            # バックアップを空にする
             self.backed_up = []
+
             self.all_redraw()
         except:
+            # コピーを復元
             self.set_data(backed_cp)
+
+            # エラー表示
             messagebox.showerror("エラー", "変換エラーが発生しました。")
             traceback.print_exc()
             return
@@ -690,9 +728,9 @@ GNU FreeFontのインストールをおすすめします。")
         frame1.pack()
 
         # キーをバインド
-        self.root.bind("<Control-Shift-Key-X>", self.cut_selected)
         self.root.bind("<Control-Shift-Key-C>", self.copy_selected)
         self.root.bind("<Control-Shift-Key-V>", self.paste_widgets)
+        self.root.bind("<Control-Shift-Key-X>", self.cut_selected)
         self.root.bind("<Control-Shift-Key-Z>", self.undo_change)
         self.root.bind("<Control-Shift-Key-A>", self.select_all)
         self.root.bind("<Control-Key-D>", self.delete_selected)
@@ -705,16 +743,16 @@ GNU FreeFontのインストールをおすすめします。")
         # 画面の左側を作成
         frame2 = tk.Frame(frame1)
         frame2.pack(side=tk.LEFT, padx=(10, 0))
-        frame2.bind("<MouseWheel>", self.scroll1)
+        frame2.bind("<MouseWheel>", self.windows_scroll)
         self.cv1 = tk.Canvas(frame2, width=EXPAND(
             WIDTH), height=EXPAND(HEIGHT*SIZE), bg="#E6E6E6")
         self.cv1.pack(side=tk.LEFT)
-        self.cv1.bind("<MouseWheel>", self.scroll1)
+        self.cv1.bind("<MouseWheel>", self.windows_scroll)
         self.cv1.create_rectangle(EXPAND(4), EXPAND(4),
                                   EXPAND(WIDTH), EXPAND(HEIGHT*SIZE),
                                   width=EXPAND(2))
         self.scr2 = ttk.Scrollbar(frame2, orient=tk.VERTICAL,
-                                  command=self.scroll2)
+                                  command=self.scroll_button)
         self.scr2.pack(fill='y', side=tk.RIGHT)
         frame3 = tk.Frame(frame1)
         frame3.pack(side=tk.RIGHT, padx=EXPAND(10))
@@ -861,10 +899,10 @@ class Widget:
         widget.bind('<Button-3>', self.show_popup2)
         widget.bind("<B1-Motion>", self.dragged)
         if SYSTEM == "Windows":
-            widget.bind("<MouseWheel>", self.p.scroll1)
+            widget.bind("<MouseWheel>", self.p.windows_scroll)
         elif SYSTEM == "Linux":
-            widget.bind("<Button-4>", self.p.scroll3)
-            widget.bind("<Button-5>", self.p.scroll3)
+            widget.bind("<Button-4>", self.p.linux_scroll)
+            widget.bind("<Button-5>", self.p.linux_scroll)
 
     def draw_cv(self):
         """キャンバスを描く"""
