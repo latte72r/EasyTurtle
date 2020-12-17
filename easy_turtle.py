@@ -166,7 +166,7 @@ def EXPAND(num): return int(round(num * WIN_MAG))
 
 FONT = (FONT_TYPE1, EXPAND(12), "bold")
 
-__version__ = (4, 11, 0)
+__version__ = (4, 11, 1)
 
 
 class EasyTurtle:
@@ -603,8 +603,9 @@ GNU FreeFontのインストールをおすすめします。")
             self.warning_ignore = False
 
             # ウィジェットを作成
+            version = tuple(data["version"])
             for d in data["body"]:
-                self.make_match_class(d)
+                self.make_match_class(d, version=version)
 
             # インデックスを変更
             self.index = data["index"] if "index" in data else 0
@@ -613,6 +614,30 @@ GNU FreeFontのインストールをおすすめします。")
             self.copied_widgets = data["copy"] if "copy" in data else []
 
             self.all_redraw()
+
+            # データを上書き
+            if (CONFIG["ask_save_new"] is True) and (version < (4, 11)):
+                res = messagebox.askyesno("確認", "\
+選択されたファイルは古いバージョンです。\n\
+このバージョン用に保存し直しますか？")
+                if res is True:
+                    # データを取得
+                    body = [d.get_data(more=CONFIG["save_more_info"])
+                            for d in self.widgets]
+
+                    # データを決定
+                    if CONFIG["save_more_info"] is True:
+                        new_data = {
+                            "version": __version__[:2],
+                            "copy": self.copied_widgets,
+                            "index": self.index,
+                            "body": body}
+                    else:
+                        new_data = {"version": __version__[:2], "body": body}
+
+                # データを保存
+                    with open(file, "w")as f:
+                        json.dump(new_data, f, indent=2)
 
             # 基本データを設定
             self.default_data = [d.get_data(more=False) for d in self.widgets]
@@ -634,11 +659,13 @@ GNU FreeFontのインストールをおすすめします。")
             traceback.print_exc()
             return
 
-    def make_match_class(self, data, index=-1):
+    def make_match_class(self, data, index=-1, version=tuple(__version__[:2])):
         """ウィジェットを作成"""
         name = data["_name"]
         if name in Names:
             Widgets[Names.index(name)](self, data, index)
+        elif (name == "Geometry") and (version <= (4, 11)):
+            ScreenSize(self, data, index)
         else:
             Undefined(self, {"_name": name, **data}, index)
 
@@ -1343,8 +1370,8 @@ class Title(Widget):
         self.p.win.title(self.stos(self.title))
 
 
-class Geometry(Widget):
-    TEXT = "Geometry      画面サイズをｗ✕ｈにする"
+class ScreenSize(Widget):
+    TEXT = "ScreenSize    画面サイズをｗ✕ｈにする"
     OPTION = False
     TYPE = "default"
     VALUES = {"width": "600", "height": "600"}
@@ -2636,7 +2663,7 @@ class Undefined(Widget):
 
 # クラスをまとめる
 Widgets = (
-    VarNumber, VarString, Title, Geometry,
+    VarNumber, VarString, Title, ScreenSize,
     Forward, Backward, Right, Left, GoTo,
     SetX, SetY, SetHeading, Home, Circle,
     Dot, Stamp, Speed, PenDown, PenUp, PenSize,

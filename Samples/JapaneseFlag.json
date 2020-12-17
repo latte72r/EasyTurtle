@@ -1,7 +1,7 @@
 {
   "version": [
     4,
-    4
+    11
   ],
   "body": [
     {
@@ -14,7 +14,7 @@
       "title": "JapaneseFlag"
     },
     {
-      "_name": "Geometry",
+      "_name": "ScreenSize",
       "width": "[num]*8",
       "height": "[num]*6"
     },

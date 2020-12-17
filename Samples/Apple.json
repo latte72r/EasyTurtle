@@ -1,7 +1,7 @@
 {
   "version": [
     4,
-    7
+    11
   ],
   "body": [
     {
@@ -14,7 +14,7 @@
       "title": "Apple"
     },
     {
-      "_name": "Geometry",
+      "_name": "ScreenSize",
       "width": "[size]*28",
       "height": "[size]*28"
     },
