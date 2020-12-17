@@ -28,6 +28,7 @@ SIZE = 8
 HEIGHT = 72
 WIDTH = 480
 
+
 def GET_CONFIG():
     """設定を取得"""
     global CONFIG
@@ -55,7 +56,7 @@ if SYSTEM == "Windows":
     FONT_TYPE2 = "Times New Roman"
 
     os.chdir(os.path.dirname(sys.argv[0]))
-    
+
     ICON_FILE = os.path.abspath("./Files/WinIcon.gif")
     README_FILE = os.path.abspath("./Files/Readme.html")
 
@@ -100,7 +101,7 @@ if SYSTEM == "Windows":
     samples = os.path.join(DOCUMENTS, "Samples")
     if os.path.exists(samples) is False:
         shutil.copytree('./Samples', samples)
-    
+
     if CONFIG["expand_window"] is True:
         WIN_MAG = windll.user32.GetSystemMetrics(0) / 1280
     else:
@@ -166,7 +167,7 @@ def EXPAND(num): return int(round(num * WIN_MAG))
 
 FONT = (FONT_TYPE1, EXPAND(12), "bold")
 
-__version__ = (4, 11, 2)
+__version__ = (4, 11, 3)
 
 
 class EasyTurtle:
@@ -178,6 +179,7 @@ class EasyTurtle:
         self.default_data = []
         self.backed_up = []
         self.warning_ignore = False
+        self.running_program = False
         self.program_name = None
         self.basename = "untitled"
         self.setup()
@@ -299,6 +301,8 @@ GNU FreeFontのインストールをおすすめします。")
 
     def close_window(self, event=None):
         """終了時の定義"""
+        if (type(event) == tk.Event) and (self.running_program is True):
+            return
         data = [d.get_data(more=False) for d in self.widgets]
         if self.default_data == data:
             self.root.destroy()
@@ -343,6 +347,8 @@ GNU FreeFontのインストールをおすすめします。")
 
     def undo_change(self, event=None):
         """一回戻る"""
+        if (type(event) == tk.Event) and (self.running_program is True):
+            return
         data = self.get_data()
         if (len(self.backed_up) > 0) and \
            (self.backed_up[-1]["body"] != data["body"]):
@@ -439,13 +445,16 @@ GNU FreeFontのインストールをおすすめします。")
                       if len(data) <= SIZE else index)
         self.all_redraw(back_up=False)
 
-    def kill_runner(self):
+    def kill_runner(self, event=None):
         """実行停止の動作"""
         self.killed_runner = True
+        self.running_program = False
         self.win.destroy()
 
     def run_program(self, event=None):
         """実行"""
+        if (type(event) == tk.Event) and (self.running_program is True):
+            return
         self.all_redraw()
 
         # 変数の格納場所
@@ -456,6 +465,7 @@ GNU FreeFontのインストールをおすすめします。")
         self.runner_speed = 3
         self.killed_runner = False
         self.runner_pendown = True
+        self.running_program = True
 
         # ウインドウを作成
         self.win = tk.Toplevel(self.root)
@@ -463,7 +473,11 @@ GNU FreeFontのインストールをおすすめします。")
         self.win.protocol("WM_DELETE_WINDOW", self.kill_runner)
         self.win.wait_visibility(self.win)
         self.win.grab_set()
+        self.win.focus_set()
         self.win.title("EasyTurtle")
+
+        # キーをバインド
+        self.win.bind("<Control-Key-q>", self.kill_runner)
 
         # Windowsでは透過を有効にする
         if SYSTEM == "Windows":
@@ -480,7 +494,7 @@ GNU FreeFontのインストールをおすすめします。")
         tur.speed(0)
         tur.goto(self.runner_size[0] // 2, self.runner_size[1] // -2)
         tur.pendown()
-        tur.speed(self.runner_speed) 
+        tur.speed(self.runner_speed)
 
         # それぞれのウィジェットを実行
         try:
@@ -507,6 +521,8 @@ GNU FreeFontのインストールをおすすめします。")
         # キーバインドから実行された場合
         if type(file) == tk.Event:
             file = None
+        elif (type(file) == tk.Event) and (self.running_program is True):
+            return
 
         # ファイル名を質問する
         if file is None:
@@ -563,6 +579,8 @@ GNU FreeFontのインストールをおすすめします。")
         # キーバインドから実行された場合
         if type(file) == tk.Event:
             file = None
+        elif (type(file) == tk.Event) and (self.running_program is True):
+            return
 
         # データが変更されていれば保存するか確認する
         data = [d.get_data(more=False) for d in self.widgets]
@@ -679,12 +697,16 @@ GNU FreeFontのインストールをおすすめします。")
 
     def paste_widgets(self, event=None):
         """ペースト時の動作"""
+        if (type(event) == tk.Event) and (self.running_program is True):
+            return
         for d in self.copied_widgets:
             self.make_match_class(d)
         self.all_redraw()
 
     def show_information(self, event=None):
         """詳しい情報の表示"""
+        if (type(event) == tk.Event) and (self.running_program is True):
+            return
         webbrowser.open_new(README_FILE)
 
     def initialize_data(self):
@@ -699,6 +721,7 @@ GNU FreeFontのインストールをおすすめします。")
             self.default_data = []
             self.backed_up = []
             self.warning_ignore = False
+            self.running_program = False
             self.program_name = None
             self.basename = "untitled"
         self.all_redraw()
@@ -715,22 +738,30 @@ GNU FreeFontのインストールをおすすめします。")
 
     def select_all(self, event=None):
         """すべて選択"""
+        if (type(event) == tk.Event) and (self.running_program is True):
+            return
         for d in self.widgets:
             d.bln1.set(True)
 
     def clear_selected(self):
         """選択を解除"""
+        if (type(event) == tk.Event) and (self.running_program is True):
+            return
         for d in self.get_selected():
             d.bln1.set(False)
 
     def delete_selected(self, event=None):
         """選択されたデータを削除"""
+        if (type(event) == tk.Event) and (self.running_program is True):
+            return
         for d in self.get_selected():
             d.delete(back_up=False)
         self.all_redraw()
 
     def copy_selected(self, event=None):
         """選択されたデータをコピー"""
+        if (type(event) == tk.Event) and (self.running_program is True):
+            return
         copy = []
         if len(self.get_selected()) == 0:
             return
@@ -742,6 +773,8 @@ GNU FreeFontのインストールをおすすめします。")
 
     def cut_selected(self, event=None):
         """選択されたデータをカット"""
+        if (type(event) == tk.Event) and (self.running_program is True):
+            return
         self.copy_selected()
         self.delete_selected()
 
@@ -961,8 +994,9 @@ class Widget:
         self.binder(lab1)
         lab1.place(x=EXPAND(50), y=EXPAND(10))
         self.lab4.place(x=EXPAND(5), y=EXPAND(HEIGHT//4))
-        chk1 = tk.Checkbutton(self.cv, variable=self.bln1, cursor="hand2",
-                              bg=self.background, font=(FONT_TYPE2, EXPAND(10)))
+        chk1 = tk.Checkbutton(self.cv, variable=self.bln1,
+                              cursor="hand2", bg=self.background,
+                              font=(FONT_TYPE2, EXPAND(10)))
         chk1.place(x=EXPAND(12), y=EXPAND(HEIGHT//2))
         self.binder(chk1)
 
@@ -1450,7 +1484,7 @@ class ScreenSize(Widget):
             tur.pendown()
 
         # すべての要素を移動
-        for element_id in canvas.find_all(): 
+        for element_id in canvas.find_all():
             canvas.move(element_id,
                         (width - self.p.runner_size[0]) // 2,
                         (height - self.p.runner_size[1]) // 2)
@@ -2685,6 +2719,7 @@ class Undefined(Widget):
 
     def do(self, tur):
         pass
+
 
 # クラスをまとめる
 Widgets = (
