@@ -21,7 +21,7 @@ import pprint
 import getpass
 import traceback
 
-# ChangePoint: converter
+# ChangePoint: ChangeSize
 # ConfirmedBug: Undo
 
 SIZE = 8
@@ -166,7 +166,7 @@ def EXPAND(num): return int(round(num * WIN_MAG))
 
 FONT = (FONT_TYPE1, EXPAND(12), "bold")
 
-__version__ = (4, 11, 1)
+__version__ = (4, 11, 2)
 
 
 class EasyTurtle:
@@ -447,23 +447,29 @@ GNU FreeFontのインストールをおすすめします。")
     def run_program(self, event=None):
         """実行"""
         self.all_redraw()
+
+        # 変数の格納場所
         self.variable_datas = {}
+
+        # プログラムの情報
         self.runner_size = (600, 600)
         self.runner_speed = 3
+        self.killed_runner = False
+        self.runner_pendown = True
+
+        # ウインドウを作成
         self.win = tk.Toplevel(self.root)
         self.win.tk.call('wm', 'iconphoto', self.win._w, self.icon)
         self.win.protocol("WM_DELETE_WINDOW", self.kill_runner)
         self.win.wait_visibility(self.win)
+        self.win.grab_set()
         self.win.title("EasyTurtle")
+
+        # Windowsでは透過を有効にする
         if SYSTEM == "Windows":
             self.win.wm_attributes("-transparentcolor", "snow")
-        self.killed_runner = False
-        try:
-            self.win.grab_set()
-        except tk.TclError:
-            messagebox.showerror("エラー", "\
-すでに実行中のプログラムがないか確認してください。")
-            self.win.destroy()
+
+        # キャンバスを作成
         canvas = tk.Canvas(self.win, width=0, height=0, bg="snow")
         canvas.pack()
         tur = turtle.RawTurtle(canvas)
@@ -474,7 +480,9 @@ GNU FreeFontのインストールをおすすめします。")
         tur.speed(0)
         tur.goto(self.runner_size[0] // 2, self.runner_size[1] // -2)
         tur.pendown()
-        tur.speed(self.runner_speed)
+        tur.speed(self.runner_speed) 
+
+        # それぞれのウィジェットを実行
         try:
             for widget in self.widgets:
                 if self.killed_runner is False:
@@ -760,10 +768,10 @@ GNU FreeFontのインストールをおすすめします。")
         self.root.bind("<Control-Shift-Key-X>", self.cut_selected)
         self.root.bind("<Control-Shift-Key-Z>", self.undo_change)
         self.root.bind("<Control-Shift-Key-A>", self.select_all)
-        self.root.bind("<Control-Key-D>", self.delete_selected)
-        self.root.bind("<Control-Key-O>", self.open_program)
-        self.root.bind("<Control-Key-S>", self.save_program)
-        self.root.bind("<Control-Key-Q>", self.close_window)
+        self.root.bind("<Control-Key-d>", self.delete_selected)
+        self.root.bind("<Control-Key-o>", self.open_program)
+        self.root.bind("<Control-Key-s>", self.save_program)
+        self.root.bind("<Control-Key-q>", self.close_window)
         self.root.bind("<Key-F1>", self.show_information)
         self.root.bind("<Key-F5>", self.run_program)
 
@@ -1422,18 +1430,33 @@ class ScreenSize(Widget):
         self.height = self.ent2.get()
 
     def do(self, tur):
+        # データを保存する
         self.save_data()
+
+        # 画面サイズを変更
         width = self.stoi(self.width)
         height = self.stoi(self.height)
         self.p.win.geometry(f"{width}x{height}")
-        tur.getscreen().getcanvas().config(
+
+        # 亀を移動
+        canvas = tur.getscreen().getcanvas()
+        canvas.config(
             width=width, height=height)
         tur.penup()
         tur.speed(0)
         tur.goto(width // 2, height // -2)
-        tur.pendown()
         tur.speed(self.p.runner_speed)
-        self.runner_size = (width, height)
+        if self.p.runner_pendown is True:
+            tur.pendown()
+
+        # すべての要素を移動
+        for element_id in canvas.find_all(): 
+            canvas.move(element_id,
+                        (width - self.p.runner_size[0]) // 2,
+                        (height - self.p.runner_size[1]) // 2)
+
+        # データを変更
+        self.p.runner_size = (width, height)
 
 
 class Forward(Widget):
@@ -1989,6 +2012,7 @@ class PenDown(Widget):
 
     def do(self, tur):
         self.save_data()
+        self.p.runner_pendown = True
         tur.pendown()
 
 
@@ -2016,6 +2040,7 @@ class PenUp(Widget):
 
     def do(self, tur):
         self.save_data()
+        self.p.runner_pendown = False
         tur.penup()
 
 
