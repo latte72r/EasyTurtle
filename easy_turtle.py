@@ -21,7 +21,7 @@ import pprint
 import getpass
 import traceback
 
-# ChangePoint: Undo
+# ChangePoint: Menu
 
 SIZE = 8
 HEIGHT = 72
@@ -166,7 +166,7 @@ def EXPAND(num): return int(round(num * WIN_MAG))
 
 FONT = (FONT_TYPE1, EXPAND(12), "bold")
 
-__version__ = (4, 11, 4)
+__version__ = (4, 11, 5)
 
 
 class EasyTurtle:
@@ -783,6 +783,11 @@ GNU FreeFontのインストールをおすすめします。")
         """ウィンドウを削除"""
         self.root.destroy()
 
+    def delete_menu(self, event):
+        "メニューを消す"
+        if hasattr(self, "menu") is True:
+            self.menu.destroy()
+
     def setup(self):
         """セットアップ"""
         # 基本ウィンドウを作成
@@ -797,6 +802,7 @@ GNU FreeFontのインストールをおすすめします。")
         frame1.pack()
 
         # キーをバインド
+        self.root.bind('<Button-1>', self.delete_menu)
         self.root.bind("<Control-Shift-Key-C>", self.copy_selected)
         self.root.bind("<Control-Shift-Key-V>", self.paste_widgets)
         self.root.bind("<Control-Shift-Key-X>", self.cut_selected)
@@ -1015,7 +1021,7 @@ class Widget:
         elif 1.5 * EXPAND(HEIGHT) < event.y:
             self.down()
 
-    def paste1(self):
+    def paste_up(self):
         """上へのペースト"""
         index = self.p.widgets.index(self)
         for d in reversed(self.p.copied_widgets):
@@ -1023,7 +1029,7 @@ class Widget:
         self.p.index = index
         self.p.all_redraw()
 
-    def paste2(self):
+    def paste_down(self):
         """下へのペースト"""
         index = self.p.widgets.index(self)
         for d in reversed(self.p.copied_widgets):
@@ -1032,8 +1038,10 @@ class Widget:
         self.p.all_redraw()
 
     def show_popup2(self, event):
+        if hasattr(self.p, "menu") is True:
+            self.p.menu.destroy()
         index = self.p.widgets.index(self)
-        menu = tk.Menu(self.p.root, tearoff=False)
+        self.p.menu = tk.Menu(self.p.root, tearoff=False)
         states = ["active" for i in range(7)]
         if index <= 0:
             states[0] = states[2] = "disabled"
@@ -1041,23 +1049,23 @@ class Widget:
             states[1] = states[3] = "disabled"
         if len(self.p.copied_widgets) == 0:
             states[6] = "disabled"
-        menu.add_command(label=' Top', command=self.top, state=states[0])
-        menu.add_command(label=' Bottom', command=self.bottom, state=states[1])
-        menu.add_command(label=' Up', command=self.up, state=states[2])
-        menu.add_command(label=' Down', command=self.down, state=states[3])
-        menu.add_separator()
-        menu.add_command(label=' Copy', command=self.copy, state=states[4])
-        menu.add_command(label=' Delete', command=self.delete, state=states[5])
+        self.p.menu.add_command(label=' Top', command=self.top, state=states[0])
+        self.p.menu.add_command(label=' Bottom', command=self.bottom, state=states[1])
+        self.p.menu.add_command(label=' Up', command=self.up, state=states[2])
+        self.p.menu.add_command(label=' Down', command=self.down, state=states[3])
+        self.p.menu.add_separator()
+        self.p.menu.add_command(label=' Copy', command=self.copy, state=states[4])
+        self.p.menu.add_command(label=' Delete', command=self.delete, state=states[5])
         if self.OPTION is True:
-            menu.add_separator()
-            menu.add_command(label=' Option', command=self.show_option)
+            self.p.menu.add_separator()
+            self.p.menu.add_command(label=' Option', command=self.show_option)
         if self.TYPE == "undefined":
-            menu.add_separator()
-            menu.add_command(label=' Details', command=self.details)
-        menu.add_separator()
-        menu.add_command(label='⇧Paste⇧', command=self.paste1, state=states[6])
-        menu.add_command(label='⇩Paste⇩', command=self.paste2, state=states[6])
-        menu.post(event.x_root, event.y_root)
+            self.p.menu.add_separator()
+            self.p.menu.add_command(label=' Details', command=self.details)
+        self.p.menu.add_separator()
+        self.p.menu.add_command(label='⇧Paste⇧', command=self.paste_up, state=states[6])
+        self.p.menu.add_command(label='⇩Paste⇩', command=self.paste_down, state=states[6])
+        self.p.menu.post(event.x_root, event.y_root)
 
     def delete(self, back_up=True):
         """ウィジェットの削除"""
@@ -1127,7 +1135,7 @@ class Widget:
         self.p.all_redraw()
 
     def set_check(self, data):
-        """チェックが有るか確認する"""
+        """チェックボタンに値をセットする"""
         if data is None:
             self.check = False
         else:
@@ -1160,6 +1168,8 @@ class Widget:
 
     def show_popup1(self, event, entry):
         """ポップアップを表示する"""
+        if hasattr(self.p, "menu") is True:
+            self.p.menu.destroy()
         try:
             if self.p.root.clipboard_get() != "":
                 paste = "active"
@@ -1167,12 +1177,12 @@ class Widget:
                 paste = "disabled"
         except tk.TclError:
             paste = "disabled"
-        menu = tk.Menu(self.cv, tearoff=False)
-        menu.add_command(
+        self.p.menu = tk.Menu(self.cv, tearoff=False)
+        self.p.menu.add_command(
             label='Copy', command=lambda: self.copy_entry(entry))
-        menu.add_command(label='Paste', state=paste,
+        self.p.menu.add_command(label='Paste', state=paste,
                          command=lambda: self.paste_entry(entry))
-        menu.post(event.x_root, event.y_root)
+        self.p.menu.post(event.x_root, event.y_root)
 
     def stos(self, string):
         """変数を埋め込み"""
