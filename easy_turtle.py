@@ -19,9 +19,10 @@ from tkinter import scrolledtext
 import shutil
 import pprint
 import getpass
+import urllib.request
 import traceback
 
-# ChangePoint: Menu
+# ChangePoint: AutoUpdate
 
 SIZE = 8
 HEIGHT = 72
@@ -166,7 +167,7 @@ def EXPAND(num): return int(round(num * WIN_MAG))
 
 FONT = (FONT_TYPE1, EXPAND(12), "bold")
 
-__version__ = (4, 11, 5)
+__version__ = (4, 12, 0)
 
 
 class EasyTurtle:
@@ -222,6 +223,11 @@ GNU FreeFontのインストールをおすすめします。")
         lab4 = tk.Label(self.win, font=FONT,
                         text=f"OSバージョン：{os_version}")
         lab4.pack(anchor=tk.NW, padx=EXPAND(20), pady=(0, EXPAND(10)))
+        font = (FONT_TYPE1, EXPAND(12), "bold", "underline")
+        lab5 = tk.Label(self.win, font=font, fg="blue", cursor="hand2",
+                        text="アップデートの確認")
+        lab5.bind("<Button-1>", self.check_update)
+        lab5.pack(side=tk.RIGHT, anchor=tk.NW, padx=EXPAND(20), pady=(0, EXPAND(10)))
         self.win.resizable(0, 0)
         self.win.mainloop()
 
@@ -337,10 +343,6 @@ GNU FreeFontのインストールをおすすめします。")
     def back_up(self):
         """バックアップ"""
         data = self.get_data()
-        """
-        if len(self.widgets) == 0:
-            return
-        el"""
         if len(self.backed_up) == 0:
             self.backed_up.append(data)
         elif self.backed_up[-1]["body"] != data["body"]:
@@ -475,7 +477,7 @@ GNU FreeFontのインストールをおすすめします。")
         self.win.wait_visibility(self.win)
         self.win.grab_set()
         self.win.focus_set()
-        self.win.title("EasyTurtle")
+        self.win.title("EasyTurtle - Runner")
 
         # キーをバインド
         self.win.bind("<Control-Key-q>", self.kill_runner)
@@ -787,6 +789,71 @@ GNU FreeFontのインストールをおすすめします。")
         "メニューを消す"
         if hasattr(self, "menu") is True:
             self.menu.destroy()
+
+    def get_new_release(self):
+        "更新を取得"
+        url = "https://github.com/RyoFuji2005/EasyTurtle/releases/latest"
+        try:
+            with urllib.request.urlopen(url)as f:
+                text = f.geturl()
+        except AttributeError:
+            return "ConnectionError"
+        try:
+            data = text.split("/")
+            data = data[-1].replace("v", "")
+            data = data.split(".")
+            data = tuple([int(d) for d in data])
+        except AttributeError:
+            return "OtherError"
+        return data
+
+    def show_release(self, event):
+        """リリースページの表示"""
+        url = "https://github.com/RyoFuji2005/EasyTurtle/releases/latest"
+        webbrowser.open_new(url)
+
+    def check_update(self, event):
+        "アップデートを確認"
+        new_version = self.get_new_release()
+        new_joined_version = '.'.join([str(n) for n in new_version])
+        old_joined_version = '.'.join([str(n) for n in __version__])
+        if new_version == "ConnectionError":
+            messagebox.showerror("エラー", "\
+エラーが発生しました。\n\
+ネットワーク接続を確認してください。")
+        elif new_version == "OtherError":
+            messagebox.showerror("\
+エラーが発生しました。\n\
+しばらくしてからもう一度お試しください。")
+        elif new_version > __version__:
+            self.win = tk.Toplevel(self.root)
+            self.win.tk.call('wm', 'iconphoto', self.win._w, self.icon)
+            self.win.title("EasyTurtle - Update")
+            self.win.wait_visibility()
+            self.win.grab_set()
+            lab1 = tk.Label(self.win, font=FONT,
+                            text="新しいバージョンが見つかりました")
+            lab1.pack(anchor=tk.NW, padx=EXPAND(20), pady=(0, EXPAND(10)))
+            lab2 = tk.Label(self.win, font=FONT,
+                            text=f"お使いのバージョン：{old_joined_version}")
+            lab2.pack(anchor=tk.NW, padx=EXPAND(20), pady=(0, EXPAND(10)))
+            lab3 = tk.Label(self.win, font=FONT,
+                            text=f"最新のバージョン  ：{new_joined_version}")
+            lab3.pack(anchor=tk.NW, padx=EXPAND(20), pady=(0, EXPAND(10)))
+            lab4 = tk.Label(self.win, font=FONT,
+                            text="下記サイトよりダウンロードしてください")
+            lab4.pack(anchor=tk.NW, padx=EXPAND(20), pady=(0, EXPAND(10)))
+            font = (FONT_TYPE1, EXPAND(12), "bold", "underline")
+            lab5 = tk.Label(self.win, font=font, fg="blue", cursor="hand2",
+                            text="EasyTurtle Latest Release")
+            lab5.bind("<Button-1>", self.show_release)
+            lab5.pack(anchor=tk.NW, padx=EXPAND(20), pady=(0, EXPAND(10)))
+            self.win.resizable(0, 0)
+            self.win.mainloop()
+        else:
+            messagebox.showinfo("アップデート", f"\
+バージョン：{old_joined_version}\n\
+お使いのバージョンは最新です。")
 
     def setup(self):
         """セットアップ"""
@@ -1424,7 +1491,7 @@ class Title(Widget):
 
 
 class ScreenSize(Widget):
-    TEXT = "ScreenSize    画面サイズをｗ✕ｈにする"
+    TEXT = "ScreenSize    画面サイズをｗｘｈにする"
     OPTION = False
     TYPE = "default"
     VALUES = {"width": "600", "height": "600"}
