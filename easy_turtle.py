@@ -20,9 +20,10 @@ import shutil
 import pprint
 import getpass
 import urllib.request
+import threading
 import traceback
 
-# ChangePoint: AutoUpdate
+# ChangePoint: "auto_update", "delete_cache"
 
 SIZE = 8
 HEIGHT = 72
@@ -70,19 +71,17 @@ if SYSTEM == "Windows":
 
     if PROGRA is False:
         CONFIG_FILE = os.path.abspath("./config.json")
-        os.makedirs("./cache", exist_ok=True)
     else:
         CONFIG_FILE = "C:/ProgramData/EasyTurtle/config.json"
         os.makedirs(os.path.dirname(CONFIG_FILE), exist_ok=True)
-        os.makedirs("C:/ProgramData/EasyTurtle/cache", exist_ok=True)
 
     DEFAULT_CONFIG = {
         "save_more_info": False,
         "tolerate_danger": False,
         "expand_window": True,
-        "delete_cache": True,
         "ask_save_new": True,
-        "user_document": True}
+        "user_document": True,
+        "auto_update": True}
 
     GET_CONFIG()
 
@@ -122,15 +121,14 @@ elif SYSTEM == "Linux":
     PROGRA = False
 
     CONFIG_FILE = os.path.abspath("./config.json")
-    os.makedirs("./cache", exist_ok=True)
 
     DEFAULT_CONFIG = {
         "save_more_info": False,
         "tolerate_danger": False,
         "expand_window": True,
-        "delete_cache": True,
         "ask_save_new": True,
-        "user_document": False}
+        "user_document": False,
+        "auto_update": True}
 
     GET_CONFIG()
 
@@ -167,7 +165,7 @@ def EXPAND(num): return int(round(num * WIN_MAG))
 
 FONT = (FONT_TYPE1, EXPAND(12), "bold")
 
-__version__ = (4, 12, 0)
+__version__ = (4, 12, 1)
 
 
 class EasyTurtle:
@@ -183,12 +181,15 @@ class EasyTurtle:
         self.program_name = None
         self.basename = "untitled"
         self.setup()
-        if file is not None:
-            self.open_program(file)
         if (SYSTEM == "Linux") and ("FreeMono" not in font.families()):
             messagebox.showwarning("警告", "\
 EasyTurtleを安定してご利用いただくために\n\
 GNU FreeFontのインストールをおすすめします。")
+        if CONFIG["auto_update"] is True:
+            thread = threading.Thread(target=self.update_starting)
+            thread.start()
+        if file is not None:
+            self.open_program(file)
         self.root.mainloop()
 
     def __str__(self):
@@ -250,32 +251,32 @@ GNU FreeFontのインストールをおすすめします。")
                               font=FONT, variable=self.var1)
         chb1.pack(padx=EXPAND(10), pady=(0, EXPAND(10)), anchor=tk.NW)
         self.var2 = tk.BooleanVar()
-        self.var2.set(CONFIG["delete_cache"])
-        text = "ファイルのキャッシュを削除する"
+        self.var2.set(CONFIG["ask_save_new"])
+        text = "古いファイルを変更するか確認する"
         chb2 = tk.Checkbutton(self.win, text=text,
                               font=FONT, variable=self.var2)
         chb2.pack(padx=EXPAND(10), pady=(0, EXPAND(10)), anchor=tk.NW)
         self.var3 = tk.BooleanVar()
-        self.var3.set(CONFIG["ask_save_new"])
-        text = "古いファイルを変更するか確認する"
+        self.var3.set(CONFIG["tolerate_danger"])
+        text = "危険なプログラムを許容する"
         chb3 = tk.Checkbutton(self.win, text=text,
                               font=FONT, variable=self.var3)
         chb3.pack(padx=EXPAND(10), pady=(0, EXPAND(10)), anchor=tk.NW)
         self.var4 = tk.BooleanVar()
-        self.var4.set(CONFIG["tolerate_danger"])
-        text = "危険なプログラムを許容する"
+        self.var4.set(CONFIG["expand_window"])
+        text = "画面の大きさをを調整する"
         chb4 = tk.Checkbutton(self.win, text=text,
                               font=FONT, variable=self.var4)
         chb4.pack(padx=EXPAND(10), pady=(0, EXPAND(10)), anchor=tk.NW)
         self.var5 = tk.BooleanVar()
-        self.var5.set(CONFIG["expand_window"])
-        text = "画面の大きさをを調整する"
+        self.var5.set(CONFIG["user_document"])
+        text = "ユーザードキュメントを使用する"
         chb5 = tk.Checkbutton(self.win, text=text,
                               font=FONT, variable=self.var5)
         chb5.pack(padx=EXPAND(10), pady=(0, EXPAND(10)), anchor=tk.NW)
         self.var6 = tk.BooleanVar()
-        self.var6.set(CONFIG["user_document"])
-        text = "ユーザードキュメントを使用する"
+        self.var6.set(CONFIG["auto_update"])
+        text = "起動時にアップデートを確認する"
         chb6 = tk.Checkbutton(self.win, text=text,
                               font=FONT, variable=self.var6)
         chb6.pack(padx=EXPAND(10), pady=(0, EXPAND(10)), anchor=tk.NW)
@@ -294,12 +295,12 @@ GNU FreeFontのインストールをおすすめします。")
         """設定を決定"""
         global CONFIG
         CONFIG = {
-            "save_more_info": self.var1.get(),
-            "delete_cache": self.var2.get(),
-            "ask_save_new": self.var3.get(),
-            "tolerate_danger": self.var4.get(),
-            "expand_window": self.var5.get(),
-            "user_document": self.var6.get()}
+            "save_more_info":   self.var1.get(),
+            "ask_save_new":     self.var2.get(),
+            "tolerate_danger":  self.var3.get(),
+            "expand_window":    self.var4.get(),
+            "user_document":    self.var5.get(),
+            "auto_update":      self.var6.get()}
         with open(CONFIG_FILE, "w", encoding="UTF-8")as f:
             json.dump(CONFIG, f, indent=4)
         self.win.destroy()
@@ -792,7 +793,7 @@ GNU FreeFontのインストールをおすすめします。")
 
     def get_new_release(self):
         "更新を取得"
-        url = "https://github.com/RyoFuji2005/EasyTurtle/releases/latest"
+        url = "http://github.com/RyoFuji2005/EasyTurtle/releases/latest"
         try:
             with urllib.request.urlopen(url)as f:
                 text = f.geturl()
@@ -809,22 +810,16 @@ GNU FreeFontのインストールをおすすめします。")
 
     def show_release(self, event):
         """リリースページの表示"""
-        url = "https://github.com/RyoFuji2005/EasyTurtle/releases/latest"
+        url = "http://github.com/RyoFuji2005/EasyTurtle/releases/latest"
         webbrowser.open_new(url)
 
-    def check_update(self, event):
-        "アップデートを確認"
+    def update_starting(self):
+        "開始時に確認"
         new_version = self.get_new_release()
         new_joined_version = '.'.join([str(n) for n in new_version])
         old_joined_version = '.'.join([str(n) for n in __version__])
-        if new_version == "ConnectionError":
-            messagebox.showerror("エラー", "\
-エラーが発生しました。\n\
-ネットワーク接続を確認してください。")
-        elif new_version == "OtherError":
-            messagebox.showerror("\
-エラーが発生しました。\n\
-しばらくしてからもう一度お試しください。")
+        if type(new_version) == str:
+            return
         elif new_version > __version__:
             self.win = tk.Toplevel(self.root)
             self.win.tk.call('wm', 'iconphoto', self.win._w, self.icon)
@@ -850,6 +845,45 @@ GNU FreeFontのインストールをおすすめします。")
             lab5.pack(anchor=tk.NW, padx=EXPAND(20), pady=(0, EXPAND(10)))
             self.win.resizable(0, 0)
             self.win.mainloop()
+
+    def check_update(self, event):
+        "アップデートを確認"
+        new_version = self.get_new_release()
+        new_joined_version = '.'.join([str(n) for n in new_version])
+        old_joined_version = '.'.join([str(n) for n in __version__])
+        if new_version == "ConnectionError":
+            messagebox.showerror("エラー", "\
+エラーが発生しました。\n\
+ネットワーク接続を確認してください。")
+        elif new_version == "OtherError":
+            messagebox.showerror("\
+エラーが発生しました。\n\
+しばらくしてからもう一度お試しください。")
+        elif new_version > __version__:
+            self.win2 = tk.Toplevel(self.win)
+            self.win2.tk.call('wm', 'iconphoto', self.win._w, self.icon)
+            self.win2.title("EasyTurtle - Update")
+            self.win2.wait_visibility()
+            self.win2.grab_set()
+            lab1 = tk.Label(self.win2, font=FONT,
+                            text="新しいバージョンが見つかりました")
+            lab1.pack(anchor=tk.NW, padx=EXPAND(20), pady=(0, EXPAND(10)))
+            lab2 = tk.Label(self.win2, font=FONT,
+                            text=f"お使いのバージョン：{old_joined_version}")
+            lab2.pack(anchor=tk.NW, padx=EXPAND(20), pady=(0, EXPAND(10)))
+            lab3 = tk.Label(self.win2, font=FONT,
+                            text=f"最新のバージョン  ：{new_joined_version}")
+            lab3.pack(anchor=tk.NW, padx=EXPAND(20), pady=(0, EXPAND(10)))
+            lab4 = tk.Label(self.win2, font=FONT,
+                            text="下記サイトよりダウンロードしてください")
+            lab4.pack(anchor=tk.NW, padx=EXPAND(20), pady=(0, EXPAND(10)))
+            font = (FONT_TYPE1, EXPAND(12), "bold", "underline")
+            lab5 = tk.Label(self.win2, font=font, fg="blue", cursor="hand2",
+                            text="EasyTurtle Latest Release")
+            lab5.bind("<Button-1>", self.show_release)
+            lab5.pack(anchor=tk.NW, padx=EXPAND(20), pady=(0, EXPAND(10)))
+            self.win2.resizable(0, 0)
+            self.win2.mainloop()
         else:
             messagebox.showinfo("アップデート", f"\
 バージョン：{old_joined_version}\n\
