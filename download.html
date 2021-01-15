@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8" />
+    <link rel="stylesheet" href="main.css">
+    <title>EasyTurtle</title>
+    <script src="./jquery-3.5.1.min.js"></script>
+</head>
+
+<body>
+    <ul class="nav">
+        <li><a href="index.html">EasyTurtle Home</a></li>
+        <li><a href="">Download</a>
+            <ul>
+                <li><a href="licence.html">ライセンス</a></li>
+                <li><a href="download.html">ダウンロード</a></li>
+                <li><a href="install.win.html">Windows搭載環境での実行</a></li>
+                <li><a href="install.lin.html">Linux搭載環境での実行</a></li>
+            </ul>
+        </li>
+        <li><a href="">Tutorial</a>
+            <ul>
+                <li><a href="tutorial.html">基本説明</a></li>
+                <li><a href="tutorial.html#widget">ウィジェットの説明</a></li>
+            </ul>
+        </li>
+        <li><a href="">Samples</a>
+            <ul>
+                <li><a href="samples.html">付属するサンプル</a></li>
+            </ul>
+        </li>
+        <li><a href="">Release of EasyTurtle</a>
+            <ul>
+                <li><a href="https://github.com/RyoFuji2005/EasyTurtle/releases">リリース - (GitHub)</a></li>
+            </ul>
+        </li>
+    </ul>
+
+    <script>
+        $(function () {
+            var nav = $('.nav');
+            $('li', nav)
+                .mouseover(function (e) {
+                    $('ul', this).stop().slideDown('fast');
+                })
+                .mouseout(function (e) {
+                    $('ul', this).stop().slideUp('fast');
+                });
+        });
+    </script>
+<!---------><!--<code>push()</code>-->
+<section class="home" id="home">
+    <h2 class="title">ダウンロードとインストール</h2>
+    <h2>実行環境</h2>
+    <p>EasyTurtleは、Windows環境向けのビルド済みファイルと、Python3が実行可能な環境で動作するPython形式のファイルが提供されます。</p><br>
+    <p>リリースされているビルド済みファイルはPython for Windowsの３系を利用してビルドされています。</p>
+    <p>これらのファイルはWindows 64bit上で動作します。</p>
+    <p>リリースされているPython形式のファイルはPython3を実行可能なWindows 10,Linuxで動作します。</p>
+    <p>EasyTurtle-[version]内にあるeasy_turtle.pyを実行してください。</p>
+    <p>※初期設定の場合、Windowが大きく表示される可能性があります。Windowサイズを小さくする場合は"ユーザー設定 -> 画面の大きさを調節する"のチェックを外し、ソフトウェアを再起動してください。</p>
+    <p>※Python形式のファイルはWindows 10(実機),Ubuntu(WSL),Fedora(実機)の環境で動作確認をしました。</p>
+    <h2>ダウンロード</h2>
+    <p>最新版は<a href="https://github.com/RyoFuji2005/EasyTurtle/releases">GitHub</a>からダウンロードできます。</p>
+    <p>Python形式のファイル、圧縮形式のZipファイル、インストーラー形式のMsiのファイルがダウンロードできます。</p>
+    <p>Windowsで実行する場合は<a href="install.win.html">こちら</a>、Linuxで実行する場合は<a href="install.lin.html">こちら</a>を御覧ください。</p>
+</section>
+<!--------->
+</body>
+<footer>
+    <p>Copyright © 2021 Ryo Fujinami, Ryota Furukawa. All rights reserved.</p>
+</footer>
+
+</html>
