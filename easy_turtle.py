@@ -164,7 +164,7 @@ def EXPAND(num): return int(round(num * WIN_MAG))
 
 FONT = (FONT_TYPE1, EXPAND(12), "bold")
 
-__version__ = (5, 0, "0a2")
+__version__ = (5, 0, 0)
 
 
 class EasyTurtle:
@@ -3089,24 +3089,28 @@ class Write(Widget):
         self.ent2.place(x=EXPAND(300), y=EXPAND(HEIGHT//2+8))
 
     def show_option(self):
+        # データを取得する
         self.text = self.ent1.get()
         self.size = self.ent2.get()
+
+        # ウィンドウを作成する
         self.win = tk.Toplevel(self.p.root)
         self.win.tk.call('wm', 'iconphoto', self.win._w, self.p.icon)
-        self.win.geometry(f"{EXPAND(340)}x{EXPAND(380)}")
+        self.win.geometry(f"{EXPAND(400)}x{EXPAND(380)}")
         self.win.resizable(0, 0)
         self.win.wait_visibility()
         self.win.grab_set()
+
         font = (FONT_TYPE1, EXPAND(16), "bold")
         lab0 = tk.Label(self.win, text="Options",
                         font=(FONT_TYPE2, EXPAND(30), "bold"))
-        lab0.place(x=EXPAND(80), y=EXPAND(20))
+        lab0.place(x=EXPAND(140), y=EXPAND(20))
         lab1 = tk.Label(self.win, text="text   <= ", font=font)
         lab1.place(x=EXPAND(30), y=EXPAND(90))
         ent1 = tk.Entry(self.win, font=font, width=12, justify=tk.RIGHT)
         ent1.insert(tk.END, self.text)
         ent1.bind('<Button-3>', lambda e: self.show_popup1(e, ent1))
-        ent1.place(x=EXPAND(150), y=EXPAND(90))
+        ent1.place(x=EXPAND(160), y=EXPAND(90))
         lab2 = tk.Label(self.win, text="move   <= ", font=font)
         lab2.place(x=EXPAND(30), y=EXPAND(120))
         self.var1 = tk.StringVar()
@@ -3114,42 +3118,42 @@ class Write(Widget):
                            font=font, width=12)
         cb1['values'] = ("True", "False")
         cb1.set(self.move)
-        cb1.place(x=EXPAND(150), y=EXPAND(120))
+        cb1.place(x=EXPAND(160), y=EXPAND(120))
         lab3 = tk.Label(self.win, text="align  <= ", font=font)
         lab3.place(x=EXPAND(30), y=EXPAND(150))
         ent3 = tk.Entry(self.win, font=font, width=12, justify=tk.RIGHT)
         ent3.insert(tk.END, self.align)
         ent3.bind('<Button-3>', lambda e: self.show_popup1(e, ent1))
-        ent3.place(x=EXPAND(150), y=EXPAND(150))
+        ent3.place(x=EXPAND(160), y=EXPAND(150))
         lab4 = tk.Label(self.win, text="family <= ", font=font)
         lab4.place(x=EXPAND(30), y=EXPAND(180))
         ent4 = tk.Entry(self.win, font=font, width=12, justify=tk.RIGHT)
         ent4.insert(tk.END, self.family)
         ent4.bind('<Button-3>', lambda e: self.show_popup1(e, ent1))
-        ent4.place(x=EXPAND(150), y=EXPAND(180))
+        ent4.place(x=EXPAND(160), y=EXPAND(180))
         lab5 = tk.Label(self.win, text="size   <= ", font=font)
         lab5.place(x=EXPAND(30), y=EXPAND(210))
         ent5 = tk.Entry(self.win, font=font, width=12, justify=tk.RIGHT)
         ent5.insert(tk.END, self.size)
         ent5.bind('<Button-3>', lambda e: self.show_popup1(e, ent1))
-        ent5.place(x=EXPAND(150), y=EXPAND(210))
+        ent5.place(x=EXPAND(160), y=EXPAND(210))
         lab6 = tk.Label(self.win, text="weight <= ", font=font)
         lab6.place(x=EXPAND(30), y=EXPAND(240))
         ent6 = tk.Entry(self.win, font=font, width=12, justify=tk.RIGHT)
         ent6.insert(tk.END, self.weight)
         ent6.bind('<Button-3>', lambda e: self.show_popup1(e, ent1))
-        ent6.place(x=EXPAND(150), y=EXPAND(240))
+        ent6.place(x=EXPAND(160), y=EXPAND(240))
         lab7 = tk.Label(self.win, text="slant  <= ", font=font)
         lab7.place(x=EXPAND(30), y=EXPAND(270))
         ent7 = tk.Entry(self.win, font=font, width=12, justify=tk.RIGHT)
         ent7.insert(tk.END, self.slant)
         ent7.bind('<Button-3>', lambda e: self.show_popup1(e, ent1))
-        ent7.place(x=EXPAND(150), y=EXPAND(270))
+        ent7.place(x=EXPAND(160), y=EXPAND(270))
         entries = (ent1, cb1, ent3, ent4, ent5, ent6, ent7)
+
         but1 = tk.Button(self.win, text="決定", font=font, width=8,
                          command=lambda: self.decide_option(entries))
-        but1.place(x=100, y=310)
-        self.win.mainloop()
+        but1.place(x=140, y=310)
 
     def decide_option(self, entries):
         self.text = entries[0].get()
