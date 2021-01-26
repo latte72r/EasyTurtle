@@ -22,7 +22,7 @@ import urllib.request
 import threading
 import traceback
 
-# ChangePoint: Comment, NewWidgets
+# ChangePoint: ColorHighlight
 
 SIZE = 8
 HEIGHT = 72
@@ -164,7 +164,7 @@ def EXPAND(num): return int(round(num * WIN_MAG))
 
 FONT = (FONT_TYPE1, EXPAND(12), "bold")
 
-__version__ = (5, 0, 0)
+__version__ = (5, 1, "0a1")
 
 
 class EasyTurtle:
@@ -2539,29 +2539,53 @@ class Color(Widget):
         lab2 = tk.Label(self.cv, text="c <= ", font=FONT, bg=self.background)
         self.binder(lab2)
         lab2.place(x=EXPAND(50), y=EXPAND(HEIGHT//2+8))
-        self.ent1 = tk.Entry(self.cv, font=FONT, width=12, justify=tk.RIGHT)
-        self.ent1.insert(tk.END, self.color)
+        strvar = tk.StringVar()
+        self.ent1 = tk.Entry(self.cv, font=FONT, width=12, justify=tk.RIGHT,
+                             validate='all', textvariable=strvar,
+                             vcmd=self.color_highlight)
+        strvar.set(self.color)
         self.binder(self.ent1)
         self.ent1.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent1))
+        self.ent1.bind("<KeyPress>", self.color_highlight)
         self.ent1.place(x=EXPAND(100), y=EXPAND(HEIGHT//2+8))
+        self.color_highlight()
+
+    def color_highlight(self, event=None):
+        text = self.ent1.get()
+        if event is not None:
+            if event.char == "\x08":
+                text = text[:-1]
+            elif repr(event.char)[1] != "\\":
+                text += repr(event.char)[1:-1]
+        color = self.stos(text)
+        if color == "":
+            color = "white"
+        self.cv.delete("highlight")
+        try:
+            self.cv.create_rectangle(EXPAND(280), EXPAND(HEIGHT//2+10),
+                                     EXPAND(300), EXPAND(HEIGHT-6),
+                                     fill=color, outline="lightgray",
+                                     width=2, tag="highlight")
+        except:
+            self.cv.create_rectangle(EXPAND(280), EXPAND(HEIGHT//2+10),
+                                     EXPAND(300), EXPAND(HEIGHT-6),
+                                     fill="black", outline="lightgray",
+                                     width=2, tag="highlight")
 
     def show_option(self):
         color = self.ent1.get()
         try:
             color = colorchooser.askcolor(
-                color=self.stos(color), parent=self.p.root)
+            color=self.stos(color), parent=self.p.root)
         except tk.TclError:
             color = colorchooser.askcolor(parent=self.p.root)
         if color != (None, None):
             self.ent1.delete(0, tk.END)
             self.ent1.insert(0, color[1].upper())
+        self.color_highlight()
 
     def save_data(self):
         self.color = self.ent1.get()
-        if self.color == "":
-            self.color = "black"
-            self.ent1.delete(0, tk.END)
-            self.ent1.insert(0, self.color)
 
     def do(self, tur):
         self.save_data()
@@ -2597,11 +2621,38 @@ class PenColor(Widget):
         lab2 = tk.Label(self.cv, text="c <= ", font=FONT, bg=self.background)
         self.binder(lab2)
         lab2.place(x=EXPAND(50), y=EXPAND(HEIGHT//2+8))
-        self.ent1 = tk.Entry(self.cv, font=FONT, width=12, justify=tk.RIGHT)
-        self.ent1.insert(tk.END, self.color)
+        strvar = tk.StringVar()
+        self.ent1 = tk.Entry(self.cv, font=FONT, width=12, justify=tk.RIGHT,
+                             validate='all', textvariable=strvar,
+                             vcmd=self.color_highlight)
+        strvar.set(self.color)
         self.binder(self.ent1)
         self.ent1.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent1))
+        self.ent1.bind("<KeyPress>", self.color_highlight)
         self.ent1.place(x=EXPAND(100), y=EXPAND(HEIGHT//2+8))
+        self.color_highlight()
+
+    def color_highlight(self, event=None):
+        text = self.ent1.get()
+        if event is not None:
+            if event.char == "\x08":
+                text = text[:-1]
+            elif repr(event.char)[1] != "\\":
+                text += repr(event.char)[1:-1]
+        color = self.stos(text)
+        if color == "":
+            color = "white"
+        self.cv.delete("highlight")
+        try:
+            self.cv.create_rectangle(EXPAND(280), EXPAND(HEIGHT//2+10),
+                                     EXPAND(300), EXPAND(HEIGHT-6),
+                                     fill=color, outline="lightgray",
+                                     width=2, tag="highlight")
+        except:
+            self.cv.create_rectangle(EXPAND(280), EXPAND(HEIGHT//2+10),
+                                     EXPAND(300), EXPAND(HEIGHT-6),
+                                     fill="black", outline="lightgray",
+                                     width=2, tag="highlight")
 
     def show_option(self):
         color = self.ent1.get()
@@ -2613,13 +2664,10 @@ class PenColor(Widget):
         if color != (None, None):
             self.ent1.delete(0, tk.END)
             self.ent1.insert(0, color[1].upper())
+        self.color_highlight()
 
     def save_data(self):
         self.color = self.ent1.get()
-        if self.color == "":
-            self.color = "black"
-            self.ent1.delete(0, tk.END)
-            self.ent1.insert(0, self.color)
 
     def do(self, tur):
         self.save_data()
@@ -2655,11 +2703,38 @@ class FillColor(Widget):
         lab2 = tk.Label(self.cv, text="c <= ", font=FONT, bg=self.background)
         self.binder(lab2)
         lab2.place(x=EXPAND(50), y=EXPAND(HEIGHT//2+8))
-        self.ent1 = tk.Entry(self.cv, font=FONT, width=12, justify=tk.RIGHT)
-        self.ent1.insert(tk.END, self.color)
+        strvar = tk.StringVar()
+        self.ent1 = tk.Entry(self.cv, font=FONT, width=12, justify=tk.RIGHT,
+                             validate='all', textvariable=strvar,
+                             vcmd=self.color_highlight)
+        strvar.set(self.color)
         self.binder(self.ent1)
         self.ent1.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent1))
+        self.ent1.bind("<KeyPress>", self.color_highlight)
         self.ent1.place(x=EXPAND(100), y=EXPAND(HEIGHT//2+8))
+        self.color_highlight()
+
+    def color_highlight(self, event=None):
+        text = self.ent1.get()
+        if event is not None:
+            if event.char == "\x08":
+                text = text[:-1]
+            elif repr(event.char)[1] != "\\":
+                text += repr(event.char)[1:-1]
+        color = self.stos(text)
+        if color == "":
+            color = "white"
+        self.cv.delete("highlight")
+        try:
+            self.cv.create_rectangle(EXPAND(280), EXPAND(HEIGHT//2+10),
+                                     EXPAND(300), EXPAND(HEIGHT-6),
+                                     fill=color, outline="lightgray",
+                                     width=2, tag="highlight")
+        except:
+            self.cv.create_rectangle(EXPAND(280), EXPAND(HEIGHT//2+10),
+                                     EXPAND(300), EXPAND(HEIGHT-6),
+                                     fill="black", outline="lightgray",
+                                     width=2, tag="highlight")
 
     def show_option(self):
         color = self.ent1.get()
@@ -2671,13 +2746,10 @@ class FillColor(Widget):
         if color != (None, None):
             self.ent1.delete(0, tk.END)
             self.ent1.insert(0, color[1].upper())
+        self.color_highlight()
 
     def save_data(self):
         self.color = self.ent1.get()
-        if self.color == "":
-            self.color = "black"
-            self.ent1.delete(0, tk.END)
-            self.ent1.insert(0, self.color)
 
     def do(self, tur):
         self.save_data()
@@ -2713,11 +2785,38 @@ class BGColor(Widget):
         lab2 = tk.Label(self.cv, text="c <= ", font=FONT, bg=self.background)
         self.binder(lab2)
         lab2.place(x=EXPAND(50), y=EXPAND(HEIGHT//2+8))
-        self.ent1 = tk.Entry(self.cv, font=FONT, width=12, justify=tk.RIGHT)
-        self.ent1.insert(tk.END, self.color)
+        strvar = tk.StringVar()
+        self.ent1 = tk.Entry(self.cv, font=FONT, width=12, justify=tk.RIGHT,
+                             validate='all', textvariable=strvar,
+                             vcmd=self.color_highlight)
+        strvar.set(self.color)
         self.binder(self.ent1)
         self.ent1.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent1))
+        self.ent1.bind("<KeyPress>", self.color_highlight)
         self.ent1.place(x=EXPAND(100), y=EXPAND(HEIGHT//2+8))
+        self.color_highlight()
+
+    def color_highlight(self, event=None):
+        text = self.ent1.get()
+        if event is not None:
+            if event.char == "\x08":
+                text = text[:-1]
+            elif repr(event.char)[1] != "\\":
+                text += repr(event.char)[1:-1]
+        color = self.stos(text)
+        if color == "":
+            color = "white"
+        self.cv.delete("highlight")
+        try:
+            self.cv.create_rectangle(EXPAND(280), EXPAND(HEIGHT//2+10),
+                                     EXPAND(300), EXPAND(HEIGHT-6),
+                                     fill=color, outline="lightgray",
+                                     width=2, tag="highlight")
+        except:
+            self.cv.create_rectangle(EXPAND(280), EXPAND(HEIGHT//2+10),
+                                     EXPAND(300), EXPAND(HEIGHT-6),
+                                     fill="white", outline="lightgray",
+                                     width=2, tag="highlight")
 
     def show_option(self):
         color = self.ent1.get()
@@ -2729,13 +2828,10 @@ class BGColor(Widget):
         if color != (None, None):
             self.ent1.delete(0, tk.END)
             self.ent1.insert(0, color[1].upper())
+        self.color_highlight()
 
     def save_data(self):
         self.color = self.ent1.get()
-        if self.color == "":
-            self.color = "black"
-            self.ent1.delete(0, tk.END)
-            self.ent1.insert(0, self.color)
 
     def do(self, tur):
         self.save_data()
@@ -3433,4 +3529,4 @@ Names = tuple([c.__name__ for c in Widgets])
 # 実行
 if __name__ == "__main__":
     file = sys.argv[1] if len(sys.argv) > 1 else None
-    et = EasyTurtle(file=file)
+    EasyTurtle(file=file)
