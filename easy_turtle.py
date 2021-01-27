@@ -171,7 +171,7 @@ def EXPAND(num): return int(round(num * WIN_MAG))
 
 FONT = (FONT_TYPE1, EXPAND(12), "bold")
 
-__version__ = (5, 1, "0a2")
+__version__ = (5, 1, 0)
 
 
 class EasyTurtle:
@@ -1794,9 +1794,25 @@ class ScreenSize(Widget):
         # データを保存する
         self.save_data()
 
-        # 画面サイズを変更
+        # 画面サイズを取得
         width = self.stoi(self.width)
         height = self.stoi(self.height)
+
+        # 警告を表示
+        if width > SYSTEM_WIDTH:
+            if CONFIG["show_warning"] is True:
+                messagebox.showwarning("警告", f'\
+line: {self.p.widgets.index(self)+1}, {self.__class__.__name__}\n\
+画面の横幅（{SYSTEM_WIDTH}）以上の数値が指定されました。')
+            width = SYSTEM_WIDTH
+        if height > SYSTEM_HEIGHT:
+            if CONFIG["show_warning"] is True:
+                messagebox.showwarning("警告", f'\
+line: {self.p.widgets.index(self)+1}, {self.__class__.__name__}\n\
+画面の高さ（{SYSTEM_HEIGHT}）以上の数値が指定されました。')
+            height = SYSTEM_HEIGHT
+
+        # 画面サイズを変更
         self.p.win.geometry(f"{width}x{height}")
 
         # 亀を移動

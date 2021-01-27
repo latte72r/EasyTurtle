@@ -1,7 +1,7 @@
 {
   "version": [
-    4,
-    11
+    5,
+    1
   ],
   "body": [
     {
@@ -45,22 +45,22 @@
       "_name": "PenDown"
     },
     {
-      "_name": "BeginFill"
-    },
-    {
-      "_name": "Color",
+      "_name": "PenColor",
       "color": "red"
     },
     {
-      "_name": "Circle",
-      "radius": "[size]*8",
-      "extent": "360"
-    },
-    {
-      "_name": "Color",
+      "_name": "FillColor",
       "color": "pink"
     },
     {
+      "_name": "BeginFill"
+    },
+    {
+      "_name": "Circle",
+      "radius": "[size]*8",
+      "extent": "360"
+    },
+    {
       "_name": "EndFill"
     },
     {
@@ -74,20 +74,20 @@
       "_name": "PenDown"
     },
     {
-      "_name": "BeginFill"
-    },
-    {
-      "_name": "Color",
+      "_name": "PenColor",
       "color": "gray"
     },
     {
+      "_name": "FillColor",
+      "color": "white"
+    },
+    {
+      "_name": "BeginFill"
+    },
+    {
       "_name": "Circle",
       "radius": "[size]*8",
       "extent": "360"
-    },
-    {
-      "_name": "Color",
-      "color": "white"
     },
     {
       "_name": "EndFill"
@@ -103,20 +103,20 @@
       "_name": "PenDown"
     },
     {
-      "_name": "BeginFill"
+      "_name": "PenColor",
+      "color": "green"
     },
     {
-      "_name": "Color",
-      "color": "green"
+      "_name": "FillColor",
+      "color": "yellowgreen"
+    },
+    {
+      "_name": "BeginFill"
     },
     {
       "_name": "Circle",
       "radius": "[size]*8",
       "extent": "360"
-    },
-    {
-      "_name": "Color",
-      "color": "yellowgreen"
     },
     {
       "_name": "EndFill"
