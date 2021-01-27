@@ -22,7 +22,7 @@ import urllib.request
 import threading
 import traceback
 
-# ChangePoint: Enable & Disable, "show_warning"
+# ChangePoint: AutoUpdate
 
 SIZE = 8
 HEIGHT = 72
@@ -150,7 +150,6 @@ elif SYSTEM == "Linux":
     if os.path.exists(samples) is False:
         shutil.copytree('./Samples', samples)
 
-        
     response = subprocess.check_output("xrandr | fgrep '*'", shell=True)
     metrics = response.decode("utf8").split()[0].split("x")
     SYSTEM_WIDTH = int(metrics[0])
@@ -171,7 +170,7 @@ def EXPAND(num): return int(round(num * WIN_MAG))
 
 FONT = (FONT_TYPE1, EXPAND(12), "bold")
 
-__version__ = (5, 1, 0)
+__version__ = (5, 1, 1)
 
 
 class EasyTurtle:
@@ -877,7 +876,6 @@ line: {index+1}, {widget.__class__.__name__}\n\
             self.win = tk.Toplevel(self.root)
             self.win.tk.call('wm', 'iconphoto', self.win._w, self.icon)
             self.win.title("EasyTurtle - Update")
-            self.win.wait_visibility()
             self.win.grab_set()
             lab1 = tk.Label(self.win, font=FONT,
                             text="新しいバージョンが見つかりました")
@@ -1131,7 +1129,7 @@ class Widget:
             self.p.widgets.insert(index, self)
 
         self.set_data(data)
-        
+
         self.draw()
 
     def __str__(self):
@@ -2655,7 +2653,7 @@ class Color(Widget):
                                      EXPAND(300), EXPAND(HEIGHT-6),
                                      fill=color, outline="lightgray",
                                      width=2, tag="highlight")
-        except:
+        except tk.TclError:
             self.cv.create_rectangle(EXPAND(280), EXPAND(HEIGHT//2+10),
                                      EXPAND(300), EXPAND(HEIGHT-6),
                                      fill="black", outline="lightgray",
@@ -2665,7 +2663,7 @@ class Color(Widget):
         color = self.ent1.get()
         try:
             color = colorchooser.askcolor(
-            color=self.stos(color), parent=self.p.root)
+                color=self.stos(color), parent=self.p.root)
         except tk.TclError:
             color = colorchooser.askcolor(parent=self.p.root)
         if color != (None, None):
@@ -2737,7 +2735,7 @@ class PenColor(Widget):
                                      EXPAND(300), EXPAND(HEIGHT-6),
                                      fill=color, outline="lightgray",
                                      width=2, tag="highlight")
-        except:
+        except tk.TclError:
             self.cv.create_rectangle(EXPAND(280), EXPAND(HEIGHT//2+10),
                                      EXPAND(300), EXPAND(HEIGHT-6),
                                      fill="black", outline="lightgray",
@@ -2819,7 +2817,7 @@ class FillColor(Widget):
                                      EXPAND(300), EXPAND(HEIGHT-6),
                                      fill=color, outline="lightgray",
                                      width=2, tag="highlight")
-        except:
+        except tk.TclError:
             self.cv.create_rectangle(EXPAND(280), EXPAND(HEIGHT//2+10),
                                      EXPAND(300), EXPAND(HEIGHT-6),
                                      fill="black", outline="lightgray",
@@ -2901,7 +2899,7 @@ class BGColor(Widget):
                                      EXPAND(300), EXPAND(HEIGHT-6),
                                      fill=color, outline="lightgray",
                                      width=2, tag="highlight")
-        except:
+        except tk.TclError:
             self.cv.create_rectangle(EXPAND(280), EXPAND(HEIGHT//2+10),
                                      EXPAND(300), EXPAND(HEIGHT-6),
                                      fill="white", outline="lightgray",
