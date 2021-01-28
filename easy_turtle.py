@@ -26,7 +26,7 @@ import traceback
 
 SIZE = 8
 HEIGHT = 72
-WIDTH = 480
+WIDTH = 520
 
 
 def GET_CONFIG():
@@ -170,7 +170,7 @@ def EXPAND(num): return int(round(num * WIN_MAG))
 
 FONT = (FONT_TYPE1, EXPAND(12), "bold")
 
-__version__ = (5, 2, "0a1")
+__version__ = (5, 2, "0a2")
 
 
 class EasyTurtle:
@@ -1087,8 +1087,8 @@ line: {index+1}, {widget.__class__.__name__}\n\
         var1 = tk.StringVar(self.root, value=Texts)
         height = 8 if SYSTEM == "Windows" else 10
         self.lsb1 = tk.Listbox(frame7, listvariable=var1, height=height,
-                               width=37, selectmode='single',
-                               bg="#FFEFD7", font=(FONT_TYPE1, EXPAND(22)),
+                               width=40, selectmode='single',
+                               bg="#FFEFD7", font=(FONT_TYPE1, EXPAND(20)),
                                selectbackground="#2F4FAF",
                                selectforeground="#FFFFFF")
         self.lsb1.bind('<<ListboxSelect>>', self.listbox_selected)
@@ -1533,7 +1533,8 @@ line: {self.p.widgets.index(self)+1}, {self.__class__.__name__}\n\
     def stoint(self, string):
         """文字列を整数に変換"""
         num = self.stofloat(string)
-        if float(num).is_integer() is not True:
+        if (float(num).is_integer() is False) and \
+           (CONFIG["show_warning"] is True):
             messagebox.showwarning("警告", f'\
 line: {self.p.widgets.index(self)+1}, {self.__class__.__name__}\n\
 値は整数でなければなりません。')
@@ -1563,7 +1564,7 @@ line: {self.p.widgets.index(self)+1}, {self.__class__.__name__}\n\
 
 
 class VarNumber(Widget):
-    TEXT = "VarNumber     変数ｎを数値ｖにする"
+    TEXT = "VarNumber   変数①を数値②にする"
     TYPE = "variable"
     VALUES = {"name": "num", "value": "0"}
 
@@ -1590,22 +1591,22 @@ class VarNumber(Widget):
 
     def draw(self):
         self.draw_cv()
-        lab2 = tk.Label(self.cv, text="n <= ", font=FONT, bg=self.background)
+        lab2 = tk.Label(self.cv, text="①", font=FONT, bg=self.background)
         self.binder(lab2)
         lab2.place(x=EXPAND(50), y=EXPAND(HEIGHT//2+8))
         self.ent1 = tk.Entry(self.cv, font=FONT, width=12, justify=tk.RIGHT)
         self.ent1.insert(tk.END, self.name)
         self.binder(self.ent1)
         self.ent1.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent1))
-        self.ent1.place(x=EXPAND(100), y=EXPAND(HEIGHT//2+8))
-        lab3 = tk.Label(self.cv, text=", v <= ", font=FONT, bg=self.background)
+        self.ent1.place(x=EXPAND(70), y=EXPAND(HEIGHT//2+8))
+        lab3 = tk.Label(self.cv, text="②", font=FONT, bg=self.background)
         self.binder(lab3)
-        lab3.place(x=EXPAND(230), y=EXPAND(HEIGHT//2+8))
+        lab3.place(x=EXPAND(200), y=EXPAND(HEIGHT//2+8))
         self.ent2 = tk.Entry(self.cv, font=FONT, width=12, justify=tk.RIGHT)
         self.ent2.insert(tk.END, self.value)
         self.binder(self.ent2)
         self.ent2.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent2))
-        self.ent2.place(x=EXPAND(300), y=EXPAND(HEIGHT//2+8))
+        self.ent2.place(x=EXPAND(220), y=EXPAND(HEIGHT//2+8))
 
     def save_data(self):
         self.name = self.ent1.get()
@@ -1617,7 +1618,7 @@ class VarNumber(Widget):
 
 
 class VarString(Widget):
-    TEXT = "VarString     変数ｎを文字列ｖにする"
+    TEXT = "VarString   変数①を文字列②にする"
     TYPE = "variable"
     VALUES = {"name": "str", "value": "text"}
 
@@ -1644,22 +1645,22 @@ class VarString(Widget):
 
     def draw(self):
         self.draw_cv()
-        lab2 = tk.Label(self.cv, text="n <= ", font=FONT, bg=self.background)
+        lab2 = tk.Label(self.cv, text="①", font=FONT, bg=self.background)
         self.binder(lab2)
         lab2.place(x=EXPAND(50), y=EXPAND(HEIGHT//2+8))
         self.ent1 = tk.Entry(self.cv, font=FONT, width=12, justify=tk.RIGHT)
         self.ent1.insert(tk.END, self.name)
         self.binder(self.ent1)
         self.ent1.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent1))
-        self.ent1.place(x=EXPAND(100), y=EXPAND(HEIGHT//2+8))
-        lab3 = tk.Label(self.cv, text=", v <= ", font=FONT, bg=self.background)
+        self.ent1.place(x=EXPAND(70), y=EXPAND(HEIGHT//2+8))
+        lab3 = tk.Label(self.cv, text="②", font=FONT, bg=self.background)
         self.binder(lab3)
-        lab3.place(x=EXPAND(230), y=EXPAND(HEIGHT//2+8))
+        lab3.place(x=EXPAND(200), y=EXPAND(HEIGHT//2+8))
         self.ent2 = tk.Entry(self.cv, font=FONT, width=12, justify=tk.RIGHT)
         self.ent2.insert(tk.END, self.value)
         self.binder(self.ent2)
         self.ent2.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent2))
-        self.ent2.place(x=EXPAND(300), y=EXPAND(HEIGHT//2+8))
+        self.ent2.place(x=EXPAND(220), y=EXPAND(HEIGHT//2+8))
 
     def save_data(self):
         self.name = self.ent1.get()
@@ -1671,7 +1672,7 @@ class VarString(Widget):
 
 
 class VarBoolean(Widget):
-    TEXT = "VarBoolean    変数ｎを真理値ｖにする"
+    TEXT = "VarBoolean  変数①を真理値②にする"
     TYPE = "variable"
     VALUES = {"name": "bool", "value": "True"}
 
@@ -1698,24 +1699,24 @@ class VarBoolean(Widget):
 
     def draw(self):
         self.draw_cv()
-        lab2 = tk.Label(self.cv, text="n <= ", font=FONT, bg=self.background)
+        lab2 = tk.Label(self.cv, text="①", font=FONT, bg=self.background)
         self.binder(lab2)
         lab2.place(x=EXPAND(50), y=EXPAND(HEIGHT//2+8))
         self.ent1 = tk.Entry(self.cv, font=FONT, width=12, justify=tk.RIGHT)
         self.ent1.insert(tk.END, self.name)
         self.binder(self.ent1)
         self.ent1.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent1))
-        self.ent1.place(x=EXPAND(100), y=EXPAND(HEIGHT//2+8))
-        lab3 = tk.Label(self.cv, text=", v <= ", font=FONT, bg=self.background)
+        self.ent1.place(x=EXPAND(70), y=EXPAND(HEIGHT//2+8))
+        lab3 = tk.Label(self.cv, text="②", font=FONT, bg=self.background)
         self.binder(lab3)
-        lab3.place(x=EXPAND(230), y=EXPAND(HEIGHT//2+8))
+        lab3.place(x=EXPAND(200), y=EXPAND(HEIGHT//2+8))
         self.var1 = tk.StringVar()
         cb1 = ttk.Combobox(self.cv, textvariable=self.var1,
-                           font=FONT, width=12)
+                           font=FONT, width=10)
         cb1['values'] = ("True", "False")
         cb1.set(self.value)
         self.binder(cb1)
-        cb1.place(x=EXPAND(300), y=EXPAND(HEIGHT//2+8))
+        cb1.place(x=EXPAND(220), y=EXPAND(HEIGHT//2+8))
 
     def save_data(self):
         self.name = self.ent1.get()
@@ -1727,7 +1728,7 @@ class VarBoolean(Widget):
 
 
 class Title(Widget):
-    TEXT = "Title         画面タイトルをｔにする"
+    TEXT = "Title       画面タイトルを①にする"
     TYPE = "normalset"
     VALUES = {"title": "Turtle"}
 
@@ -1747,14 +1748,14 @@ class Title(Widget):
 
     def draw(self):
         self.draw_cv()
-        lab2 = tk.Label(self.cv, text="t <= ", font=FONT, bg=self.background)
+        lab2 = tk.Label(self.cv, text="①", font=FONT, bg=self.background)
         self.binder(lab2)
         lab2.place(x=EXPAND(50), y=EXPAND(HEIGHT//2+8))
         self.ent1 = tk.Entry(self.cv, font=FONT, width=12, justify=tk.RIGHT)
         self.ent1.insert(tk.END, self.title)
         self.binder(self.ent1)
         self.ent1.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent1))
-        self.ent1.place(x=EXPAND(100), y=EXPAND(HEIGHT//2+8))
+        self.ent1.place(x=EXPAND(70), y=EXPAND(HEIGHT//2+8))
 
     def save_data(self):
         self.title = self.ent1.get()
@@ -1765,7 +1766,7 @@ class Title(Widget):
 
 
 class ScreenSize(Widget):
-    TEXT = "ScreenSize    画面サイズをｗｘｈにする"
+    TEXT = "ScreenSize  画面を横幅①、高さ②にする"
     TYPE = "normalset"
     VALUES = {"width": "600", "height": "600"}
 
@@ -1792,22 +1793,22 @@ class ScreenSize(Widget):
 
     def draw(self):
         self.draw_cv()
-        lab2 = tk.Label(self.cv, text="w <= ", font=FONT, bg=self.background)
+        lab2 = tk.Label(self.cv, text="①", font=FONT, bg=self.background)
         self.binder(lab2)
         lab2.place(x=EXPAND(50), y=EXPAND(HEIGHT//2+8))
         self.ent1 = tk.Entry(self.cv, font=FONT, width=12, justify=tk.RIGHT)
         self.ent1.insert(tk.END, self.width)
         self.binder(self.ent1)
         self.ent1.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent1))
-        self.ent1.place(x=EXPAND(100), y=EXPAND(HEIGHT//2+8))
-        lab3 = tk.Label(self.cv, text=", h <= ", font=FONT, bg=self.background)
+        self.ent1.place(x=EXPAND(70), y=EXPAND(HEIGHT//2+8))
+        lab3 = tk.Label(self.cv, text="②", font=FONT, bg=self.background)
         self.binder(lab3)
-        lab3.place(x=EXPAND(230), y=EXPAND(HEIGHT//2+8))
+        lab3.place(x=EXPAND(200), y=EXPAND(HEIGHT//2+8))
         self.ent2 = tk.Entry(self.cv, font=FONT, width=12, justify=tk.RIGHT)
         self.ent2.insert(tk.END, self.height)
         self.binder(self.ent2)
         self.ent2.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent2))
-        self.ent2.place(x=EXPAND(300), y=EXPAND(HEIGHT//2+8))
+        self.ent2.place(x=EXPAND(220), y=EXPAND(HEIGHT//2+8))
 
     def save_data(self):
         self.width = self.ent1.get()
@@ -1860,7 +1861,7 @@ line: {self.p.widgets.index(self)+1}, {self.__class__.__name__}\n\
 
 
 class Forward(Widget):
-    TEXT = "Forward       前方向にｄ移動する"
+    TEXT = "Forward     前方向に①移動する"
     TYPE = "normalset"
     VALUES = {"distance": "0"}
 
@@ -1880,14 +1881,14 @@ class Forward(Widget):
 
     def draw(self):
         self.draw_cv()
-        lab2 = tk.Label(self.cv, text="d <= ", font=FONT, bg=self.background)
+        lab2 = tk.Label(self.cv, text="①", font=FONT, bg=self.background)
         self.binder(lab2)
         lab2.place(x=EXPAND(50), y=EXPAND(HEIGHT//2+8))
         self.ent1 = tk.Entry(self.cv, font=FONT, width=12, justify=tk.RIGHT)
         self.ent1.insert(tk.END, self.distance)
         self.binder(self.ent1)
         self.ent1.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent1))
-        self.ent1.place(x=EXPAND(100), y=EXPAND(HEIGHT//2+8))
+        self.ent1.place(x=EXPAND(70), y=EXPAND(HEIGHT//2+8))
 
     def save_data(self):
         self.distance = self.ent1.get()
@@ -1898,7 +1899,7 @@ class Forward(Widget):
 
 
 class Backward(Widget):
-    TEXT = "Backward      後方向にｄ移動する"
+    TEXT = "Backward    後方向に①移動する"
     TYPE = "normalset"
     VALUES = {"distance": "0"}
 
@@ -1925,7 +1926,7 @@ class Backward(Widget):
         self.ent1.insert(tk.END, self.distance)
         self.binder(self.ent1)
         self.ent1.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent1))
-        self.ent1.place(x=EXPAND(100), y=EXPAND(HEIGHT//2+8))
+        self.ent1.place(x=EXPAND(70), y=EXPAND(HEIGHT//2+8))
 
     def save_data(self):
         self.distance = self.ent1.get()
@@ -1936,7 +1937,7 @@ class Backward(Widget):
 
 
 class Right(Widget):
-    TEXT = "Right         右方向にａ度曲げる"
+    TEXT = "Right       右方向に①度曲げる"
     TYPE = "normalset"
     VALUES = {"angle": "0"}
 
@@ -1956,14 +1957,14 @@ class Right(Widget):
 
     def draw(self):
         self.draw_cv()
-        lab2 = tk.Label(self.cv, text="a <= ", font=FONT, bg=self.background)
+        lab2 = tk.Label(self.cv, text="①", font=FONT, bg=self.background)
         self.binder(lab2)
         lab2.place(x=EXPAND(50), y=EXPAND(HEIGHT//2+8))
         self.ent1 = tk.Entry(self.cv, font=FONT, width=12, justify=tk.RIGHT)
         self.ent1.insert(tk.END, self.angle)
         self.binder(self.ent1)
         self.ent1.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent1))
-        self.ent1.place(x=EXPAND(100), y=EXPAND(HEIGHT//2+8))
+        self.ent1.place(x=EXPAND(70), y=EXPAND(HEIGHT//2+8))
 
     def save_data(self):
         self.angle = self.ent1.get()
@@ -1974,7 +1975,7 @@ class Right(Widget):
 
 
 class Left(Widget):
-    TEXT = "Left          左方向にａ度曲げる"
+    TEXT = "Left        左方向に①度曲げる"
     TYPE = "normalset"
     VALUES = {"angle": "0"}
 
@@ -1994,14 +1995,14 @@ class Left(Widget):
 
     def draw(self):
         self.draw_cv()
-        lab2 = tk.Label(self.cv, text="a <= ", font=FONT, bg=self.background)
+        lab2 = tk.Label(self.cv, text="①", font=FONT, bg=self.background)
         self.binder(lab2)
         lab2.place(x=EXPAND(50), y=EXPAND(HEIGHT//2+8))
         self.ent1 = tk.Entry(self.cv, font=FONT, width=12, justify=tk.RIGHT)
         self.ent1.insert(tk.END, self.angle)
         self.binder(self.ent1)
         self.ent1.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent1))
-        self.ent1.place(x=EXPAND(100), y=EXPAND(HEIGHT//2+8))
+        self.ent1.place(x=EXPAND(70), y=EXPAND(HEIGHT//2+8))
 
     def save_data(self):
         self.angle = self.ent1.get()
@@ -2012,7 +2013,7 @@ class Left(Widget):
 
 
 class GoTo(Widget):
-    TEXT = "GoTo          座標ｘ，ｙに移動する"
+    TEXT = "GoTo        ｘ座標①，ｙ座標②に移動する"
     TYPE = "normalset"
     VALUES = {"x": "0", "y": "0"}
 
@@ -2037,22 +2038,22 @@ class GoTo(Widget):
 
     def draw(self):
         self.draw_cv()
-        lab2 = tk.Label(self.cv, text="x <= ", font=FONT, bg=self.background)
+        lab2 = tk.Label(self.cv, text="①", font=FONT, bg=self.background)
         self.binder(lab2)
         lab2.place(x=EXPAND(50), y=EXPAND(HEIGHT//2+8))
         self.ent1 = tk.Entry(self.cv, font=FONT, width=12, justify=tk.RIGHT)
         self.ent1.insert(tk.END, self.x)
         self.binder(self.ent1)
         self.ent1.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent1))
-        self.ent1.place(x=EXPAND(100), y=EXPAND(HEIGHT//2+8))
-        lab3 = tk.Label(self.cv, text=", y <= ", font=FONT, bg=self.background)
+        self.ent1.place(x=EXPAND(70), y=EXPAND(HEIGHT//2+8))
+        lab3 = tk.Label(self.cv, text="②", font=FONT, bg=self.background)
         self.binder(lab3)
-        lab3.place(x=EXPAND(230), y=EXPAND(HEIGHT//2+8))
+        lab3.place(x=EXPAND(200), y=EXPAND(HEIGHT//2+8))
         self.ent2 = tk.Entry(self.cv, font=FONT, width=12, justify=tk.RIGHT)
         self.ent2.insert(tk.END, self.y)
         self.binder(self.ent2)
         self.ent2.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent2))
-        self.ent2.place(x=EXPAND(300), y=EXPAND(HEIGHT//2+8))
+        self.ent2.place(x=EXPAND(220), y=EXPAND(HEIGHT//2+8))
 
     def save_data(self):
         self.x = self.ent1.get()
@@ -2066,7 +2067,7 @@ class GoTo(Widget):
 
 
 class SetX(Widget):
-    TEXT = "SetX          座標ｘに移動する"
+    TEXT = "SetX        ｘ座標①に移動する"
     TYPE = "normalset"
     VALUES = {"x": "0"}
 
@@ -2086,14 +2087,14 @@ class SetX(Widget):
 
     def draw(self):
         self.draw_cv()
-        lab2 = tk.Label(self.cv, text="a <= ", font=FONT, bg=self.background)
+        lab2 = tk.Label(self.cv, text="①", font=FONT, bg=self.background)
         self.binder(lab2)
         lab2.place(x=EXPAND(50), y=EXPAND(HEIGHT//2+8))
         self.ent1 = tk.Entry(self.cv, font=FONT, width=12, justify=tk.RIGHT)
         self.ent1.insert(tk.END, self.x)
         self.binder(self.ent1)
         self.ent1.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent1))
-        self.ent1.place(x=EXPAND(100), y=EXPAND(HEIGHT//2+8))
+        self.ent1.place(x=EXPAND(70), y=EXPAND(HEIGHT//2+8))
 
     def save_data(self):
         self.x = self.ent1.get()
@@ -2104,7 +2105,7 @@ class SetX(Widget):
 
 
 class SetY(Widget):
-    TEXT = "SetY          座標ｙに移動する"
+    TEXT = "SetY        ｙ座標①に移動する"
     TYPE = "normalset"
     VALUES = {"y": "0"}
 
@@ -2124,14 +2125,14 @@ class SetY(Widget):
 
     def draw(self):
         self.draw_cv()
-        lab2 = tk.Label(self.cv, text="y <= ", font=FONT, bg=self.background)
+        lab2 = tk.Label(self.cv, text="①", font=FONT, bg=self.background)
         self.binder(lab2)
         lab2.place(x=EXPAND(50), y=EXPAND(HEIGHT//2+8))
         self.ent1 = tk.Entry(self.cv, font=FONT, width=12, justify=tk.RIGHT)
         self.ent1.insert(tk.END, self.y)
         self.binder(self.ent1)
         self.ent1.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent1))
-        self.ent1.place(x=EXPAND(100), y=EXPAND(HEIGHT//2+8))
+        self.ent1.place(x=EXPAND(70), y=EXPAND(HEIGHT//2+8))
 
     def save_data(self):
         self.y = self.ent1.get()
@@ -2142,7 +2143,7 @@ class SetY(Widget):
 
 
 class SetHeading(Widget):
-    TEXT = "SetHeading    角度をａ度に変更する"
+    TEXT = "SetHeading  向きを①度に変更する"
     TYPE = "normalset"
     VALUES = {"angle": "0"}
 
@@ -2162,14 +2163,14 @@ class SetHeading(Widget):
 
     def draw(self):
         self.draw_cv()
-        lab2 = tk.Label(self.cv, text="a <= ", font=FONT, bg=self.background)
+        lab2 = tk.Label(self.cv, text="①", font=FONT, bg=self.background)
         self.binder(lab2)
         lab2.place(x=EXPAND(50), y=EXPAND(HEIGHT//2+8))
         self.ent1 = tk.Entry(self.cv, font=FONT, width=12, justify=tk.RIGHT)
         self.ent1.insert(tk.END, self.angle)
         self.binder(self.ent1)
         self.ent1.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent1))
-        self.ent1.place(x=EXPAND(100), y=EXPAND(HEIGHT//2+8))
+        self.ent1.place(x=EXPAND(70), y=EXPAND(HEIGHT//2+8))
 
     def save_data(self):
         self.angle = self.ent1.get()
@@ -2180,7 +2181,7 @@ class SetHeading(Widget):
 
 
 class Home(Widget):
-    TEXT = "Home          初期座標・角度に戻る"
+    TEXT = "Home        座標と角度を初期状態に戻す"
     TYPE = "normalset"
 
     def set_data(self, data):
@@ -2205,7 +2206,7 @@ class Home(Widget):
 
 
 class Position(Widget):
-    TEXT = "Position      座標ｘ，ｙを取得する"
+    TEXT = "Position    座標ｘを①、ｙを②に代入する"
     TYPE = "normalget"
     VALUES = {"x": "xcor", "y": "ycor"}
 
@@ -2230,22 +2231,22 @@ class Position(Widget):
 
     def draw(self):
         self.draw_cv()
-        lab2 = tk.Label(self.cv, text="x => ", font=FONT, bg=self.background)
+        lab2 = tk.Label(self.cv, text="①", font=FONT, bg=self.background)
         self.binder(lab2)
         lab2.place(x=EXPAND(50), y=EXPAND(HEIGHT//2+8))
         self.ent1 = tk.Entry(self.cv, font=FONT, width=12, justify=tk.RIGHT)
         self.ent1.insert(tk.END, self.x)
         self.binder(self.ent1)
         self.ent1.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent1))
-        self.ent1.place(x=EXPAND(100), y=EXPAND(HEIGHT//2+8))
-        lab3 = tk.Label(self.cv, text=", y => ", font=FONT, bg=self.background)
+        self.ent1.place(x=EXPAND(70), y=EXPAND(HEIGHT//2+8))
+        lab3 = tk.Label(self.cv, text="②", font=FONT, bg=self.background)
         self.binder(lab3)
-        lab3.place(x=EXPAND(230), y=EXPAND(HEIGHT//2+8))
+        lab3.place(x=EXPAND(200), y=EXPAND(HEIGHT//2+8))
         self.ent2 = tk.Entry(self.cv, font=FONT, width=12, justify=tk.RIGHT)
         self.ent2.insert(tk.END, self.y)
         self.binder(self.ent2)
         self.ent2.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent2))
-        self.ent2.place(x=EXPAND(300), y=EXPAND(HEIGHT//2+8))
+        self.ent2.place(x=EXPAND(220), y=EXPAND(HEIGHT//2+8))
 
     def save_data(self):
         self.x = self.ent1.get()
@@ -2260,8 +2261,80 @@ class Position(Widget):
             yval + self.p.runner_size[1] // 2, "N")
 
 
+class ToWards(Widget):
+    TEXT = "ToWards     ｘ①、ｙ②への角度を③に代入する"
+    TYPE = "normalget"
+    VALUES = {"x": "0",
+              "y": "0",
+              "angle": "angle"}
+
+    def set_data(self, data):
+        if data is None:
+            self.x = self.VALUES["x"]
+            self.y = self.VALUES["y"]
+            self.angle = self.VALUES["angle"]
+        else:
+            if "x" in data:
+                self.x = data["x"]
+            else:
+                self.x = self.VALUES["x"]
+            if "y" in data:
+                self.y = data["y"]
+            else:
+                self.y = self.VALUES["y"]
+            if "angle" in data:
+                self.angle = data["angle"]
+            else:
+                self.angle = self.VALUES["angle"]
+        self.set_common(data)
+
+    def get_data(self, more=True):
+        self.save_data()
+        return self.get_class_data({"x": self.x,
+                                    "y": self.y,
+                                    "angle": self.angle}, more)
+
+    def draw(self):
+        self.draw_cv()
+        lab2 = tk.Label(self.cv, text="①", font=FONT, bg=self.background)
+        self.binder(lab2)
+        lab2.place(x=EXPAND(50), y=EXPAND(HEIGHT//2+8))
+        self.ent1 = tk.Entry(self.cv, font=FONT, width=12, justify=tk.RIGHT)
+        self.ent1.insert(tk.END, self.x)
+        self.binder(self.ent1)
+        self.ent1.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent1))
+        self.ent1.place(x=EXPAND(70), y=EXPAND(HEIGHT//2+8))
+        lab3 = tk.Label(self.cv, text="②", font=FONT, bg=self.background)
+        self.binder(lab3)
+        lab3.place(x=EXPAND(200), y=EXPAND(HEIGHT//2+8))
+        self.ent2 = tk.Entry(self.cv, font=FONT, width=12, justify=tk.RIGHT)
+        self.ent2.insert(tk.END, self.y)
+        self.binder(self.ent1)
+        self.ent2.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent1))
+        self.ent2.place(x=EXPAND(220), y=EXPAND(HEIGHT//2+8))
+        lab4 = tk.Label(self.cv, text="③", font=FONT, bg=self.background)
+        self.binder(lab4)
+        lab4.place(x=EXPAND(350), y=EXPAND(HEIGHT//2+8))
+        self.ent3 = tk.Entry(self.cv, font=FONT, width=12, justify=tk.RIGHT)
+        self.ent3.insert(tk.END, self.angle)
+        self.binder(self.ent1)
+        self.ent3.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent1))
+        self.ent3.place(x=EXPAND(370), y=EXPAND(HEIGHT//2+8))
+
+    def save_data(self):
+        self.x = self.ent1.get()
+        self.y = self.ent2.get()
+        self.angle = self.ent3.get()
+
+    def do(self, tur):
+        self.save_data()
+        angle = tur.towards(self.stoint(self.x),
+                            self.stoint(self.y))
+        self.p.variable_datas[self.angle] = (angle, "N")
+
+
 class XCor(Widget):
-    TEXT = "XCor          座標ｘを取得する"
+    TEXT = "XCor        ｘ座標を①に代入する"
     TYPE = "normalget"
     VALUES = {"x": "xcor"}
 
@@ -2281,14 +2354,14 @@ class XCor(Widget):
 
     def draw(self):
         self.draw_cv()
-        lab2 = tk.Label(self.cv, text="x => ", font=FONT, bg=self.background)
+        lab2 = tk.Label(self.cv, text="①", font=FONT, bg=self.background)
         self.binder(lab2)
         lab2.place(x=EXPAND(50), y=EXPAND(HEIGHT//2+8))
         self.ent1 = tk.Entry(self.cv, font=FONT, width=12, justify=tk.RIGHT)
         self.ent1.insert(tk.END, self.x)
         self.binder(self.ent1)
         self.ent1.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent1))
-        self.ent1.place(x=EXPAND(100), y=EXPAND(HEIGHT//2+8))
+        self.ent1.place(x=EXPAND(70), y=EXPAND(HEIGHT//2+8))
 
     def save_data(self):
         self.x = self.ent1.get()
@@ -2301,7 +2374,7 @@ class XCor(Widget):
 
 
 class YCor(Widget):
-    TEXT = "YCor          座標ｙを取得する"
+    TEXT = "YCor        ｙ座標を①に代入する"
     TYPE = "normalget"
     VALUES = {"y": "ycor"}
 
@@ -2321,14 +2394,14 @@ class YCor(Widget):
 
     def draw(self):
         self.draw_cv()
-        lab2 = tk.Label(self.cv, text="y => ", font=FONT, bg=self.background)
+        lab2 = tk.Label(self.cv, text="①", font=FONT, bg=self.background)
         self.binder(lab2)
         lab2.place(x=EXPAND(50), y=EXPAND(HEIGHT//2+8))
         self.ent1 = tk.Entry(self.cv, font=FONT, width=12, justify=tk.RIGHT)
         self.ent1.insert(tk.END, self.y)
         self.binder(self.ent1)
         self.ent1.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent1))
-        self.ent1.place(x=EXPAND(100), y=EXPAND(HEIGHT//2+8))
+        self.ent1.place(x=EXPAND(70), y=EXPAND(HEIGHT//2+8))
 
     def save_data(self):
         self.y = self.ent1.get()
@@ -2341,7 +2414,7 @@ class YCor(Widget):
 
 
 class Heading(Widget):
-    TEXT = "Heading       角度ａを取得する"
+    TEXT = "Heading     角度を①に代入する"
     TYPE = "normalget"
     VALUES = {"angle": "angle"}
 
@@ -2361,14 +2434,14 @@ class Heading(Widget):
 
     def draw(self):
         self.draw_cv()
-        lab2 = tk.Label(self.cv, text="a => ", font=FONT, bg=self.background)
+        lab2 = tk.Label(self.cv, text="①", font=FONT, bg=self.background)
         self.binder(lab2)
         lab2.place(x=EXPAND(50), y=EXPAND(HEIGHT//2+8))
         self.ent1 = tk.Entry(self.cv, font=FONT, width=12, justify=tk.RIGHT)
         self.ent1.insert(tk.END, self.angle)
         self.binder(self.ent1)
         self.ent1.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent1))
-        self.ent1.place(x=EXPAND(100), y=EXPAND(HEIGHT//2+8))
+        self.ent1.place(x=EXPAND(70), y=EXPAND(HEIGHT//2+8))
 
     def save_data(self):
         self.angle = self.ent1.get()
@@ -2380,7 +2453,7 @@ class Heading(Widget):
 
 
 class Circle(Widget):
-    TEXT = "Circle        半径ｒの円をｅ度描く"
+    TEXT = "Circle      半径①の円を角度②度描く"
     TYPE = "normalset"
     VALUES = {"radius": "0", "extent": "360"}
 
@@ -2407,22 +2480,22 @@ class Circle(Widget):
 
     def draw(self):
         self.draw_cv()
-        lab2 = tk.Label(self.cv, text="r <= ", font=FONT, bg=self.background)
+        lab2 = tk.Label(self.cv, text="①", font=FONT, bg=self.background)
         self.binder(lab2)
         lab2.place(x=EXPAND(50), y=EXPAND(HEIGHT//2+8))
         self.ent1 = tk.Entry(self.cv, font=FONT, width=12, justify=tk.RIGHT)
         self.ent1.insert(tk.END, self.radius)
         self.binder(self.ent1)
         self.ent1.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent1))
-        self.ent1.place(x=EXPAND(100), y=EXPAND(HEIGHT//2+8))
-        lab3 = tk.Label(self.cv, text=", e <= ", font=FONT, bg=self.background)
+        self.ent1.place(x=EXPAND(70), y=EXPAND(HEIGHT//2+8))
+        lab3 = tk.Label(self.cv, text="②", font=FONT, bg=self.background)
         self.binder(lab3)
-        lab3.place(x=EXPAND(230), y=EXPAND(HEIGHT//2+8))
+        lab3.place(x=EXPAND(200), y=EXPAND(HEIGHT//2+8))
         self.ent2 = tk.Entry(self.cv, font=FONT, width=12, justify=tk.RIGHT)
         self.ent2.insert(tk.END, self.extent)
         self.binder(self.ent2)
         self.ent2.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent2))
-        self.ent2.place(x=EXPAND(300), y=EXPAND(HEIGHT//2+8))
+        self.ent2.place(x=EXPAND(220), y=EXPAND(HEIGHT//2+8))
 
     def save_data(self):
         self.radius = self.ent1.get()
@@ -2436,7 +2509,7 @@ class Circle(Widget):
 
 
 class Dot(Widget):
-    TEXT = "Dot           直径ｒの円を描く"
+    TEXT = "Dot         直径①の円を描く"
     TYPE = "normalset"
     VALUES = {"size": "0"}
 
@@ -2456,14 +2529,14 @@ class Dot(Widget):
 
     def draw(self):
         self.draw_cv()
-        lab2 = tk.Label(self.cv, text="r <= ", font=FONT, bg=self.background)
+        lab2 = tk.Label(self.cv, text="①", font=FONT, bg=self.background)
         self.binder(lab2)
         lab2.place(x=EXPAND(50), y=EXPAND(HEIGHT//2+8))
         self.ent1 = tk.Entry(self.cv, font=FONT, width=12, justify=tk.RIGHT)
         self.ent1.insert(tk.END, self.size)
         self.binder(self.ent1)
         self.ent1.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent1))
-        self.ent1.place(x=EXPAND(100), y=EXPAND(HEIGHT//2+8))
+        self.ent1.place(x=EXPAND(70), y=EXPAND(HEIGHT//2+8))
 
     def save_data(self):
         self.size = self.ent1.get()
@@ -2474,7 +2547,7 @@ class Dot(Widget):
 
 
 class Stamp(Widget):
-    TEXT = "Stamp         亀のスタンプを押す"
+    TEXT = "Stamp       亀のスタンプを押す"
     TYPE = "normalset"
 
     def set_data(self, data):
@@ -2499,7 +2572,7 @@ class Stamp(Widget):
 
 
 class Speed(Widget):
-    TEXT = "Speed         速度ｓに変更する"
+    TEXT = "Speed       速度を①に変更する"
     TYPE = "normalset"
     VALUES = {"speed": "3"}
 
@@ -2519,14 +2592,14 @@ class Speed(Widget):
 
     def draw(self):
         self.draw_cv()
-        lab2 = tk.Label(self.cv, text="s <= ", font=FONT, bg=self.background)
+        lab2 = tk.Label(self.cv, text="①", font=FONT, bg=self.background)
         self.binder(lab2)
         lab2.place(x=EXPAND(50), y=EXPAND(HEIGHT//2+8))
         self.ent1 = tk.Entry(self.cv, font=FONT, width=12, justify=tk.RIGHT)
         self.ent1.insert(tk.END, self.speed)
         self.binder(self.ent1)
         self.ent1.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent1))
-        self.ent1.place(x=EXPAND(100), y=EXPAND(HEIGHT//2+8))
+        self.ent1.place(x=EXPAND(70), y=EXPAND(HEIGHT//2+8))
 
     def save_data(self):
         self.speed = self.ent1.get()
@@ -2538,7 +2611,7 @@ class Speed(Widget):
 
 
 class PenDown(Widget):
-    TEXT = "PenDown       動いた線を引くようにする"
+    TEXT = "PenDown     動いた線を引くようにする"
     TYPE = "normalset"
 
     def set_data(self, data):
@@ -2564,7 +2637,7 @@ class PenDown(Widget):
 
 
 class PenUp(Widget):
-    TEXT = "PenUp         動いた線を引かなくする"
+    TEXT = "PenUp       動いた線を引かなくする"
     TYPE = "normalset"
 
     def set_data(self, data):
@@ -2589,8 +2662,47 @@ class PenUp(Widget):
         tur.penup()
 
 
+class IsDown(Widget):
+    TEXT = "IsDown      動いた線を引くか①に代入する"
+    TYPE = "normalget"
+    VALUES = {"down": "down"}
+
+    def set_data(self, data):
+        if data is None:
+            self.down = self.VALUES["down"]
+        else:
+            if "down" in data:
+                self.down = data["down"]
+            else:
+                self.down = self.VALUES["down"]
+        self.set_common(data)
+
+    def get_data(self, more=True):
+        self.save_data()
+        return self.get_class_data({"down": self.down}, more)
+
+    def draw(self):
+        self.draw_cv()
+        lab2 = tk.Label(self.cv, text="①", font=FONT, bg=self.background)
+        self.binder(lab2)
+        lab2.place(x=EXPAND(50), y=EXPAND(HEIGHT//2+8))
+        self.ent1 = tk.Entry(self.cv, font=FONT, width=12, justify=tk.RIGHT)
+        self.ent1.insert(tk.END, self.down)
+        self.binder(self.ent1)
+        self.ent1.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent1))
+        self.ent1.place(x=EXPAND(70), y=EXPAND(HEIGHT//2+8))
+
+    def save_data(self):
+        self.down = self.ent1.get()
+
+    def do(self, tur):
+        self.save_data()
+        down = tur.isdown()
+        self.p.variable_datas[self.down] = (down, "B")
+
+
 class PenSize(Widget):
-    TEXT = "PenSize       先の太さをｗにする"
+    TEXT = "PenSize     ペン先の太さを①にする"
     TYPE = "normalset"
     VALUES = {"width": "1"}
 
@@ -2610,14 +2722,14 @@ class PenSize(Widget):
 
     def draw(self):
         self.draw_cv()
-        lab2 = tk.Label(self.cv, text="w <= ", font=FONT, bg=self.background)
+        lab2 = tk.Label(self.cv, text="①", font=FONT, bg=self.background)
         self.binder(lab2)
         lab2.place(x=EXPAND(50), y=EXPAND(HEIGHT//2+8))
         self.ent1 = tk.Entry(self.cv, font=FONT, width=12, justify=tk.RIGHT)
         self.ent1.insert(tk.END, self.width)
         self.binder(self.ent1)
         self.ent1.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent1))
-        self.ent1.place(x=EXPAND(100), y=EXPAND(HEIGHT//2+8))
+        self.ent1.place(x=EXPAND(70), y=EXPAND(HEIGHT//2+8))
 
     def save_data(self):
         self.width = self.ent1.get()
@@ -2628,7 +2740,7 @@ class PenSize(Widget):
 
 
 class Color(Widget):
-    TEXT = "Color         色をｃにする"
+    TEXT = "Color       ペンと背景の色を①にする"
     TYPE = "normalset"
     VALUES = {"color": "black"}
 
@@ -2648,7 +2760,7 @@ class Color(Widget):
 
     def draw(self):
         self.draw_cv()
-        lab2 = tk.Label(self.cv, text="c <= ", font=FONT, bg=self.background)
+        lab2 = tk.Label(self.cv, text="①", font=FONT, bg=self.background)
         self.binder(lab2)
         lab2.place(x=EXPAND(50), y=EXPAND(HEIGHT//2+8))
         strvar = tk.StringVar()
@@ -2659,7 +2771,7 @@ class Color(Widget):
         self.binder(self.ent1)
         self.ent1.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent1))
         self.ent1.bind("<KeyPress>", self.color_highlight)
-        self.ent1.place(x=EXPAND(100), y=EXPAND(HEIGHT//2+8))
+        self.ent1.place(x=EXPAND(70), y=EXPAND(HEIGHT//2+8))
         self.color_highlight()
 
     def color_highlight(self, event=None):
@@ -2710,7 +2822,7 @@ line: {self.p.widgets.index(self)+1}, {self.__class__.__name__}\n\
 
 
 class PenColor(Widget):
-    TEXT = "PenColor      ペンの色をｃにする"
+    TEXT = "PenColor    ペンの色を①にする"
     TYPE = "normalset"
     VALUES = {"color": "black"}
 
@@ -2730,7 +2842,7 @@ class PenColor(Widget):
 
     def draw(self):
         self.draw_cv()
-        lab2 = tk.Label(self.cv, text="c <= ", font=FONT, bg=self.background)
+        lab2 = tk.Label(self.cv, text="①", font=FONT, bg=self.background)
         self.binder(lab2)
         lab2.place(x=EXPAND(50), y=EXPAND(HEIGHT//2+8))
         strvar = tk.StringVar()
@@ -2741,7 +2853,7 @@ class PenColor(Widget):
         self.binder(self.ent1)
         self.ent1.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent1))
         self.ent1.bind("<KeyPress>", self.color_highlight)
-        self.ent1.place(x=EXPAND(100), y=EXPAND(HEIGHT//2+8))
+        self.ent1.place(x=EXPAND(70), y=EXPAND(HEIGHT//2+8))
         self.color_highlight()
 
     def color_highlight(self, event=None):
@@ -2792,7 +2904,7 @@ line: {self.p.widgets.index(self)+1}, {self.__class__.__name__}\n\
 
 
 class FillColor(Widget):
-    TEXT = "FillColor     塗りつぶしの色をｃにする"
+    TEXT = "FillColor   塗りつぶしの色を①にする"
     TYPE = "normalset"
     VALUES = {"color": "black"}
 
@@ -2812,7 +2924,7 @@ class FillColor(Widget):
 
     def draw(self):
         self.draw_cv()
-        lab2 = tk.Label(self.cv, text="c <= ", font=FONT, bg=self.background)
+        lab2 = tk.Label(self.cv, text="①", font=FONT, bg=self.background)
         self.binder(lab2)
         lab2.place(x=EXPAND(50), y=EXPAND(HEIGHT//2+8))
         strvar = tk.StringVar()
@@ -2823,7 +2935,7 @@ class FillColor(Widget):
         self.binder(self.ent1)
         self.ent1.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent1))
         self.ent1.bind("<KeyPress>", self.color_highlight)
-        self.ent1.place(x=EXPAND(100), y=EXPAND(HEIGHT//2+8))
+        self.ent1.place(x=EXPAND(70), y=EXPAND(HEIGHT//2+8))
         self.color_highlight()
 
     def color_highlight(self, event=None):
@@ -2874,7 +2986,7 @@ line: {self.p.widgets.index(self)+1}, {self.__class__.__name__}\n\
 
 
 class BGColor(Widget):
-    TEXT = "BGColor       背景の色をｃに変更する"
+    TEXT = "BGColor     背景色を①に変更する"
     TYPE = "normalset"
     VALUES = {"color": "white"}
 
@@ -2894,7 +3006,7 @@ class BGColor(Widget):
 
     def draw(self):
         self.draw_cv()
-        lab2 = tk.Label(self.cv, text="c <= ", font=FONT, bg=self.background)
+        lab2 = tk.Label(self.cv, text="①", font=FONT, bg=self.background)
         self.binder(lab2)
         lab2.place(x=EXPAND(50), y=EXPAND(HEIGHT//2+8))
         strvar = tk.StringVar()
@@ -2905,7 +3017,7 @@ class BGColor(Widget):
         self.binder(self.ent1)
         self.ent1.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent1))
         self.ent1.bind("<KeyPress>", self.color_highlight)
-        self.ent1.place(x=EXPAND(100), y=EXPAND(HEIGHT//2+8))
+        self.ent1.place(x=EXPAND(70), y=EXPAND(HEIGHT//2+8))
         self.color_highlight()
 
     def color_highlight(self, event=None):
@@ -2956,7 +3068,7 @@ line: {self.p.widgets.index(self)+1}, {self.__class__.__name__}\n\
 
 
 class GetPenColor(Widget):
-    TEXT = "GetPenColor   ペンの色ｃを取得する"
+    TEXT = "GetPenColor ペンの色を①に代入する"
     TYPE = "normalget"
     VALUES = {"color": "color"}
 
@@ -2976,14 +3088,14 @@ class GetPenColor(Widget):
 
     def draw(self):
         self.draw_cv()
-        lab2 = tk.Label(self.cv, text="c => ", font=FONT, bg=self.background)
+        lab2 = tk.Label(self.cv, text="①", font=FONT, bg=self.background)
         self.binder(lab2)
         lab2.place(x=EXPAND(50), y=EXPAND(HEIGHT//2+8))
         self.ent1 = tk.Entry(self.cv, font=FONT, width=12, justify=tk.RIGHT)
         self.ent1.insert(tk.END, self.color)
         self.binder(self.ent1)
         self.ent1.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent1))
-        self.ent1.place(x=EXPAND(100), y=EXPAND(HEIGHT//2+8))
+        self.ent1.place(x=EXPAND(70), y=EXPAND(HEIGHT//2+8))
 
     def save_data(self):
         self.color = self.ent1.get()
@@ -2995,7 +3107,7 @@ class GetPenColor(Widget):
 
 
 class GetFillColor(Widget):
-    TEXT = "GetFillColor  塗りつぶしの色ｃを取得する"
+    TEXT = "GetFillColor塗りつぶしの色を①に代入する"
     TYPE = "normalget"
     VALUES = {"color": "color"}
 
@@ -3015,14 +3127,14 @@ class GetFillColor(Widget):
 
     def draw(self):
         self.draw_cv()
-        lab2 = tk.Label(self.cv, text="c => ", font=FONT, bg=self.background)
+        lab2 = tk.Label(self.cv, text="①", font=FONT, bg=self.background)
         self.binder(lab2)
         lab2.place(x=EXPAND(50), y=EXPAND(HEIGHT//2+8))
         self.ent1 = tk.Entry(self.cv, font=FONT, width=12, justify=tk.RIGHT)
         self.ent1.insert(tk.END, self.color)
         self.binder(self.ent1)
         self.ent1.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent1))
-        self.ent1.place(x=EXPAND(100), y=EXPAND(HEIGHT//2+8))
+        self.ent1.place(x=EXPAND(70), y=EXPAND(HEIGHT//2+8))
 
     def save_data(self):
         self.color = self.ent1.get()
@@ -3034,7 +3146,7 @@ class GetFillColor(Widget):
 
 
 class GetBGColor(Widget):
-    TEXT = "GetBGColor    背景の色ｃを取得する"
+    TEXT = "GetBGColor  背景色を①に代入する"
     TYPE = "normalget"
     VALUES = {"color": "color"}
 
@@ -3054,14 +3166,14 @@ class GetBGColor(Widget):
 
     def draw(self):
         self.draw_cv()
-        lab2 = tk.Label(self.cv, text="c => ", font=FONT, bg=self.background)
+        lab2 = tk.Label(self.cv, text="①", font=FONT, bg=self.background)
         self.binder(lab2)
         lab2.place(x=EXPAND(50), y=EXPAND(HEIGHT//2+8))
         self.ent1 = tk.Entry(self.cv, font=FONT, width=12, justify=tk.RIGHT)
         self.ent1.insert(tk.END, self.color)
         self.binder(self.ent1)
         self.ent1.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent1))
-        self.ent1.place(x=EXPAND(100), y=EXPAND(HEIGHT//2+8))
+        self.ent1.place(x=EXPAND(70), y=EXPAND(HEIGHT//2+8))
 
     def save_data(self):
         self.color = self.ent1.get()
@@ -3073,7 +3185,7 @@ class GetBGColor(Widget):
 
 
 class BeginFill(Widget):
-    TEXT = "BeginFill     塗りつぶしを始める"
+    TEXT = "BeginFill   塗りつぶしを始める"
     TYPE = "normalset"
 
     def set_data(self, data):
@@ -3098,7 +3210,7 @@ class BeginFill(Widget):
 
 
 class EndFill(Widget):
-    TEXT = "EndFill       塗りつぶしを終える"
+    TEXT = "EndFill     塗りつぶしを終える"
     TYPE = "normalset"
 
     def set_data(self, data):
@@ -3122,8 +3234,47 @@ class EndFill(Widget):
         tur.end_fill()
 
 
+class Filling(Widget):
+    TEXT = "Filling     塗りつぶしするか①に代入する"
+    TYPE = "normalget"
+    VALUES = {"fill": "fill"}
+
+    def set_data(self, data):
+        if data is None:
+            self.fill = self.VALUES["fill"]
+        else:
+            if "fill" in data:
+                self.fill = data["fill"]
+            else:
+                self.fill = self.VALUES["fill"]
+        self.set_common(data)
+
+    def get_data(self, more=True):
+        self.save_data()
+        return self.get_class_data({"fill": self.fill}, more)
+
+    def draw(self):
+        self.draw_cv()
+        lab2 = tk.Label(self.cv, text="①", font=FONT, bg=self.background)
+        self.binder(lab2)
+        lab2.place(x=EXPAND(50), y=EXPAND(HEIGHT//2+8))
+        self.ent1 = tk.Entry(self.cv, font=FONT, width=12, justify=tk.RIGHT)
+        self.ent1.insert(tk.END, self.fill)
+        self.binder(self.ent1)
+        self.ent1.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent1))
+        self.ent1.place(x=EXPAND(70), y=EXPAND(HEIGHT//2+8))
+
+    def save_data(self):
+        self.fill = self.ent1.get()
+
+    def do(self, tur):
+        self.save_data()
+        fill = tur.filling()
+        self.p.variable_datas[self.fill] = (fill, "B")
+
+
 class ShowTurtle(Widget):
-    TEXT = "ShowTurtle    亀を表示にする"
+    TEXT = "ShowTurtle  カメを表示モードにする"
     TYPE = "normalset"
 
     def set_data(self, data):
@@ -3148,7 +3299,7 @@ class ShowTurtle(Widget):
 
 
 class HideTurtle(Widget):
-    TEXT = "HideTurtle    亀を非表示にする"
+    TEXT = "HideTurtle  カメを非表示モードにする"
     TYPE = "normalset"
 
     def set_data(self, data):
@@ -3172,8 +3323,47 @@ class HideTurtle(Widget):
         tur.hideturtle()
 
 
+class IsVisible(Widget):
+    TEXT = "IsVisible   表示モードか①に代入する"
+    TYPE = "normalget"
+    VALUES = {"shown": "shown"}
+
+    def set_data(self, data):
+        if data is None:
+            self.shown = self.VALUES["shown"]
+        else:
+            if "shown" in data:
+                self.shown = data["shown"]
+            else:
+                self.shown = self.VALUES["shown"]
+        self.set_common(data)
+
+    def get_data(self, more=True):
+        self.save_data()
+        return self.get_class_data({"shown": self.shown}, more)
+
+    def draw(self):
+        self.draw_cv()
+        lab2 = tk.Label(self.cv, text="①", font=FONT, bg=self.background)
+        self.binder(lab2)
+        lab2.place(x=EXPAND(50), y=EXPAND(HEIGHT//2+8))
+        self.ent1 = tk.Entry(self.cv, font=FONT, width=12, justify=tk.RIGHT)
+        self.ent1.insert(tk.END, self.shown)
+        self.binder(self.ent1)
+        self.ent1.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent1))
+        self.ent1.place(x=EXPAND(70), y=EXPAND(HEIGHT//2+8))
+
+    def save_data(self):
+        self.shown = self.ent1.get()
+
+    def do(self, tur):
+        self.save_data()
+        shown = tur.isvisible()
+        self.p.variable_datas[self.shown] = (shown, "B")
+
+
 class TurtleSize(Widget):
-    TEXT = "TurtleSize    亀の大きさをｓにする"
+    TEXT = "TurtleSize  亀の大きさを①にする"
     TYPE = "normalset"
     VALUES = {"size": "1"}
 
@@ -3193,14 +3383,14 @@ class TurtleSize(Widget):
 
     def draw(self):
         self.draw_cv()
-        lab2 = tk.Label(self.cv, text="s <= ", font=FONT, bg=self.background)
+        lab2 = tk.Label(self.cv, text="①", font=FONT, bg=self.background)
         self.binder(lab2)
         lab2.place(x=EXPAND(50), y=EXPAND(HEIGHT//2+8))
         self.ent1 = tk.Entry(self.cv, font=FONT, width=12, justify=tk.RIGHT)
         self.ent1.insert(tk.END, self.size)
         self.binder(self.ent1)
         self.ent1.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent1))
-        self.ent1.place(x=EXPAND(100), y=EXPAND(HEIGHT//2+8))
+        self.ent1.place(x=EXPAND(70), y=EXPAND(HEIGHT//2+8))
 
     def save_data(self):
         self.size = self.ent1.get()
@@ -3211,7 +3401,7 @@ class TurtleSize(Widget):
 
 
 class Write(Widget):
-    TEXT = "Write         サイズｓの文字列ｔを書く"
+    TEXT = "Write       文字列①を大きさ②で書く"
     TYPE = "normalset"
     VALUES = {
         "text": "Sample",
@@ -3279,22 +3469,22 @@ class Write(Widget):
 
     def draw(self):
         self.draw_cv()
-        lab2 = tk.Label(self.cv, text="t <= ", font=FONT, bg=self.background)
+        lab2 = tk.Label(self.cv, text="①", font=FONT, bg=self.background)
         self.binder(lab2)
         lab2.place(x=EXPAND(50), y=EXPAND(HEIGHT//2+8))
         self.ent1 = tk.Entry(self.cv, font=FONT, width=12, justify=tk.RIGHT)
         self.ent1.insert(tk.END, self.text)
         self.binder(self.ent1)
         self.ent1.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent1))
-        self.ent1.place(x=EXPAND(100), y=EXPAND(HEIGHT//2+8))
-        lab3 = tk.Label(self.cv, text=", s <= ", font=FONT, bg=self.background)
+        self.ent1.place(x=EXPAND(70), y=EXPAND(HEIGHT//2+8))
+        lab3 = tk.Label(self.cv, text="②", font=FONT, bg=self.background)
         self.binder(lab3)
-        lab3.place(x=EXPAND(230), y=EXPAND(HEIGHT//2+8))
+        lab3.place(x=EXPAND(200), y=EXPAND(HEIGHT//2+8))
         self.ent2 = tk.Entry(self.cv, font=FONT, width=12, justify=tk.RIGHT)
         self.ent2.insert(tk.END, self.size)
         self.binder(self.ent2)
         self.ent2.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent2))
-        self.ent2.place(x=EXPAND(300), y=EXPAND(HEIGHT//2+8))
+        self.ent2.place(x=EXPAND(220), y=EXPAND(HEIGHT//2+8))
 
     def show_option(self):
         # データを取得する
@@ -3396,7 +3586,7 @@ class Write(Widget):
 
 
 class Bye(Widget):
-    TEXT = "Bye           プログラムを終了する"
+    TEXT = "Bye         プログラムを終了する"
     TYPE = "normalset"
 
     def set_data(self, data):
@@ -3421,7 +3611,7 @@ class Bye(Widget):
 
 
 class ExitOnClick(Widget):
-    TEXT = "ExitOnClick   クリックで終了する"
+    TEXT = "ExitOnClick クリックで終了する"
     TYPE = "normalset"
 
     def set_data(self, data):
@@ -3449,7 +3639,7 @@ class ExitOnClick(Widget):
 
 
 class Bell(Widget):
-    TEXT = "Bell          システムサウンドを鳴らす"
+    TEXT = "Bell        システムサウンドを鳴らす"
     TYPE = "normalset"
 
     def set_data(self, data):
@@ -3474,7 +3664,7 @@ class Bell(Widget):
 
 
 class Sleep(Widget):
-    TEXT = "Sleep         操作をｄ秒停止する"
+    TEXT = "Sleep       操作を①秒停止する"
     TYPE = "normalset"
     VALUES = {"second": "0"}
 
@@ -3494,14 +3684,14 @@ class Sleep(Widget):
 
     def draw(self):
         self.draw_cv()
-        lab2 = tk.Label(self.cv, text="d <= ", font=FONT, bg=self.background)
+        lab2 = tk.Label(self.cv, text="①", font=FONT, bg=self.background)
         self.binder(lab2)
         lab2.place(x=EXPAND(50), y=EXPAND(HEIGHT//2+8))
         self.ent1 = tk.Entry(self.cv, font=FONT, width=12, justify=tk.RIGHT)
         self.ent1.insert(tk.END, self.second)
         self.binder(self.ent1)
         self.ent1.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent1))
-        self.ent1.place(x=EXPAND(100), y=EXPAND(HEIGHT//2+8))
+        self.ent1.place(x=EXPAND(70), y=EXPAND(HEIGHT//2+8))
 
     def save_data(self):
         self.second = self.ent1.get()
@@ -3512,7 +3702,7 @@ class Sleep(Widget):
 
 
 class Comment(Widget):
-    TEXT = "Comment       実行されないコメント文"
+    TEXT = "Comment     実行されないコメント文"
     TYPE = "comment"
     VALUES = {"comment": "Comment"}
 
@@ -3576,7 +3766,7 @@ class Comment(Widget):
 
 
 class Undefined(Widget):
-    TEXT = "Undefined     対応していない不明なクラス"
+    TEXT = "Undefined   対応していない不明なクラス"
     TYPE = "undefined"
 
     def set_data(self, data):
@@ -3628,13 +3818,14 @@ Widgets = (
     VarNumber, VarString, VarBoolean, Title, ScreenSize,
     Forward, Backward, Right, Left, GoTo,
     SetX, SetY, SetHeading, Home, Position,
-    XCor, YCor, Heading, Circle,
-    Dot, Stamp, Speed, PenDown, PenUp, PenSize,
+    ToWards, XCor, YCor, Heading, Circle,
+    Dot, Stamp, Speed, PenDown, PenUp, IsDown, PenSize,
     Color, PenColor, FillColor, BGColor,
     GetPenColor, GetFillColor, GetBGColor,
-    BeginFill, EndFill, ShowTurtle, HideTurtle,
-    TurtleSize, Write, Bye, ExitOnClick, Bell,
-    Sleep, Comment)
+    BeginFill, EndFill, Filling,
+    ShowTurtle, HideTurtle, IsVisible,
+    TurtleSize, Write, Bye, ExitOnClick,
+    Bell, Sleep, Comment)
 Texts = tuple([c.TEXT for c in Widgets])
 Names = tuple([c.__name__ for c in Widgets])
 
