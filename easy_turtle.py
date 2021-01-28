@@ -170,7 +170,7 @@ def EXPAND(num): return int(round(num * WIN_MAG))
 
 FONT = (FONT_TYPE1, EXPAND(12), "bold")
 
-__version__ = (5, 1, 1)
+__version__ = (5, 2, "0a1")
 
 
 class EasyTurtle:
@@ -1108,9 +1108,7 @@ class Widget:
         self.item_id = -1
         self.p = parent
 
-        if self.TYPE == "default":
-            self.background = "#F7F787"
-        elif self.TYPE == "variable":
+        if self.TYPE == "variable":
             self.background = "#F7C7A7"
         elif self.TYPE == "normalset":
             self.background = "#B7E7F7"
@@ -1418,7 +1416,7 @@ class Widget:
                                 command=lambda: self.paste_entry(entry))
         self.p.menu.post(event.x_root, event.y_root)
 
-    def stos(self, string):
+    def stostr(self, string):
         """変数を埋め込み"""
         for var in re.findall(r'\[\w*\]', string):
             name = var[1:-1] if len(var) > 2 else ""
@@ -1439,7 +1437,7 @@ line: {self.p.widgets.index(self)+1}, {self.__class__.__name__}\n\
                     var, str(self.p.variable_datas[name][0]))
         return string
 
-    def stob(self, string):
+    def stobool(self, string):
         """変数を埋め込み"""
         match = re.fullmatch(r'\[\w*\]', string)
         if match is not None:
@@ -1521,7 +1519,7 @@ line: {self.p.widgets.index(self)+1}, {self.__class__.__name__}\n\
                 string += str(float(form))
         return float(eval(string))
 
-    def stof(self, string):
+    def stofloat(self, string):
         """文字列を小数に変換"""
         try:
             return self.calculator(string)
@@ -1532,9 +1530,36 @@ line: {self.p.widgets.index(self)+1}, {self.__class__.__name__}\n\
             traceback.print_exc()
             return 0
 
-    def stoi(self, string):
+    def stoint(self, string):
         """文字列を整数に変換"""
-        return int(self.stof(string))
+        num = self.stofloat(string)
+        if float(num).is_integer() is not True:
+            messagebox.showwarning("警告", f'\
+line: {self.p.widgets.index(self)+1}, {self.__class__.__name__}\n\
+値は整数でなければなりません。')
+        return int(round(num))
+
+    def stouint(self, string):
+        """文字列を符号なし整数に変換"""
+        num = self.stoint(string)
+        if num < 0:
+            messagebox.showerror("エラー", f'\
+line: {self.p.widgets.index(self)+1}, {self.__class__.__name__}\n\
+値は正の整数でなければなりません。')
+            return 0
+        else:
+            return num
+
+    def stoufloat(self, string):
+        """文字列を符号なし小数に変換"""
+        num = self.stofloat(string)
+        if num < 0:
+            messagebox.showerror("エラー", f'\
+line: {self.p.widgets.index(self)+1}, {self.__class__.__name__}\n\
+値は正の小数でなければなりません。')
+            return 0
+        else:
+            return num
 
 
 class VarNumber(Widget):
@@ -1588,7 +1613,7 @@ class VarNumber(Widget):
 
     def do(self, tur):
         self.save_data()
-        self.p.variable_datas[self.name] = (self.stof(self.value), "N")
+        self.p.variable_datas[self.name] = (self.stofloat(self.value), "N")
 
 
 class VarString(Widget):
@@ -1642,7 +1667,7 @@ class VarString(Widget):
 
     def do(self, tur):
         self.save_data()
-        self.p.variable_datas[self.name] = (self.stos(self.value), "S")
+        self.p.variable_datas[self.name] = (self.stostr(self.value), "S")
 
 
 class VarBoolean(Widget):
@@ -1698,12 +1723,12 @@ class VarBoolean(Widget):
 
     def do(self, tur):
         self.save_data()
-        self.p.variable_datas[self.name] = (self.stob(self.value), "B")
+        self.p.variable_datas[self.name] = (self.stobool(self.value), "B")
 
 
 class Title(Widget):
     TEXT = "Title         画面タイトルをｔにする"
-    TYPE = "default"
+    TYPE = "normalset"
     VALUES = {"title": "Turtle"}
 
     def set_data(self, data):
@@ -1736,12 +1761,12 @@ class Title(Widget):
 
     def do(self, tur):
         self.save_data()
-        self.p.win.title(self.stos(self.title))
+        self.p.win.title(self.stostr(self.title))
 
 
 class ScreenSize(Widget):
     TEXT = "ScreenSize    画面サイズをｗｘｈにする"
-    TYPE = "default"
+    TYPE = "normalset"
     VALUES = {"width": "600", "height": "600"}
 
     def set_data(self, data):
@@ -1793,8 +1818,8 @@ class ScreenSize(Widget):
         self.save_data()
 
         # 画面サイズを取得
-        width = self.stoi(self.width)
-        height = self.stoi(self.height)
+        width = self.stouint(self.width)
+        height = self.stouint(self.height)
 
         # 警告を表示
         if width > SYSTEM_WIDTH:
@@ -1869,7 +1894,7 @@ class Forward(Widget):
 
     def do(self, tur):
         self.save_data()
-        tur.forward(self.stoi(self.distance))
+        tur.forward(self.stoint(self.distance))
 
 
 class Backward(Widget):
@@ -1907,7 +1932,7 @@ class Backward(Widget):
 
     def do(self, tur):
         self.save_data()
-        tur.backward(self.stoi(self.distance))
+        tur.backward(self.stoint(self.distance))
 
 
 class Right(Widget):
@@ -1945,7 +1970,7 @@ class Right(Widget):
 
     def do(self, tur):
         self.save_data()
-        tur.right(self.stoi(self.angle))
+        tur.right(self.stoint(self.angle))
 
 
 class Left(Widget):
@@ -1983,7 +2008,7 @@ class Left(Widget):
 
     def do(self, tur):
         self.save_data()
-        tur.left(self.stoi(self.angle))
+        tur.left(self.stoint(self.angle))
 
 
 class GoTo(Widget):
@@ -2036,8 +2061,8 @@ class GoTo(Widget):
     def do(self, tur):
         self.save_data()
         tur.goto(
-            self.stoi(self.x) + self.p.runner_size[0] // 2,
-            self.stoi(self.y) - self.p.runner_size[1] // 2)
+            self.stoint(self.x) + self.p.runner_size[0] // 2,
+            self.stoint(self.y) - self.p.runner_size[1] // 2)
 
 
 class SetX(Widget):
@@ -2075,7 +2100,7 @@ class SetX(Widget):
 
     def do(self, tur):
         self.save_data()
-        tur.setx(self.stoi(self.x) + self.p.runner_size[0] // 2)
+        tur.setx(self.stoint(self.x) + self.p.runner_size[0] // 2)
 
 
 class SetY(Widget):
@@ -2113,7 +2138,7 @@ class SetY(Widget):
 
     def do(self, tur):
         self.save_data()
-        tur.sety(self.stoi(self.y) - self.p.runner_size[1] // 2)
+        tur.sety(self.stoint(self.y) - self.p.runner_size[1] // 2)
 
 
 class SetHeading(Widget):
@@ -2151,7 +2176,7 @@ class SetHeading(Widget):
 
     def do(self, tur):
         self.save_data()
-        tur.setheading(self.stoi(self.angle))
+        tur.setheading(self.stoint(self.angle))
 
 
 class Home(Widget):
@@ -2406,8 +2431,8 @@ class Circle(Widget):
     def do(self, tur):
         self.save_data()
         tur.circle(
-            self.stoi(self.radius),
-            self.stoi(self.extent))
+            self.stoint(self.radius),
+            self.stoint(self.extent))
 
 
 class Dot(Widget):
@@ -2445,7 +2470,7 @@ class Dot(Widget):
 
     def do(self, tur):
         self.save_data()
-        tur.dot(self.stoi(self.size))
+        tur.dot(self.stouint(self.size))
 
 
 class Stamp(Widget):
@@ -2508,7 +2533,7 @@ class Speed(Widget):
 
     def do(self, tur):
         self.save_data()
-        self.p.runner_speed = self.stoi(self.speed)
+        self.p.runner_speed = self.stoint(self.speed)
         tur.speed(self.p.runner_speed)
 
 
@@ -2599,7 +2624,7 @@ class PenSize(Widget):
 
     def do(self, tur):
         self.save_data()
-        tur.pensize(self.stoi(self.width))
+        tur.pensize(self.stouint(self.width))
 
 
 class Color(Widget):
@@ -2644,7 +2669,7 @@ class Color(Widget):
                 text = text[:-1]
             elif repr(event.char)[1] != "\\":
                 text += repr(event.char)[1:-1]
-        color = self.stos(text)
+        color = self.stostr(text)
         if color == "":
             color = "white"
         self.cv.delete("highlight")
@@ -2663,7 +2688,7 @@ class Color(Widget):
         color = self.ent1.get()
         try:
             color = colorchooser.askcolor(
-                color=self.stos(color), parent=self.p.root)
+                color=self.stostr(color), parent=self.p.root)
         except tk.TclError:
             color = colorchooser.askcolor(parent=self.p.root)
         if color != (None, None):
@@ -2677,7 +2702,7 @@ class Color(Widget):
     def do(self, tur):
         self.save_data()
         try:
-            tur.color(self.stos(self.color))
+            tur.color(self.stostr(self.color))
         except turtle.TurtleGraphicsError:
             messagebox.showerror("エラー", f'\
 line: {self.p.widgets.index(self)+1}, {self.__class__.__name__}\n\
@@ -2726,7 +2751,7 @@ class PenColor(Widget):
                 text = text[:-1]
             elif repr(event.char)[1] != "\\":
                 text += repr(event.char)[1:-1]
-        color = self.stos(text)
+        color = self.stostr(text)
         if color == "":
             color = "white"
         self.cv.delete("highlight")
@@ -2745,7 +2770,7 @@ class PenColor(Widget):
         color = self.ent1.get()
         try:
             color = colorchooser.askcolor(
-                color=self.stos(color), parent=self.p.root)
+                color=self.stostr(color), parent=self.p.root)
         except tk.TclError:
             color = colorchooser.askcolor(parent=self.p.root)
         if color != (None, None):
@@ -2759,7 +2784,7 @@ class PenColor(Widget):
     def do(self, tur):
         self.save_data()
         try:
-            tur.pencolor(self.stos(self.color))
+            tur.pencolor(self.stostr(self.color))
         except turtle.TurtleGraphicsError:
             messagebox.showerror("エラー", f'\
 line: {self.p.widgets.index(self)+1}, {self.__class__.__name__}\n\
@@ -2808,7 +2833,7 @@ class FillColor(Widget):
                 text = text[:-1]
             elif repr(event.char)[1] != "\\":
                 text += repr(event.char)[1:-1]
-        color = self.stos(text)
+        color = self.stostr(text)
         if color == "":
             color = "white"
         self.cv.delete("highlight")
@@ -2827,7 +2852,7 @@ class FillColor(Widget):
         color = self.ent1.get()
         try:
             color = colorchooser.askcolor(
-                color=self.stos(color), parent=self.p.root)
+                color=self.stostr(color), parent=self.p.root)
         except tk.TclError:
             color = colorchooser.askcolor(parent=self.p.root)
         if color != (None, None):
@@ -2841,7 +2866,7 @@ class FillColor(Widget):
     def do(self, tur):
         self.save_data()
         try:
-            tur.fillcolor(self.stos(self.color))
+            tur.fillcolor(self.stostr(self.color))
         except turtle.TurtleGraphicsError:
             messagebox.showerror("エラー", f'\
 line: {self.p.widgets.index(self)+1}, {self.__class__.__name__}\n\
@@ -2890,7 +2915,7 @@ class BGColor(Widget):
                 text = text[:-1]
             elif repr(event.char)[1] != "\\":
                 text += repr(event.char)[1:-1]
-        color = self.stos(text)
+        color = self.stostr(text)
         if color == "":
             color = "white"
         self.cv.delete("highlight")
@@ -2909,7 +2934,7 @@ class BGColor(Widget):
         color = self.ent1.get()
         try:
             color = colorchooser.askcolor(
-                color=self.stos(color), parent=self.p.root)
+                color=self.stostr(color), parent=self.p.root)
         except tk.TclError:
             color = colorchooser.askcolor(parent=self.p.root)
         if color != (None, None):
@@ -2923,7 +2948,7 @@ class BGColor(Widget):
     def do(self, tur):
         self.save_data()
         try:
-            tur.getscreen().bgcolor(self.stos(self.color))
+            tur.getscreen().bgcolor(self.stostr(self.color))
         except turtle.TurtleGraphicsError:
             messagebox.showerror("エラー", f'\
 line: {self.p.widgets.index(self)+1}, {self.__class__.__name__}\n\
@@ -3182,7 +3207,7 @@ class TurtleSize(Widget):
 
     def do(self, tur):
         self.save_data()
-        tur.turtlesize(self.stoi(self.size))
+        tur.turtlesize(self.stoint(self.size))
 
 
 class Write(Widget):
@@ -3360,52 +3385,14 @@ class Write(Widget):
     def do(self, tur):
         self.save_data()
         tur.write(
-            self.stos(self.text),
-            move=self.stob(self.move),
-            align=self.stos(self.align),
+            self.stostr(self.text),
+            move=self.stobool(self.move),
+            align=self.stostr(self.align),
             font=(
-                self.stos(self.family),
-                self.stoi(self.size),
-                self.stos(self.weight),
-                self.stos(self.slant)))
-
-
-class Sleep(Widget):
-    TEXT = "Sleep         操作をｄ秒停止する"
-    TYPE = "normalset"
-    VALUES = {"second": "0"}
-
-    def set_data(self, data):
-        if data is None:
-            self.second = self.VALUES["second"]
-        else:
-            if "second" in data:
-                self.second = data["second"]
-            else:
-                self.second = self.VALUES["second"]
-        self.set_common(data)
-
-    def get_data(self, more=True):
-        self.save_data()
-        return self.get_class_data({"second": self.second}, more)
-
-    def draw(self):
-        self.draw_cv()
-        lab2 = tk.Label(self.cv, text="d <= ", font=FONT, bg=self.background)
-        self.binder(lab2)
-        lab2.place(x=EXPAND(50), y=EXPAND(HEIGHT//2+8))
-        self.ent1 = tk.Entry(self.cv, font=FONT, width=12, justify=tk.RIGHT)
-        self.ent1.insert(tk.END, self.second)
-        self.binder(self.ent1)
-        self.ent1.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent1))
-        self.ent1.place(x=EXPAND(100), y=EXPAND(HEIGHT//2+8))
-
-    def save_data(self):
-        self.second = self.ent1.get()
-
-    def do(self, tur):
-        self.save_data()
-        time.sleep(self.stof(self.second))
+                self.stostr(self.family),
+                self.stoint(self.size),
+                self.stostr(self.weight),
+                self.stostr(self.slant)))
 
 
 class Bye(Widget):
@@ -3484,6 +3471,44 @@ class Bell(Widget):
     def do(self, tur):
         self.save_data()
         self.p.win.bell()
+
+
+class Sleep(Widget):
+    TEXT = "Sleep         操作をｄ秒停止する"
+    TYPE = "normalset"
+    VALUES = {"second": "0"}
+
+    def set_data(self, data):
+        if data is None:
+            self.second = self.VALUES["second"]
+        else:
+            if "second" in data:
+                self.second = data["second"]
+            else:
+                self.second = self.VALUES["second"]
+        self.set_common(data)
+
+    def get_data(self, more=True):
+        self.save_data()
+        return self.get_class_data({"second": self.second}, more)
+
+    def draw(self):
+        self.draw_cv()
+        lab2 = tk.Label(self.cv, text="d <= ", font=FONT, bg=self.background)
+        self.binder(lab2)
+        lab2.place(x=EXPAND(50), y=EXPAND(HEIGHT//2+8))
+        self.ent1 = tk.Entry(self.cv, font=FONT, width=12, justify=tk.RIGHT)
+        self.ent1.insert(tk.END, self.second)
+        self.binder(self.ent1)
+        self.ent1.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent1))
+        self.ent1.place(x=EXPAND(100), y=EXPAND(HEIGHT//2+8))
+
+    def save_data(self):
+        self.second = self.ent1.get()
+
+    def do(self, tur):
+        self.save_data()
+        time.sleep(self.stoufloat(self.second))
 
 
 class Comment(Widget):
@@ -3608,8 +3633,8 @@ Widgets = (
     Color, PenColor, FillColor, BGColor,
     GetPenColor, GetFillColor, GetBGColor,
     BeginFill, EndFill, ShowTurtle, HideTurtle,
-    TurtleSize, Write, Sleep, Bye, ExitOnClick,
-    Bell, Comment)
+    TurtleSize, Write, Bye, ExitOnClick, Bell,
+    Sleep, Comment)
 Texts = tuple([c.TEXT for c in Widgets])
 Names = tuple([c.__name__ for c in Widgets])
 
