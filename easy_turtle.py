@@ -170,7 +170,7 @@ def EXPAND(num): return int(round(num * WIN_MAG))
 
 FONT = (FONT_TYPE1, EXPAND(12), "bold")
 
-__version__ = (5, 2, "0b1")
+__version__ = (5, 2, 0)
 
 
 class EasyTurtle:
@@ -238,7 +238,6 @@ GNU FreeFontのインストールをおすすめします。")
         lab5.pack(side=tk.RIGHT, anchor=tk.NW,
                   padx=EXPAND(20), pady=(0, EXPAND(10)))
         self.win.resizable(0, 0)
-        self.win.mainloop()
 
     def edit_config(self, event):
         """設定を編集"""
@@ -297,7 +296,6 @@ GNU FreeFontのインストールをおすすめします。")
                         font=(FONT_TYPE1, EXPAND(10), "bold"), fg="red")
         lab1.pack(padx=EXPAND(20), pady=(0, EXPAND(10)))
         self.win.resizable(0, 0)
-        self.win.mainloop()
 
     def decide_config(self):
         """設定を決定"""
@@ -884,7 +882,7 @@ line: {index+1}, {widget.__class__.__name__}\n\
                             text=f"お使いのバージョン：{old_joined_version}")
             lab2.pack(anchor=tk.NW, padx=EXPAND(20), pady=(0, EXPAND(10)))
             lab3 = tk.Label(self.win, font=FONT,
-                            text=f"最新のバージョン  ：{new_joined_version}")
+                            text=f"最新のバージョン　：{new_joined_version}")
             lab3.pack(anchor=tk.NW, padx=EXPAND(20), pady=(0, EXPAND(10)))
             lab4 = tk.Label(self.win, font=FONT,
                             text="下記サイトよりダウンロードしてください")
@@ -895,7 +893,6 @@ line: {index+1}, {widget.__class__.__name__}\n\
             lab5.bind("<Button-1>", self.show_release)
             lab5.pack(anchor=tk.NW, padx=EXPAND(20), pady=(0, EXPAND(10)))
             self.win.resizable(0, 0)
-            self.win.mainloop()
 
     def check_update(self, event):
         "アップデートを確認"
@@ -934,7 +931,6 @@ line: {index+1}, {widget.__class__.__name__}\n\
             lab5.bind("<Button-1>", self.show_release)
             lab5.pack(anchor=tk.NW, padx=EXPAND(20), pady=(0, EXPAND(10)))
             self.win2.resizable(0, 0)
-            self.win2.mainloop()
         else:
             messagebox.showinfo("アップデート", f"\
 バージョン：{old_joined_version}\n\
@@ -1259,10 +1255,6 @@ class Widget:
         if hasattr(self, "show_option") is True:
             self.p.menu.add_separator()
             self.p.menu.add_command(label=' Option', command=self.show_option)
-
-        if self.TYPE == "undefined":
-            self.p.menu.add_separator()
-            self.p.menu.add_command(label=' Details', command=self.details)
 
         self.p.menu.add_separator()
         if (self.TYPE == "undefined") or (self.TYPE == "comment"):
@@ -3822,7 +3814,6 @@ class Comment(Widget):
                          command=self.decide_option)
         but1.pack(padx=EXPAND(36), pady=EXPAND(20))
         self.win.resizable(0, 0)
-        self.win.mainloop()
 
     def decide_option(self):
         self.comment = self.scr1.get("0.0", tk.END)[:-1]
@@ -3861,12 +3852,12 @@ class Undefined(Widget):
         self.binder(lab2)
         lab2.place(x=EXPAND(50), y=EXPAND(HEIGHT//2+8))
 
-    def details(self):
+    def show_option(self):
         self.win = tk.Toplevel(self.p.root)
         self.win.tk.call('wm', 'iconphoto', self.win._w, self.p.icon)
         self.win.wait_visibility()
         self.win.grab_set()
-        lab1 = tk.Label(self.win, text="Details",
+        lab1 = tk.Label(self.win, text="Option",
                         font=(FONT_TYPE2, EXPAND(30), "bold"))
         lab1.pack(padx=20, pady=20)
         data = self.get_class_data(self.data, CONFIG["save_more_info"])
@@ -3878,7 +3869,6 @@ class Undefined(Widget):
         scr1.insert("0.0", text)
         scr1.config(state="disabled")
         self.win.resizable(0, 0)
-        self.win.mainloop()
 
     def save_data(self):
         pass
@@ -3902,6 +3892,7 @@ Widgets = (
     Bell, Sleep, Comment)
 Texts = tuple([c.TEXT for c in Widgets])
 Names = tuple([c.__name__ for c in Widgets])
+
 
 # 実行
 if __name__ == "__main__":
