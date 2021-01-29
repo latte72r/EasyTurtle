@@ -64,12 +64,71 @@
                     <h3>ウィジェットを変更する</h3>
                     <p>ウィジェットを右クリックすることでメニューが表示されます。</p>
                     <p><img src="./Photos/photo13.png" alt="photo" width="400" height="200"></p>
+                    <table border="1">
+                    <thead>
+                        <tr>
+                            <th>　　名称　　</th>
+                            <th>　　　　　　　　説明　　　　　　　　</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Top</td>
+                            <td>ウィジェットを一番上に移動する</td>
+                        </tr>
+                        <tr>
+                            <td>Bottom</td>
+                            <td>ウィジェットを一番下に移動する</td>
+                        </tr>
+                        <tr>
+                            <td>Up</td>
+                            <td>ウィジェットを一個上に移動する</td>
+                        </tr>
+                        <tr>
+                            <td>Down</td>
+                            <td>ウィジェットを一個下に移動する</td>
+                        </tr>
+                        <tr>
+                            <td>Copy</td>
+                            <td>ウィジェットをコピーする</td>
+                        </tr>
+                        <tr>
+                            <td>Cut</td>
+                            <td>ウィジェットをカットする</td>
+                        </tr>
+                        <tr>
+                            <td>Delete</td>
+                            <td>ウィジェットを削除する</td>
+                        </tr>
+                        <tr>
+                            <td>Option</td>
+                            <td>オプションを表示する　　　　　　※１</td>
+                        </tr>
+                        <tr>
+                            <td>Enable</td>
+                            <td>ウィジェットを有効化する　　　　※２</td>
+                        </tr>
+                        <tr>
+                            <td>Disable</td>
+                            <td>ウィジェットを無効化する　　　　※２</td>
+                        </tr>
+                        <tr>
+                            <td>⇧Paste⇧</td>
+                            <td>ウィジェットを上にペーストする　※３</td>
+                        </tr>
+                        <tr>
+                            <td>⇩Paste⇩</td>
+                            <td>ウィジェットを下にペーストする　※３</td>
+                        </tr>
+                    </tbody>
+                    </table>
                     <p>※注：WriteウィジェットやColorウィジェットにはオプションもついています。</p>
-                    <h3>コピー＆ペースト</h3>
-                    <h4>複数のウィジェットのコピー</h4>
+                    <h3>複数ウィジェットのコピーとペースト</h3>
+                    <h4>コピー</h4>
                     <p>Copy Selectedを押すことでコピーすることができます。</p>
-                    <h4>複数のウィジェットのペースト</h4>
+                    <h4>ペースト</h4>
                     <p>Paste Widgetsを押すことで左側のリストにコピーしたウィジェットを追加できます。</p>
+                    <h3>
                     <h3>実行する</h3>
                     <p>Run Programを押すと新しいウィンドウが作られ実行されます。</p>
                     <p><img src="./Photos/photo3.png" alt="photo" width="400" height="200"></p>
@@ -87,276 +146,263 @@
             <div>
                 <article>
                     <table border="1">
-                        <thead>
-                            <tr>
-                                <th>　　ウィジェット　　</th>
-                                <th>　　　　説明　　　　</th>
-                                <th>　　ドキュメント　　</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td>VarNumber</td>
-                                <td>変数ｎを数値ｖにする</td>
-                                <td>オリジナル</td>
-                            </tr>
-                            <tr>
-                                <td>VarString</td>
-                                <td>変数ｎを文字列ｖにする</td>
-                                <td>オリジナル</td>
-                            </tr>
-                            <tr>
-                                <td>VarBoolean</td>
-                                <td>変数ｎを真偽値ｖにする</td>
-                                <td>オリジナル</td>
-                            </tr>
-                            <tr>
-                                <td>Title</td>
-                                <td>画面タイトルをｔにする</td>
-                                <td><a href="https://docs.python.org/ja/3/library/turtle.html#turtle.title">turtle.title</a>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>ScreenSize</td>
-                                <td>画面サイズをｗ✕ｈにする</td>
-                                <td><a href="https://docs.python.org/ja/3/library/turtle.html#turtle.screensize">turtle.screensize</a>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>Forward</td>
-                                <td>前方向にｄ移動する</td>
-                                <td><a href="https://docs.python.org/ja/3/library/turtle.html#turtle.forward">turtle.forward</a>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>Backward</td>
-                                <td>後方向にｄ移動する</td>
-                                <td><a href="https://docs.python.org/ja/3/library/turtle.html#turtle.backward">turtle.backward</a>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>Right</td>
-                                <td>右方向にａ度曲げる</td>
-                                <td><a href="https://docs.python.org/ja/3/library/turtle.html#turtle.right">turtle.right</a>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>Left</td>
-                                <td>左方向にａ度曲げる</td>
-                                <td><a href="https://docs.python.org/ja/3/library/turtle.html#turtle.left">turtle.left</a>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>GoTo</td>
-                                <td>座標ｘ，ｙに移動する</td>
-                                <td><a href="https://docs.python.org/ja/3/library/turtle.html#turtle.goto">turtle.goto</a>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>SetX</td>
-                                <td>座標ｘに移動する</td>
-                                <td><a href="https://docs.python.org/ja/3/library/turtle.html#turtle.setx">turtle.setx</a>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>SetY</td>
-                                <td>座標ｙに移動する</td>
-                                <td><a href="https://docs.python.org/ja/3/library/turtle.html#turtle.sety">turtle.sety</a>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>SetHeading</td>
-                                <td>角度をａ度に変更する</td>
-                                <td><a href="https://docs.python.org/ja/3/library/turtle.html#turtle.setheading">turtle.setheading</a>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>Home</td>
-                                <td>初期座標・角度に戻る</td>
-                                <td><a href="https://docs.python.org/ja/3/library/turtle.html#turtle.home">turtle.home</a>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>Position</td>
-                                <td>座標ｘ，ｙを取得する</td>
-                                <td><a href="https://docs.python.org/ja/3/library/turtle.html#turtle.position">turtle.position</a>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>XCor</td>
-                                <td>座標ｘを取得する</td>
-                                <td><a href="https://docs.python.org/ja/3/library/turtle.html#turtle.xcor">turtle.xcor</a>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>YCor</td>
-                                <td>座標ｙを取得する</td>
-                                <td><a href="https://docs.python.org/ja/3/library/turtle.html#turtle.ycor">turtle.ycor</a>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>Heading</td>
-                                <td>角度ａを取得する</td>
-                                <td><a href="https://docs.python.org/ja/3/library/turtle.html#turtle.heading">turtle.heading</a>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>Circle</td>
-                                <td>半径ｒの円をｅ度描く</td>
-                                <td><a href="https://docs.python.org/ja/3/library/turtle.html#turtle.circle">turtle.circle</a>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>Dot</td>
-                                <td>直径ｒの円を描く</td>
-                                <td><a href="https://docs.python.org/ja/3/library/turtle.html#turtle.dot">turtle.dot</a>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>Stamp</td>
-                                <td>亀のスタンプを押す</td>
-                                <td><a href="https://docs.python.org/ja/3/library/turtle.html#turtle.stamp">turtle.stamp</a>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>Speed</td>
-                                <td>速度ｓに変更する</td>
-                                <td><a href="https://docs.python.org/ja/3/library/turtle.html#turtle.speed">turtle.speed</a>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>PenDown</td>
-                                <td>動いた線を引く</td>
-                                <td><a href="https://docs.python.org/ja/3/library/turtle.html#turtle.pendown">turtle.pendown</a>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>PenUp</td>
-                                <td>動いた線を引かない</td>
-                                <td><a href="https://docs.python.org/ja/3/library/turtle.html#turtle.penup">turtle.penup</a>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>PenSize</td>
-                                <td>先の太さをｗにする</td>
-                                <td><a href="https://docs.python.org/ja/3/library/turtle.html#turtle.pensize">turtle.pensize</a>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>Color</td>
-                                <td>色をｃに変更する</td>
-                                <td><a href="https://docs.python.org/ja/3/library/turtle.html#turtle.color">turtle.color</a>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>PenColor</td>
-                                <td>ペンの色をｃに変更する</td>
-                                <td><a href="https://docs.python.org/ja/3/library/turtle.html#turtle.pencolor">turtle.pencolor</a>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>FillColor</td>
-                                <td>塗りつぶしの色をｃに変更する</td>
-                                <td><a href="https://docs.python.org/ja/3/library/turtle.html#turtle.fillcolor">turtle.fillcolor</a>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>BGColor</td>
-                                <td>背景の色をｃに変更する</td>
-                                <td><a href="https://docs.python.org/ja/3/library/turtle.html#turtle.bgcolor">turtle.bgcolor</a>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>GetPenColor</td>
-                                <td>ペンの色ｃを取得する</td>
-                                <td><a href="https://docs.python.org/ja/3/library/turtle.html#turtle.pencolor">turtle.pencolor</a>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>GetFillColor</td>
-                                <td>塗りつぶしの色ｃを取得する</td>
-                                <td><a href="https://docs.python.org/ja/3/library/turtle.html#turtle.fillcolor">turtle.fillcolor</a>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>GetBGColor</td>
-                                <td>背景の色ｃを取得する</td>
-                                <td><a href="https://docs.python.org/ja/3/library/turtle.html#turtle.bgcolor">turtle.bgcolor</a>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>BeginFill</td>
-                                <td>塗りつぶしを始める</td>
-                                <td><a href="https://docs.python.org/ja/3/library/turtle.html#turtle.begin_fill">turtle.begin_fill</a>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>EndFill</td>
-                                <td>塗りつぶしを終える</td>
-                                <td><a href="https://docs.python.org/ja/3/library/turtle.html#turtle.end_fill">turtle.end_fill</a>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>ShowTurtle</td>
-                                <td>亀を表示にする</td>
-                                <td><a href="https://docs.python.org/ja/3/library/turtle.html#turtle.showturtle">turtle.showturtle</a>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>HideTurtle</td>
-                                <td>亀を非表示にする</td>
-                                <td><a href="https://docs.python.org/ja/3/library/turtle.html#turtle.hideturtle">turtle.hideturtle</a>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>TurtleSize</td>
-                                <td>亀の大きさをｓにする</td>
-                                <td><a href="https://docs.python.org/ja/3/library/turtle.html#turtle.turtlesize">turtle.turtlesize</a>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>Write</td>
-                                <td>サイズｓの文字列ｔを書く</td>
-                                <td><a href="https://docs.python.org/ja/3/library/turtle.html#turtle.write">turtle.write</a>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>Sleep</td>
-                                <td>操作をｄ秒停止する</td>
-                                <td><a href="https://docs.python.org/ja/3/library/time.html#time.sleep">time.sleep</a></td>
-                            </tr>
-                            <tr>
-                                <td>Bye</td>
-                                <td>プログラムを終了する</td>
-                                <td><a href="https://docs.python.org/ja/3/library/turtle.html#turtle.bye">turtle.bye</a>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>ExitOnClick</td>
-                                <td>クリックで終了する</td>
-                                <td><a href="https://docs.python.org/ja/3/library/turtle.html#turtle.exitonclick">turtle.exitonclick</a>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>Bell</td>
-                                <td>システムサウンドを鳴らす</td>
-                                <td>オリジナル</a></td>
-                            </tr>
-                            <tr>
-                                <td>Comment　　※１</td>
-                                <td>実行されないコメント文</td>
-                                <td>オリジナル</td>
-                            </tr>
-                            <tr>
-                                <td>Undefined　　※２</td>
-                                <td>情報のない不明なクラス</td>
-                                <td>オリジナル</td>
-                            </tr>
-                        </tbody>
+                    <thead>
+                        <tr>
+                            <th>　　ウィジェット　　</th>
+                            <th>　　　　説明　　　　</th>
+                            <th>　　ドキュメント　　</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>VarNumber</td>
+                            <td>変数①を数値②にする</td>
+                            <td>オリジナル</td>
+                        </tr>
+                        <tr>
+                            <td>VarString</td>
+                            <td>変数①を文字列②にする</td>
+                            <td>オリジナル</td>
+                        </tr>
+                        <tr>
+                            <td>VarBoolean</td>
+                            <td>変数①を真理値②にする</td>
+                            <td>オリジナル</td>
+                        </tr>
+                        <tr>
+                            <td>Title</td>
+                            <td>画面タイトルを①にする</td>
+                            <td><a href="https://docs.python.org/ja/3/library/turtle.html#turtle.title">turtle.title</a></td>
+                        </tr>
+                        <tr>
+                            <td>ScreenSize</td>
+                            <td>画面を横幅①、高さ②にする</td>
+                            <td><a href="https://docs.python.org/ja/3/library/turtle.html#turtle.screensize">turtle.screensize</a></td>
+                        </tr>
+                        <tr>
+                            <td>Forward</td>
+                            <td>前方向に①移動する</td>
+                            <td><a href="https://docs.python.org/ja/3/library/turtle.html#turtle.forward">turtle.forward</a></td>
+                        </tr>
+                        <tr>
+                            <td>Backward</td>
+                            <td>後方向に①移動する</td>
+                            <td><a href="https://docs.python.org/ja/3/library/turtle.html#turtle.backward">turtle.backward</a></td>
+                        </tr>
+                        <tr>
+                            <td>Right</td>
+                            <td>右方向に①度曲げる</td>
+                            <td><a href="https://docs.python.org/ja/3/library/turtle.html#turtle.right">turtle.right</a></td>
+                        </tr>
+                        <tr>
+                            <td>Left</td>
+                            <td>左方向に①度曲げる</td>
+                            <td><a href="https://docs.python.org/ja/3/library/turtle.html#turtle.left">turtle.left</a></td>
+                        </tr>
+                        <tr>
+                            <td>GoTo</td>
+                            <td>ｘ座標①，ｙ座標②に移動する</td>
+                            <td><a href="https://docs.python.org/ja/3/library/turtle.html#turtle.goto">turtle.goto</a></td>
+                        </tr>
+                        <tr>
+                            <td>SetX</td>
+                            <td>ｘ座標①に移動する</td>
+                            <td><a href="https://docs.python.org/ja/3/library/turtle.html#turtle.setx">turtle.setx</a></td>
+                        </tr>
+                        <tr>
+                            <td>SetY</td>
+                            <td>ｙ座標①に移動する</td>
+                            <td><a href="https://docs.python.org/ja/3/library/turtle.html#turtle.sety">turtle.sety</a></td>
+                        </tr>
+                        <tr>
+                            <td>SetHeading</td>
+                            <td>向きを①度に変更する</td>
+                            <td><a href="https://docs.python.org/ja/3/library/turtle.html#turtle.setheading">turtle.setheading</a></td>
+                        </tr>
+                        <tr>
+                            <td>Home</td>
+                            <td>座標と角度を初期状態に戻す</td>
+                            <td><a href="https://docs.python.org/ja/3/library/turtle.html#turtle.home">turtle.home</a></td>
+                        </tr>
+                        <tr>
+                            <td>Position</td>
+                            <td>座標ｘを①、ｙを②に代入する</td>
+                            <td><a href="https://docs.python.org/ja/3/library/turtle.html#turtle.position">turtle.position</a></td>
+                        </tr>
+                        <tr>
+                            <td>ToWards</td>
+                            <td>ｘ①、ｙ②への角度を③に代入する</td>
+                            <td><a href="https://docs.python.org/ja/3/library/turtle.html#turtle.towards">turtle.towards</a></td>
+                        </tr>
+                        <tr>
+                            <td>XCor</td>
+                            <td>ｘ座標を①に代入する</td>
+                            <td><a href="https://docs.python.org/ja/3/library/turtle.html#turtle.xcor">turtle.xcor</a></td>
+                        </tr>
+                        <tr>
+                            <td>YCor</td>
+                            <td>ｙ座標を①に代入する</td>
+                            <td><a href="https://docs.python.org/ja/3/library/turtle.html#turtle.ycor">turtle.ycor</a></td>
+                        </tr>
+                        <tr>
+                            <td>Heading</td>
+                            <td>角度を①に代入する</td>
+                            <td><a href="https://docs.python.org/ja/3/library/turtle.html#turtle.heading">turtle.heading</a></td>
+                        </tr>
+                        <tr>
+                            <td>Distance</td>
+                            <td>ｘ①、ｙ②への距離を③に代入する</td>
+                            <td><a href="https://docs.python.org/ja/3/library/turtle.html#turtle.distance">turtle.distance</a></td>
+                        </tr>
+                        <tr>
+                            <td>Circle</td>
+                            <td>半径①の円を角度②度描く</td>
+                            <td><a href="https://docs.python.org/ja/3/library/turtle.html#turtle.circle">turtle.circle</a></td>
+                        </tr>
+                        <tr>
+                            <td>Dot</td>
+                            <td>直径①の円を描く</td>
+                            <td><a href="https://docs.python.org/ja/3/library/turtle.html#turtle.dot">turtle.dot</a></td>
+                        </tr>
+                        <tr>
+                            <td>Stamp</td>
+                            <td>亀のスタンプを押す</td>
+                            <td><a href="https://docs.python.org/ja/3/library/turtle.html#turtle.stamp">turtle.stamp</a></td>
+                        </tr>
+                        <tr>
+                            <td>Speed</td>
+                            <td>速度を①に変更する</td>
+                            <td><a href="https://docs.python.org/ja/3/library/turtle.html#turtle.speed">turtle.speed</a></td>
+                        </tr>
+                        <tr>
+                            <td>PenDown</td>
+                            <td>動いた線を引くようにする</td>
+                            <td><a href="https://docs.python.org/ja/3/library/turtle.html#turtle.pendown">turtle.pendown</a></td>
+                        </tr>
+                        <tr>
+                            <td>PenUp</td>
+                            <td>動いた線を引かなくする</td>
+                            <td><a href="https://docs.python.org/ja/3/library/turtle.html#turtle.penup">turtle.penup</a></td>
+                        </tr>
+                        <tr>
+                            <td>IsDown</td>
+                            <td>動いた線を引くか①に代入する</td>
+                            <td><a href="https://docs.python.org/ja/3/library/turtle.html#turtle.isdown">turtle.isdown</a></td>
+                        </tr>
+                        <tr>
+                            <td>PenSize</td>
+                            <td>ペン先の太さを①にする</td>
+                            <td><a href="https://docs.python.org/ja/3/library/turtle.html#turtle.pensize">turtle.pensize</a></td>
+                        </tr>
+                        <tr>
+                            <td>Color</td>
+                            <td>ペンと背景の色を①にする</td>
+                            <td><a href="https://docs.python.org/ja/3/library/turtle.html#turtle.color">turtle.color</a></td>
+                        </tr>
+                        <tr>
+                            <td>PenColor</td>
+                            <td>ペンの色を①にする</td>
+                            <td><a href="https://docs.python.org/ja/3/library/turtle.html#turtle.pencolor">turtle.pencolor</a></td>
+                        </tr>
+                        <tr>
+                            <td>FillColor</td>
+                            <td>塗りつぶしの色を①にする</td>
+                            <td><a href="https://docs.python.org/ja/3/library/turtle.html#turtle.fillcolor">turtle.fillcolor</a></td>
+                        </tr>
+                        <tr>
+                            <td>BGColor</td>
+                            <td>背景色を①に変更する</td>
+                            <td>オリジナル</td>
+                        </tr>
+                        <tr>
+                            <td>GetPenColor</td>
+                            <td>ペンの色を①に代入する</td>
+                            <td><a href="https://docs.python.org/ja/3/library/turtle.html#turtle.pencolor">turtle.pencolor</a></td>
+                        </tr>
+                        <tr>
+                            <td>GetFillColor</td>
+                            <td>塗りつぶしの色を①に代入する</td>
+                            <td><a href="https://docs.python.org/ja/3/library/turtle.html#turtle.fillcolor">turtle.fillcolor</a></td>
+                        </tr>
+                        <tr>
+                            <td>GetBGColor</td>
+                            <td>背景色を①に代入する</td>
+                            <td>オリジナル</td>
+                        </tr>
+                        <tr>
+                            <td>BeginFill</td>
+                            <td>塗りつぶしを始める</td>
+                            <td><a href="https://docs.python.org/ja/3/library/turtle.html#turtle.begin_fill">turtle.begin_fill</a></td>
+                        </tr>
+                        <tr>
+                            <td>EndFill</td>
+                            <td>塗りつぶしを終える</td>
+                            <td><a href="https://docs.python.org/ja/3/library/turtle.html#turtle.end_fill">turtle.end_fill</a></td>
+                        </tr>
+                        <tr>
+                            <td>Filling</td>
+                            <td>塗りつぶしするか①に代入する</td>
+                            <td><a href="https://docs.python.org/ja/3/library/turtle.html#turtle.filling">turtle.filling</a></td>
+                        </tr>
+                        <tr>
+                            <td>ShowTurtle</td>
+                            <td>カメを表示モードにする</td>
+                            <td><a href="https://docs.python.org/ja/3/library/turtle.html#turtle.showturtle">turtle.showturtle</a></td>
+                        </tr>
+                        <tr>
+                            <td>HideTurtle</td>
+                            <td>カメを非表示モードにする</td>
+                            <td><a href="https://docs.python.org/ja/3/library/turtle.html#turtle.hideturtle">turtle.hideturtle</a></td>
+                        </tr>
+                        <tr>
+                            <td>IsVisible</td>
+                            <td>表示モードか①に代入する</td>
+                            <td><a href="https://docs.python.org/ja/3/library/turtle.html#turtle.isvisible">turtle.isvisible</a></td>
+                        </tr>
+                        <tr>
+                            <td>TurtleSize</td>
+                            <td>亀の大きさを①にする</td>
+                            <td><a href="https://docs.python.org/ja/3/library/turtle.html#turtle.turtlesize">turtle.turtlesize</a></td>
+                        </tr>
+                        <tr>
+                            <td>Write</td>
+                            <td>文字列①を大きさ②で書く</td>
+                            <td><a href="https://docs.python.org/ja/3/library/turtle.html#turtle.write">turtle.write</a></td>
+                        </tr>
+                        <tr>
+                            <td>Bye</td>
+                            <td>プログラムを終了する</td>
+                            <td><a href="https://docs.python.org/ja/3/library/turtle.html#turtle.bye">turtle.bye</a></td>
+                        </tr>
+                        <tr>
+                            <td>ExitOnClick</td>
+                            <td>クリックで終了する</td>
+                            <td><a href="https://docs.python.org/ja/3/library/turtle.html#turtle.exitonclick">turtle.exitonclick</a></td>
+                        </tr>
+                        <tr>
+                            <td>Bell</td>
+                            <td>システムサウンドを鳴らす</td>
+                            <td>オリジナル</td>
+                        </tr>
+                        <tr>
+                            <td>Sleep</td>
+                            <td>操作を①秒停止する</td>
+                            <td><a href="https://docs.python.org/ja/3/library/time.html#time.sleep">time.sleep</a></td>
+                        </tr>
+                        <tr>
+                            <td>Comment　　※１</td>
+                            <td>実行されないコメント文</td>
+                            <td>オリジナル</td>
+                        </tr>
+                        <tr>
+                            <td>Undefined　　※２</td>
+                            <td>情報のない不明なクラス</td>
+                            <td>オリジナル</td>
+                        </tr>
+                    </tbody>
                     </table>
                     <p>※１：このウィジェットはコメント用です。</p>
                     <p>※２：このウィジェットが表示されたときにはJsonファイルが破損していないか確認してください。</p>
-                    <p>2020/12/16 v4.9 Ryo Fujinami.</p>
                 </article>
             </div>
         </section>
