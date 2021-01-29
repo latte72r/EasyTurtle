@@ -170,7 +170,7 @@ def EXPAND(num): return int(round(num * WIN_MAG))
 
 FONT = (FONT_TYPE1, EXPAND(12), "bold")
 
-__version__ = (5, 2, "0a2")
+__version__ = (5, 2, "0b1")
 
 
 class EasyTurtle:
@@ -2328,9 +2328,83 @@ class ToWards(Widget):
 
     def do(self, tur):
         self.save_data()
-        angle = tur.towards(self.stoint(self.x),
-                            self.stoint(self.y))
+        angle = tur.towards(
+            self.stoint(self.x) + self.p.runner_size[0] // 2,
+            self.stoint(self.y) - self.p.runner_size[1] // 2)
         self.p.variable_datas[self.angle] = (angle, "N")
+
+
+class Distance(Widget):
+    TEXT = "Distance    ｘ①、ｙ②への距離を③に代入する"
+    TYPE = "normalget"
+    VALUES = {"x": "0",
+              "y": "0",
+              "distance": "distance"}
+
+    def set_data(self, data):
+        if data is None:
+            self.x = self.VALUES["x"]
+            self.y = self.VALUES["y"]
+            self.distance = self.VALUES["distance"]
+        else:
+            if "x" in data:
+                self.x = data["x"]
+            else:
+                self.x = self.VALUES["x"]
+            if "y" in data:
+                self.y = data["y"]
+            else:
+                self.y = self.VALUES["y"]
+            if "distance" in data:
+                self.distance = data["distance"]
+            else:
+                self.distance = self.VALUES["distance"]
+        self.set_common(data)
+
+    def get_data(self, more=True):
+        self.save_data()
+        return self.get_class_data({"x": self.x,
+                                    "y": self.y,
+                                    "distance": self.distance}, more)
+
+    def draw(self):
+        self.draw_cv()
+        lab2 = tk.Label(self.cv, text="①", font=FONT, bg=self.background)
+        self.binder(lab2)
+        lab2.place(x=EXPAND(50), y=EXPAND(HEIGHT//2+8))
+        self.ent1 = tk.Entry(self.cv, font=FONT, width=12, justify=tk.RIGHT)
+        self.ent1.insert(tk.END, self.x)
+        self.binder(self.ent1)
+        self.ent1.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent1))
+        self.ent1.place(x=EXPAND(70), y=EXPAND(HEIGHT//2+8))
+        lab3 = tk.Label(self.cv, text="②", font=FONT, bg=self.background)
+        self.binder(lab3)
+        lab3.place(x=EXPAND(200), y=EXPAND(HEIGHT//2+8))
+        self.ent2 = tk.Entry(self.cv, font=FONT, width=12, justify=tk.RIGHT)
+        self.ent2.insert(tk.END, self.y)
+        self.binder(self.ent1)
+        self.ent2.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent1))
+        self.ent2.place(x=EXPAND(220), y=EXPAND(HEIGHT//2+8))
+        lab4 = tk.Label(self.cv, text="③", font=FONT, bg=self.background)
+        self.binder(lab4)
+        lab4.place(x=EXPAND(350), y=EXPAND(HEIGHT//2+8))
+        self.ent3 = tk.Entry(self.cv, font=FONT, width=12, justify=tk.RIGHT)
+        self.ent3.insert(tk.END, self.distance)
+        self.binder(self.ent1)
+        self.ent3.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent1))
+        self.ent3.place(x=EXPAND(370), y=EXPAND(HEIGHT//2+8))
+
+    def save_data(self):
+        self.x = self.ent1.get()
+        self.y = self.ent2.get()
+        self.distance = self.ent3.get()
+
+    def do(self, tur):
+        self.save_data()
+        distance = tur.distance(
+            self.stoint(self.x) + self.p.runner_size[0] // 2,
+            self.stoint(self.y) - self.p.runner_size[1] // 2)
+        self.p.variable_datas[self.distance] = (distance, "N")
 
 
 class XCor(Widget):
@@ -3818,7 +3892,7 @@ Widgets = (
     VarNumber, VarString, VarBoolean, Title, ScreenSize,
     Forward, Backward, Right, Left, GoTo,
     SetX, SetY, SetHeading, Home, Position,
-    ToWards, XCor, YCor, Heading, Circle,
+    ToWards, XCor, YCor, Heading, Distance, Circle,
     Dot, Stamp, Speed, PenDown, PenUp, IsDown, PenSize,
     Color, PenColor, FillColor, BGColor,
     GetPenColor, GetFillColor, GetBGColor,
