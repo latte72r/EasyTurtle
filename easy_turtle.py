@@ -170,14 +170,14 @@ def EXPAND(num): return int(round(num * WIN_MAG))
 
 FONT = (FONT_TYPE1, EXPAND(12), "bold")
 
-__version__ = (5, 3, "0a2")
+__version__ = (5, 3, "0b1")
 
 
 class EasyTurtle:
     def __init__(self, file=None):
         """初期化"""
         self.index = 0
-        self.last_index = 0
+        self.last_shown = []
         self.widgets = []
         self.copied_widgets = []
         self.default_data = []
@@ -332,15 +332,18 @@ GNU FreeFontのインストールをおすすめします。")
     def all_redraw(self, change=True):
         """全部描き直し"""
         data = self.widgets
+
         if (self.index < 0) or (len(data) < SIZE):
             self.index = 0
         elif self.index > len(data) - SIZE:
             self.index = len(data) - SIZE
-        for d in data[self.last_index: self.last_index + SIZE]:
+
+        shown = data[self.index: self.index + SIZE]
+        for d in self.last_shown:
             d.place_cv()
-        for d in data[self.index: self.index + SIZE]:
+        for d in shown:
             d.place_cv()
-        self.last_index = self.index
+        self.last_shown = shown
         self.scroll_set()
         if change is True:
             self.check_length()
@@ -415,6 +418,8 @@ GNU FreeFontのインストールをおすすめします。")
 
     def listbox_selected(self, event):
         """リストボックス選択時の動作"""
+        before_index = self.index
+        
         mode = self.var2.get()
         if mode == 1:
             index = 0
@@ -424,7 +429,8 @@ GNU FreeFontのインストールをおすすめします。")
             index = self.get_add_index()
             if index is None:
                 return 1
-        
+
+        class_index = -1
         for i in self.lsb1.curselection():
             class_index = Texts.index(self.lsb1.get(i))
             break
@@ -432,8 +438,12 @@ GNU FreeFontのインストールをおすすめします。")
             return 1
         Widgets[class_index](parent=self, index=index)
 
-        self.index = index
-        if (mode == 1) or (mode == 3):
+        if (index < before_index) or (index > before_index + SIZE - 1):
+            self.index = index
+        else:
+            self.index = before_index
+
+        if ((mode == 1) or (mode == 3)) and (self.var3.get() is True):
             self.ent1.delete(0, tk.END)
             self.ent1.insert(0, str(index + 2))
             self.var2.set(3)
@@ -765,6 +775,8 @@ line: {index+1}, {widget.__class__.__name__}\n\
         if (type(event) == tk.Event) and (self.running_program is True):
             return
 
+        before_index = self.index
+
         mode = self.var2.get()
         if mode == 1:
             index = 0
@@ -780,8 +792,12 @@ line: {index+1}, {widget.__class__.__name__}\n\
             self.make_match_class(d, index=index)
             next_index += 1
 
-        self.index = index
-        if (mode == 1) or (mode == 3):
+        if (index < before_index) or (index > before_index + SIZE - 1):
+            self.index = index
+        else:
+            self.index = before_index
+
+        if ((mode == 1) or (mode == 3)) and (self.var3.get() is True):
             self.ent1.delete(0, tk.END)
             self.ent1.insert(0, str(next_index + 1))
             self.var2.set(3)
@@ -801,7 +817,7 @@ line: {index+1}, {widget.__class__.__name__}\n\
         if res is True:
             self.all_delete()
             self.index = 0
-            self.last_index = 0
+            self.last_shown = []
             self.widgets = []
             self.copied_widgets = []
             self.default_data = []
@@ -1038,60 +1054,60 @@ line: {index+1}, {widget.__class__.__name__}\n\
 
         # FILEメニューの作成
         filemenu = tk.Menu(self.menubar, tearoff=0)
-        filemenu.add_command(label="Open Program",
+        filemenu.add_command(label="開く",
                              accelerator="Ctrl+O",
                              command=self.open_program)
-        filemenu.add_command(label="Save Program",
+        filemenu.add_command(label="上書き保存",
                              accelerator="Ctrl+S",
                              command=self.save_program)
-        filemenu.add_command(label="Save Program As",
+        filemenu.add_command(label="名前を付けて保存",
                              accelerator="Ctrl+Shift+S",
                              command=self.save_program_as)
         filemenu.add_separator()
-        filemenu.add_command(label="Initialize",
+        filemenu.add_command(label="初期化",
                              accelerator="Ctrl+Shift+I",
                              command=self.initialize_data)
         filemenu.add_separator()
-        filemenu.add_command(label="Exit",
+        filemenu.add_command(label="終了",
                              accelerator="Ctrl+Q",
                              command=self.close_window)
-        self.menubar.add_cascade(label="File", menu=filemenu)
+        self.menubar.add_cascade(label="ファイル", menu=filemenu)
 
         # EDITメニューの作成
         editmenu = tk.Menu(self.menubar, tearoff=0)
-        editmenu.add_command(label="Undo", accelerator="Ctrl+Shift+Z", command=self.undo_change)
+        editmenu.add_command(label="元に戻す", accelerator="Ctrl+Shift+Z", command=self.undo_change)
         editmenu.add_separator()
-        editmenu.add_command(label="Cut Selected",
+        editmenu.add_command(label="切り取り",
                              accelerator="Ctrl+Shift+X",
                              command=self.cut_selected)
-        editmenu.add_command(label="Copy Selected",
+        editmenu.add_command(label="コピー",
                              accelerator="Ctrl+Shift+C",
                              command=self.copy_selected)
-        editmenu.add_command(label="Paste Widgets",
+        editmenu.add_command(label="貼り付け",
                              accelerator="Ctrl+Shift+V",
                              command=self.paste_widgets)
-        editmenu.add_command(label="Delete Selected",
+        editmenu.add_command(label="削除",
                              accelerator="Ctrl+Shift+D",
                              command=self.delete_selected)
-        editmenu.add_command(label="Select All",
+        editmenu.add_command(label="すべて選択",
                              accelerator="Ctrl+Shift+A",
                              command=self.select_all)
-        editmenu.add_command(label="Clear Selected",
+        editmenu.add_command(label="選択解除",
                              accelerator="Ctrl+Shift+L",
                              command=self.clear_selected)
-        self.menubar.add_cascade(label="Edit", menu=editmenu)
+        self.menubar.add_cascade(label="編集", menu=editmenu)
 
         # RUNメニューの作成
         runmenu = tk.Menu(self.menubar, tearoff=0)
-        runmenu.add_command(label="Run Program", accelerator="F5", command=self.run_program)
-        self.menubar.add_cascade(label="Run", menu=runmenu)
+        runmenu.add_command(label="実行", accelerator="F5", command=self.run_program)
+        self.menubar.add_cascade(label="実行", menu=runmenu)
 
         # OPTIONSメニューの追加
         othermenu = tk.Menu(self.menubar, tearoff=0)
-        othermenu.add_command(label="Configure", command=self.edit_config)
-        othermenu.add_command(label="Document", accelerator="F1", command=self.show_document)
-        othermenu.add_command(label="Version Info", command=self.version_info)
-        self.menubar.add_cascade(label="Options", menu=othermenu)
+        othermenu.add_command(label="設定", command=self.edit_config)
+        othermenu.add_command(label="ヘルプの表示", accelerator="F1", command=self.show_document)
+        othermenu.add_command(label="バージョン情報", command=self.version_info)
+        self.menubar.add_cascade(label="オプション", menu=othermenu)
 
         # 画面の左側を作成
         frame2 = tk.Frame(frame1)
@@ -1112,7 +1128,7 @@ line: {index+1}, {widget.__class__.__name__}\n\
         lab0 = tk.Label(self.cv1, text="EasyTurtle",
                         fg="#D8D8D8", bg="#E6E6E6",
                         font=(FONT_TYPE2, EXPAND(56), "bold", "italic"))
-        lab0.place(x=EXPAND(70), y=EXPAND(250))
+        lab0.place(x=EXPAND(80), y=EXPAND(250))
 
         # 画面右側下段を作成
         frame4 = tk.Frame(frame3)
@@ -1283,18 +1299,32 @@ class Widget:
 
     def paste_up(self):
         """上へのペースト"""
+        before_index = self.p.index
+
         index = self.p.widgets.index(self)
         for d in reversed(self.p.copied_widgets):
             self.p.make_match_class(d, index=index)
-        self.p.index = index
+
+        if (index < before_index) or (index > before_index + SIZE - 1):
+            self.p.index = index
+        else:
+            self.p.index = before_index
+
         self.p.all_redraw()
 
     def paste_down(self):
         """下へのペースト"""
-        index = self.p.widgets.index(self)
+        before_index = self.p.index
+
+        index = self.p.widgets.index(self) + 1
         for d in reversed(self.p.copied_widgets):
-            self.p.make_match_class(d, index=index+1)
-        self.p.index = index + 1
+            self.p.make_match_class(d, index=index)
+
+        if (index < before_index) or (index > before_index + SIZE - 1):
+            self.p.index = index
+        else:
+            self.p.index = before_index
+
         self.p.all_redraw()
 
     def show_popup2(self, event):
@@ -1365,7 +1395,10 @@ class Widget:
 
     def place_cv(self):
         """キャンバスを描き直す"""
-        index = self.p.widgets.index(self) - self.p.index
+        if self in self.p.widgets:
+            index = self.p.widgets.index(self) - self.p.index
+        else:
+            return 1
         if 0 <= index < SIZE:
             self.cv.place(x=0, y=EXPAND(HEIGHT*index))
             self.lab4.config(text=f"{self.p.widgets.index(self)+1:03}")
