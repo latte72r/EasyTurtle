@@ -170,7 +170,7 @@ def EXPAND(num): return int(round(num * WIN_MAG))
 
 FONT = (FONT_TYPE1, EXPAND(12), "bold")
 
-__version__ = (5, 2, 0)
+__version__ = (5, 3, "0a1")
 
 
 class EasyTurtle:
@@ -564,7 +564,7 @@ line: {index+1}, {widget.__class__.__name__}\n\
         # 保存する
         self.save_file(file)
 
-    def saveas_program(self, file=None):
+    def save_program_as(self, file=None):
         """保存動作"""
         # キーバインドから実行された場合
         if type(file) == tk.Event:
@@ -754,7 +754,7 @@ line: {index+1}, {widget.__class__.__name__}\n\
             self.make_match_class(d)
         self.all_redraw()
 
-    def show_information(self, event=None):
+    def show_document(self, event=None):
         """詳しい情報の表示"""
         if (type(event) == tk.Event) and (self.running_program is True):
             return
@@ -960,6 +960,8 @@ line: {index+1}, {widget.__class__.__name__}\n\
         self.root.protocol("WM_DELETE_WINDOW", self.close_window)
         self.icon = tk.PhotoImage(file=ICON_FILE)
         self.root.tk.call('wm', 'iconphoto', self.root._w, self.icon)
+        self.menubar = tk.Menu(self.root)
+        self.root.config(menu=self.menubar)
         frame1 = tk.Frame(self.root)
         frame1.pack()
 
@@ -968,15 +970,74 @@ line: {index+1}, {widget.__class__.__name__}\n\
         self.root.bind("<Control-Shift-Key-C>", self.copy_selected)
         self.root.bind("<Control-Shift-Key-V>", self.paste_widgets)
         self.root.bind("<Control-Shift-Key-X>", self.cut_selected)
+        self.root.bind("<Control-Shift-Key-L>", self.clear_selected)
         self.root.bind("<Control-Shift-Key-Z>", self.undo_change)
         self.root.bind("<Control-Shift-Key-A>", self.select_all)
-        self.root.bind("<Control-Shift-Key-S>", self.saveas_program)
-        self.root.bind("<Control-Key-d>", self.delete_selected)
+        self.root.bind("<Control-Shift-Key-S>", self.save_program_as)
+        self.root.bind("<Control-Shift-Key-I>", self.initialize_data)
+        self.root.bind("<Control-Shift-Key-D>", self.delete_selected)
         self.root.bind("<Control-Key-o>", self.open_program)
         self.root.bind("<Control-Key-s>", self.save_program)
         self.root.bind("<Control-Key-q>", self.close_window)
-        self.root.bind("<Key-F1>", self.show_information)
+        self.root.bind("<Key-F1>", self.show_document)
         self.root.bind("<Key-F5>", self.run_program)
+
+        # FILEメニューの作成
+        filemenu = tk.Menu(self.menubar, tearoff=0)
+        filemenu.add_command(label="Open Program",
+                             accelerator="Ctrl+O",
+                             command=self.open_program)
+        filemenu.add_command(label="Save Program",
+                             accelerator="Ctrl+S",
+                             command=self.save_program)
+        filemenu.add_command(label="Save Program As",
+                             accelerator="Ctrl+Shift+S",
+                             command=self.save_program_as)
+        filemenu.add_separator()
+        filemenu.add_command(label="Initialize",
+                             accelerator="Ctrl+Shift+I",
+                             command=self.initialize_data)
+        filemenu.add_separator()
+        filemenu.add_command(label="Exit",
+                             accelerator="Ctrl+Q",
+                             command=self.close_window)
+        self.menubar.add_cascade(label="File", menu=filemenu)
+
+        # EDITメニューの作成
+        editmenu = tk.Menu(self.menubar, tearoff=0)
+        editmenu.add_command(label="Undo", accelerator="Ctrl+Shift+Z", command=self.undo_change)
+        editmenu.add_separator()
+        editmenu.add_command(label="Cut Selected",
+                             accelerator="Ctrl+Shift+X",
+                             command=self.cut_selected)
+        editmenu.add_command(label="Copy Selected",
+                             accelerator="Ctrl+Shift+C",
+                             command=self.copy_selected)
+        editmenu.add_command(label="Paste Widgets",
+                             accelerator="Ctrl+Shift+V",
+                             command=self.paste_widgets)
+        editmenu.add_command(label="Delete Selected",
+                             accelerator="Ctrl+Shift+D",
+                             command=self.delete_selected)
+        editmenu.add_command(label="Select All",
+                             accelerator="Ctrl+Shift+A",
+                             command=self.select_all)
+        editmenu.add_command(label="Clear Selected",
+                             accelerator="Ctrl+Shift+L",
+                             command=self.clear_selected)
+        self.menubar.add_cascade(label="Edit", menu=editmenu)
+
+        # RUNメニューの作成
+        runmenu = tk.Menu(self.menubar, tearoff=0)
+        runmenu.add_command(label="Run Program", accelerator="F5", command=self.run_program)
+        self.menubar.add_cascade(label="Run", menu=runmenu)
+
+        # OPTIONSメニューの追加
+        othermenu = tk.Menu(self.menubar, tearoff=0)
+        othermenu.add_command(label="Configure", command=self.edit_config)
+        othermenu.add_command(label="Document", accelerator="F1", command=self.show_document)
+        othermenu.add_command(label="Version Info", command=self.version_info)
+        self.menubar.add_cascade(label="Options", menu=othermenu)
 
         # 画面の左側を作成
         frame2 = tk.Frame(frame1)
@@ -1022,7 +1083,7 @@ line: {index+1}, {widget.__class__.__name__}\n\
         lab5 = tk.Label(frame4, text="ヘルプ情報",
                         width=14, fg="blue", cursor="hand2",
                         font=(FONT_TYPE1, EXPAND(10), "underline"))
-        lab5.bind("<Button-1>", self.show_information)
+        lab5.bind("<Button-1>", self.show_document)
         lab5.pack(side=tk.LEFT, padx=EXPAND(10))
 
         # 画面右側中段を作成
@@ -1040,7 +1101,7 @@ line: {index+1}, {widget.__class__.__name__}\n\
         frame8.pack(side=tk.BOTTOM, pady=(0, EXPAND(10)))
         but3 = tk.Button(frame8, text="Save Program",
                          width=22, font=(FONT_TYPE1, EXPAND(18)),
-                         bg="#E7F7CF", command=self.saveas_program)
+                         bg="#E7F7CF", command=self.save_program_as)
         but3.pack(side=tk.LEFT, padx=(0, EXPAND(18)))
         but4 = tk.Button(frame8, text="Open Program",
                          width=22, font=(FONT_TYPE1, EXPAND(18)),
