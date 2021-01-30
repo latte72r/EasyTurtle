@@ -170,7 +170,7 @@ def EXPAND(num): return int(round(num * WIN_MAG))
 
 FONT = (FONT_TYPE1, EXPAND(12), "bold")
 
-__version__ = (5, 3, "0a1")
+__version__ = (5, 3, "0a2")
 
 
 class EasyTurtle:
@@ -209,7 +209,7 @@ GNU FreeFontのインストールをおすすめします。")
         data = self.get_data()
         return f"EasyTurtle(self, data={data})"
 
-    def version_info(self, event):
+    def version_info(self, event=None):
         """設定を編集"""
         self.win = tk.Toplevel(self.root)
         self.win.tk.call('wm', 'iconphoto', self.win._w, self.icon)
@@ -239,7 +239,7 @@ GNU FreeFontのインストールをおすすめします。")
                   padx=EXPAND(20), pady=(0, EXPAND(10)))
         self.win.resizable(0, 0)
 
-    def edit_config(self, event):
+    def edit_config(self, event=None):
         """設定を編集"""
         global CONFIG
         CONFIG = GET_CONFIG()
@@ -415,13 +415,29 @@ GNU FreeFontのインストールをおすすめします。")
 
     def listbox_selected(self, event):
         """リストボックス選択時の動作"""
-        index = -1
+        mode = self.var2.get()
+        if mode == 1:
+            index = 0
+        elif mode == 2:
+            index = len(self.widgets)
+        elif mode == 3:
+            index = self.get_add_index()
+            if index is None:
+                return 1
+        
         for i in self.lsb1.curselection():
-            index = Texts.index(self.lsb1.get(i))
+            class_index = Texts.index(self.lsb1.get(i))
             break
-        if index == -1:
-            return
-        Widgets[index](parent=self)
+        if class_index == -1:
+            return 1
+        Widgets[class_index](parent=self, index=index)
+
+        self.index = index
+        if (mode == 1) or (mode == 3):
+            self.ent1.delete(0, tk.END)
+            self.ent1.insert(0, str(index + 2))
+            self.var2.set(3)
+
         self.all_redraw()
 
     def windows_scroll(self, event):
@@ -529,7 +545,7 @@ line: {index+1}, {widget.__class__.__name__}\n\
 エラーが発生しました。\n\n{traceback.format_exc()}')
             return 1
 
-    def all_delete(self):
+    def all_delete(self, event=None):
         """全て削除"""
         widgets = [w for w in self.widgets]
         for d in widgets:
@@ -537,7 +553,7 @@ line: {index+1}, {widget.__class__.__name__}\n\
         self.all_redraw()
 
     def save_program(self, file=None):
-        """保存動作"""
+        """上書き保存"""
         # キーバインドから実行された場合
         if type(file) == tk.Event:
             file = None
@@ -565,7 +581,7 @@ line: {index+1}, {widget.__class__.__name__}\n\
         self.save_file(file)
 
     def save_program_as(self, file=None):
-        """保存動作"""
+        """名前を付けて保存"""
         # キーバインドから実行された場合
         if type(file) == tk.Event:
             file = None
@@ -741,8 +757,6 @@ line: {index+1}, {widget.__class__.__name__}\n\
         name = data["_name"]
         if name in Names:
             Widgets[Names.index(name)](self, data, index)
-        elif (name == "Geometry") and (version <= (4, 11)):
-            ScreenSize(self, data, index)
         else:
             Undefined(self, {"_name": name, **data}, index)
 
@@ -750,8 +764,28 @@ line: {index+1}, {widget.__class__.__name__}\n\
         """ペースト時の動作"""
         if (type(event) == tk.Event) and (self.running_program is True):
             return
-        for d in self.copied_widgets:
-            self.make_match_class(d)
+
+        mode = self.var2.get()
+        if mode == 1:
+            index = 0
+        elif mode == 2:
+            index = len(self.widgets)
+        elif mode == 3:
+            index = self.get_add_index()
+            if index is None:
+                return 1
+        next_index = index
+
+        for d in reversed(self.copied_widgets):
+            self.make_match_class(d, index=index)
+            next_index += 1
+
+        self.index = index
+        if (mode == 1) or (mode == 3):
+            self.ent1.delete(0, tk.END)
+            self.ent1.insert(0, str(next_index + 1))
+            self.var2.set(3)
+
         self.all_redraw()
 
     def show_document(self, event=None):
@@ -760,7 +794,7 @@ line: {index+1}, {widget.__class__.__name__}\n\
             return
         webbrowser.open_new(README_FILE)
 
-    def initialize_data(self):
+    def initialize_data(self, event=None):
         """データを初期化"""
         res = messagebox.askokcancel(
             "警告", "情報を初期化しますか？", parent=self.root)
@@ -776,6 +810,9 @@ line: {index+1}, {widget.__class__.__name__}\n\
             self.running_program = False
             self.program_name = None
             self.basename = "untitled"
+            self.var2.set(2)
+            self.var3.set(True)
+            self.ent1.delete(0, tk.END)
         self.all_redraw()
         self.default_data = [d.get_data(more=False)
                              for d in self.widgets]
@@ -950,6 +987,23 @@ line: {index+1}, {widget.__class__.__name__}\n\
             rgb += blue if len(blue) == 2 else "0" + blue
             return rgb.upper()
 
+    def get_add_index(self):
+        """追加先の取得"""
+        text = self.ent1.get()
+        if text == "":
+            messagebox.showerror("エラー", '位置が指定されていません。')
+            return None
+        elif text.isnumeric() is False:
+            messagebox.showerror("エラー", '位置は半角数字のみで指定してください。')
+            return None
+        index = int(text)
+        if index > len(self.widgets) + 1:
+            messagebox.showwarning("警告", '\
+位置が最大値を超えています。\n自動で最後に追加します。')
+            return len(self.widgets)
+        else:
+            return index - 1
+
     def setup(self):
         """セットアップ"""
         # 基本ウィンドウを作成
@@ -1062,7 +1116,7 @@ line: {index+1}, {widget.__class__.__name__}\n\
 
         # 画面右側下段を作成
         frame4 = tk.Frame(frame3)
-        frame4.pack(fill="x", side=tk.BOTTOM, pady=0)
+        frame4.pack(fill="x", side=tk.BOTTOM)
         lab1 = tk.Label(frame4, text='©2021 Ryo Fujinami.',
                         font=(FONT_TYPE2, EXPAND(12), "italic"))
         lab1.pack(side=tk.RIGHT, padx=EXPAND(20))
@@ -1070,82 +1124,42 @@ line: {index+1}, {widget.__class__.__name__}\n\
         lab2 = tk.Label(frame4, text="v"+joined_version,
                         font=(FONT_TYPE1, EXPAND(12)))
         lab2.pack(side=tk.RIGHT, padx=EXPAND(10))
-        lab3 = tk.Label(frame4, text="バージョン情報",
-                        width=14, fg="blue", cursor="hand2",
-                        font=(FONT_TYPE1, EXPAND(10), "underline"))
-        lab3.bind("<Button-1>", self.version_info)
-        lab3.pack(side=tk.LEFT, padx=EXPAND(10))
-        lab4 = tk.Label(frame4, text="ユーザー設定",
-                        width=14, fg="blue", cursor="hand2",
-                        font=(FONT_TYPE1, EXPAND(10), "underline"))
-        lab4.bind("<Button-1>", self.edit_config)
-        lab4.pack(side=tk.LEFT, padx=EXPAND(10))
-        lab5 = tk.Label(frame4, text="ヘルプ情報",
-                        width=14, fg="blue", cursor="hand2",
-                        font=(FONT_TYPE1, EXPAND(10), "underline"))
-        lab5.bind("<Button-1>", self.show_document)
-        lab5.pack(side=tk.LEFT, padx=EXPAND(10))
 
         # 画面右側中段を作成
-        frame9 = tk.Frame(frame3)
-        frame9.pack(side=tk.BOTTOM, pady=(0, EXPAND(10)))
-        but1 = tk.Button(frame9, text="Run Program", bg="#F7DFDF",
-                         font=(FONT_TYPE1, EXPAND(18)),
-                         width=22, command=self.run_program)
-        but1.pack(side=tk.LEFT, padx=(0, EXPAND(18)))
-        but2 = tk.Button(frame9, text="Initialize", bg="#DFEFF7",
-                         font=(FONT_TYPE1, EXPAND(18)),
-                         width=22, command=self.initialize_data)
-        but2.pack(side=tk.RIGHT)
-        frame8 = tk.Frame(frame3)
-        frame8.pack(side=tk.BOTTOM, pady=(0, EXPAND(10)))
-        but3 = tk.Button(frame8, text="Save Program",
-                         width=22, font=(FONT_TYPE1, EXPAND(18)),
-                         bg="#E7F7CF", command=self.save_program_as)
-        but3.pack(side=tk.LEFT, padx=(0, EXPAND(18)))
-        but4 = tk.Button(frame8, text="Open Program",
-                         width=22, font=(FONT_TYPE1, EXPAND(18)),
-                         bg="#E7F7CF", command=self.open_program)
-        but4.pack(side=tk.RIGHT)
-        frame4 = tk.Frame(frame3)
-        frame4.pack(side=tk.BOTTOM, pady=(0, EXPAND(10)))
-        but5 = tk.Button(frame4, text="Copy Selected",
-                         width=22, font=(FONT_TYPE1, EXPAND(18)),
-                         bg="#DFEFF7", command=self.copy_selected)
-        but5.pack(side=tk.LEFT, padx=(0, EXPAND(18)))
-        but0 = tk.Button(frame4, text="Paste Widgets",
-                         width=22, font=(FONT_TYPE1, EXPAND(18)),
-                         bg="#DFEFF7", command=self.paste_widgets)
-        but0.pack(side=tk.RIGHT)
-        frame5 = tk.Frame(frame3)
-        frame5.pack(side=tk.BOTTOM, pady=(0, EXPAND(10)))
-        but9 = tk.Button(frame5, text="Undo",
-                         width=22, font=(FONT_TYPE1, EXPAND(18)),
-                         bg="#E7F7CF", command=self.undo_change)
-        but9.pack(side=tk.LEFT, padx=(0, EXPAND(18)))
-        but6 = tk.Button(frame5, text="All Select",
-                         width=22, font=(FONT_TYPE1, EXPAND(18)),
-                         bg="#E7F7CF", command=self.select_all)
-        but6.pack(side=tk.RIGHT)
-        frame6 = tk.Frame(frame3)
-        frame6.pack(side=tk.BOTTOM, pady=(0, EXPAND(10)))
-        but7 = tk.Button(frame6, text="Clear Selected",
-                         width=22, font=(FONT_TYPE1, EXPAND(18)),
-                         bg="#DFEFF7", command=self.clear_selected)
-        but7.pack(side=tk.LEFT, padx=(0, EXPAND(18)))
-        but8 = tk.Button(frame6, text="Delete Selected",
-                         width=22, font=(FONT_TYPE1, EXPAND(18)),
-                         bg="#F7DFDF", command=self.delete_selected)
-        but8.pack(side=tk.RIGHT)
+        lfr1 = tk.LabelFrame(frame3, text="ウィジェットの追加位置",
+                             font=(FONT_TYPE1, EXPAND(18), "bold"),
+                             labelanchor=tk.N)
+        lfr1.pack(side=tk.BOTTOM, pady=EXPAND(10), fill=tk.X)
+        self.var2 = tk.IntVar()
+        self.var2.set(2)
+        font = (FONT_TYPE1, EXPAND(16), "bold")
+        rad1 = tk.Radiobutton(lfr1, value=1, variable=self.var2,
+                              text="プログラムの最初", font=font)
+        rad1.pack(anchor=tk.W, padx=EXPAND(80))
+        rad2 = tk.Radiobutton(lfr1, value=2, variable=self.var2,
+                              text="プログラムの最後", font=font)
+        rad2.pack(anchor=tk.W, padx=EXPAND(80))
+        frame8 = tk.Frame(lfr1)
+        frame8.pack(anchor=tk.W, padx=EXPAND(80))
+        rad3 = tk.Radiobutton(frame8, value=3, variable=self.var2,
+                              text="指定位置：", font=font)
+        rad3.pack(anchor=tk.W, side=tk.LEFT)
+        self.ent1 = tk.Entry(frame8, font=font, width=8)
+        self.ent1.pack(anchor=tk.W, side=tk.LEFT)
+        self.var3 = tk.BooleanVar()
+        self.var3.set(True)
+        chk1 = tk.Checkbutton(lfr1, text="位置の自動調整",
+                              font=font, variable=self.var3)
+        chk1.pack(anchor=tk.E, padx=80, pady=(0, EXPAND(10)))
 
         # 画面右側上段を作成
         frame7 = tk.Frame(frame3)
         frame7.pack(side=tk.TOP, pady=(0, EXPAND(10)))
         var1 = tk.StringVar(self.root, value=Texts)
-        height = 8 if SYSTEM == "Windows" else 10
+        height = 12 if SYSTEM == "Windows" else 14
         self.lsb1 = tk.Listbox(frame7, listvariable=var1, height=height,
-                               width=40, selectmode='single',
-                               bg="#FFEFD7", font=(FONT_TYPE1, EXPAND(20)),
+                               width=44, selectmode='single',
+                               bg="#FFEFD7", font=(FONT_TYPE1, EXPAND(18)),
                                selectbackground="#2F4FAF",
                                selectforeground="#FFFFFF")
         self.lsb1.bind('<<ListboxSelect>>', self.listbox_selected)
