@@ -15,6 +15,7 @@ from tkinter import messagebox
 from tkinter import filedialog
 from tkinter import ttk
 from tkinter import scrolledtext
+from tkinter import simpledialog
 import shutil
 import pprint
 import getpass
@@ -74,7 +75,7 @@ if SYSTEM == "Windows":
 
     DEFAULT_CONFIG = {
         "save_more_info": False,
-        "show_warning": False,
+        "show_warning": True,
         "expand_window": True,
         "ask_save_new": True,
         "user_document": True,
@@ -124,7 +125,7 @@ elif SYSTEM == "Linux":
 
     DEFAULT_CONFIG = {
         "save_more_info": False,
-        "show_warning": False,
+        "show_warning": True,
         "expand_window": True,
         "ask_save_new": True,
         "user_document": False,
@@ -168,12 +169,13 @@ def EXPAND(num): return int(round(num * WIN_MAG))
 
 FONT = (FONT_TYPE1, EXPAND(12), "bold")
 
-__version__ = (5, 4, "0a1")
+__version__ = (5, 4, "0a2")
 
 
 class EasyTurtle:
     def __init__(self, file=None):
         """初期化"""
+        # 変数を初期化する
         self.index = 0
         self.last_shown = []
         self.widgets = []
@@ -183,19 +185,20 @@ class EasyTurtle:
         self.warning_ignore = False
         self.running_program = False
         self.program_name = None
-        self.basename = "untitled"
+        self.basename = "無題"
+
+        # 画面を設定する
         self.setup()
-        """
-        if (SYSTEM == "Linux") and ("FreeMono" not in font.families()):
-            messagebox.showwarning("警告", "\
-EasyTurtleを安定してご利用いただくために\n\
-GNU FreeFontのインストールをおすすめします。")
-        """
+
+        # アップデート確認をする
         if CONFIG["auto_update"] is True:
             thread = threading.Thread(target=self.update_starting)
             thread.start()
+
+        # ファイルが指定されていれば開く
         if file is not None:
             self.open_program(file)
+
         self.root.mainloop()
 
     def __str__(self):
@@ -211,7 +214,7 @@ GNU FreeFontのインストールをおすすめします。")
         """設定を編集"""
         self.win = tk.Toplevel(self.root)
         self.win.tk.call('wm', 'iconphoto', self.win._w, self.icon)
-        self.win.title("EasyTurtle - Version")
+        self.win.title("バージョン情報 - EasyTurtle")
         self.win.wait_visibility()
         self.win.grab_set()
         lab1 = tk.Label(self.win, text="Version",
@@ -243,7 +246,7 @@ GNU FreeFontのインストールをおすすめします。")
         CONFIG = GET_CONFIG()
         self.win = tk.Toplevel(self.root)
         self.win.tk.call('wm', 'iconphoto', self.win._w, self.icon)
-        self.win.title("EasyTurtle - Configure")
+        self.win.title("設定 - EasyTurtle")
         self.win.wait_visibility()
         self.win.grab_set()
         lab1 = tk.Label(self.win, text="Configure",
@@ -350,9 +353,9 @@ GNU FreeFontのインストールをおすすめします。")
 
     def set_title(self):
         if [d.get_data(more=False) for d in self.widgets] == self.default_data:
-            self.root.title(f"EasyTurtle - {self.basename}")
+            self.root.title(f"{self.basename} - EasyTurtle")
         else:
-            self.root.title(f"EasyTurtle - *{self.basename}*")
+            self.root.title(f"*{self.basename}* - EasyTurtle")
 
     def back_up(self):
         """バックアップ"""
@@ -514,7 +517,7 @@ GNU FreeFontのインストールをおすすめします。")
         self.win.wait_visibility(self.win)
         self.win.grab_set()
         self.win.focus_set()
-        self.win.title("EasyTurtle - Runner")
+        self.win.title("EasyTurtle")
 
         # キーをバインド
         self.win.bind("<Control-Key-q>", self.kill_runner)
@@ -546,12 +549,15 @@ GNU FreeFontのインストールをおすすめします。")
                 else:
                     return 1
         except tk.TclError:
-            self.kill_runner()
-            traceback.print_exc()
-            messagebox.showerror("エラー", f'\
+            if self.killed_runner is True:
+                return 0
+            else:
+                self.kill_runner()
+                traceback.print_exc()
+                messagebox.showerror("エラー", f'\
 line: {index+1}, {widget.__class__.__name__}\n\
 エラーが発生しました。\n\n{traceback.format_exc()}')
-            return 1
+                return 1
 
     def all_delete(self, event=None):
         """全て削除"""
@@ -632,6 +638,9 @@ line: {index+1}, {widget.__class__.__name__}\n\
                 "version": __version__[:2],
                 "copy": self.copied_widgets,
                 "index": self.index,
+                "addmode": self.var2.get(),
+                "adjust": self.var3.get(),
+                "position": self.ent1.get(),
                 "body": body}
         else:
             data = {"version": __version__[:2], "body": body}
@@ -714,6 +723,15 @@ line: {index+1}, {widget.__class__.__name__}\n\
             # コピーされたウィジェットを設定
             self.copied_widgets = data["copy"] if "copy" in data else []
 
+            # 追加位置を設定
+            addmode = data["addmode"] if "addmode" in data else 2
+            adjust = data["adjust"] if "adjust" in data else True
+            position = data["position"] if "position" in data else ""
+            self.var2.set(addmode)
+            self.var3.set(adjust)
+            self.ent1.delete(0, tk.END)
+            self.ent1.insert(0, position)
+
             self.all_redraw()
 
             # データを上書き
@@ -722,23 +740,7 @@ line: {index+1}, {widget.__class__.__name__}\n\
 選択されたファイルは古いバージョンです。\n\
 このバージョン用に保存し直しますか？")
                 if res is True:
-                    # データを取得
-                    body = [d.get_data(more=CONFIG["save_more_info"])
-                            for d in self.widgets]
-
-                    # データを決定
-                    if CONFIG["save_more_info"] is True:
-                        new_data = {
-                            "version": __version__[:2],
-                            "copy": self.copied_widgets,
-                            "index": self.index,
-                            "body": body}
-                    else:
-                        new_data = {"version": __version__[:2], "body": body}
-
-                # データを保存
-                    with open(file, "w")as f:
-                        json.dump(new_data, f, indent=2)
+                    self.save_file(file)
 
             # 基本データを設定
             self.default_data = [d.get_data(more=False) for d in self.widgets]
@@ -749,11 +751,6 @@ line: {index+1}, {widget.__class__.__name__}\n\
 
             # バックアップを空にする
             self.backed_up = []
-
-            # 設定を初期化
-            self.var2.set(2)
-            self.var3.set(True)
-            self.ent1.delete(0, tk.END)
 
             self.set_title()
         except Exception:
@@ -815,29 +812,6 @@ line: {index+1}, {widget.__class__.__name__}\n\
             return
         webbrowser.open_new(README_FILE)
 
-    def initialize_data(self, event=None):
-        """データを初期化"""
-        res = messagebox.askokcancel(
-            "警告", "情報を初期化しますか？", parent=self.root)
-        if res is True:
-            self.all_delete()
-            self.index = 0
-            self.last_shown = []
-            self.widgets = []
-            self.copied_widgets = []
-            self.default_data = []
-            self.backed_up = []
-            self.warning_ignore = False
-            self.running_program = False
-            self.program_name = None
-            self.basename = "untitled"
-            self.var2.set(2)
-            self.var3.set(True)
-            self.ent1.delete(0, tk.END)
-        self.all_redraw()
-        self.default_data = [d.get_data(more=False)
-                             for d in self.widgets]
-
     def get_selected(self):
         """選ばれたデータ一覧を取得"""
         selected = []
@@ -894,7 +868,7 @@ line: {index+1}, {widget.__class__.__name__}\n\
         """ウィンドウを削除"""
         self.root.destroy()
 
-    def delete_menu(self, event):
+    def delete_menu(self, event=None):
         "メニューを消す"
         if hasattr(self, "menu") is True:
             self.menu.destroy()
@@ -936,7 +910,7 @@ line: {index+1}, {widget.__class__.__name__}\n\
         elif new_version > __version__:
             self.win = tk.Toplevel(self.root)
             self.win.tk.call('wm', 'iconphoto', self.win._w, self.icon)
-            self.win.title("EasyTurtle - Update")
+            self.win.title("アップデート - EasyTurtle")
             self.win.grab_set()
             lab1 = tk.Label(self.win, font=FONT,
                             text="新しいバージョンが見つかりました")
@@ -957,7 +931,7 @@ line: {index+1}, {widget.__class__.__name__}\n\
             lab5.pack(anchor=tk.NW, padx=EXPAND(20), pady=(0, EXPAND(10)))
             self.win.resizable(0, 0)
 
-    def check_update(self, event):
+    def check_update(self, event=None):
         "アップデートを確認"
         new_version = self.get_new_release()
         new_joined_version = '.'.join([str(n) for n in new_version])
@@ -973,7 +947,7 @@ line: {index+1}, {widget.__class__.__name__}\n\
         elif new_version > __version__:
             self.win2 = tk.Toplevel(self.win)
             self.win2.tk.call('wm', 'iconphoto', self.win._w, self.icon)
-            self.win2.title("EasyTurtle - Update")
+            self.win2.title("アップデート - EasyTurtle")
             self.win2.wait_visibility()
             self.win2.grab_set()
             lab1 = tk.Label(self.win2, font=FONT,
@@ -1019,22 +993,88 @@ line: {index+1}, {widget.__class__.__name__}\n\
         if text == "":
             messagebox.showerror("エラー", '位置が指定されていません。')
             return None
-        elif text.isnumeric() is False:
+        try:
+            index = int(text)
+        except ValueError:
             messagebox.showerror("エラー", '位置は半角数字のみで指定してください。')
             return None
-        index = int(text)
         if index > len(self.widgets) + 1:
             messagebox.showwarning("警告", '\
 位置が最大値を超えています。\n自動で最後に追加します。')
             return len(self.widgets)
+        elif index < 1:
+            messagebox.showerror("エラー", '位置は正の数で入力してください。')
+            return None
         else:
             return index - 1
+
+    def goto_line(self, event=None):
+        """行に移動"""
+        text = simpledialog.askstring("行へ移動", '\
+数値を入力してください。\n\
+"-1"でプログラムの最後に移動します。')
+        if text == "":
+            return 0
+        try:
+            line = int(text)
+        except ValueError:
+            messagebox.showerror("エラー", '数値で入力してください。')
+            return 1
+        if line == -1:
+            self.index = len(self.widgets) - SIZE
+        elif line > len(self.widgets):
+            messagebox.showwarning("警告", '\
+位置が最大値を超えています。\n\
+自動で最後に移動します。')
+            self.index = len(self.widgets) - SIZE
+        elif line < 1:
+            messagebox.showerror("エラー", '正の数値で入力してください。')
+            return 1
+        elif self.index <= line - 1 < self.index + SIZE:
+            pass
+        else:
+            self.index = line - 1
+        self.all_redraw(change=False)
+
+    def new_program(self, event=None):
+        """新規プログラム"""
+        # データが変更されていれば保存するか確認する
+        data = [d.get_data(more=False) for d in self.widgets]
+        if self.default_data != data:
+            res = messagebox.askyesnocancel("確認", "保存しますか？")
+            if res is None:
+                return 1
+            elif res is True:
+                if self.save_program() == 1:
+                    return 1
+
+        # データを初期化
+        self.all_delete()
+        self.index = 0
+        self.last_shown = []
+        self.widgets = []
+        self.copied_widgets = []
+        self.default_data = []
+        self.backed_up = []
+        self.warning_ignore = False
+        self.running_program = False
+        self.program_name = None
+        self.basename = "無題"
+        self.var2.set(2)
+        self.var3.set(True)
+        self.ent1.delete(0, tk.END)
+
+        self.all_redraw()
+
+        # 基本データを設定
+        self.default_data = [d.get_data(more=False)
+                             for d in self.widgets]
 
     def setup(self):
         """セットアップ"""
         # 基本ウィンドウを作成
         self.root = tk.Tk()
-        self.root.title("EasyTurtle - untitled")
+        self.root.title("無題 - EasyTurtle")
         self.root.geometry(f"{EXPAND(1240)}x{EXPAND(600)}")
         self.root.minsize(EXPAND(1240), EXPAND(600))
         self.root.protocol("WM_DELETE_WINDOW", self.close_window)
@@ -1048,14 +1088,15 @@ line: {index+1}, {widget.__class__.__name__}\n\
         self.root.bind("<Control-Shift-Key-C>", self.copy_selected)
         self.root.bind("<Control-Shift-Key-V>", self.paste_widgets)
         self.root.bind("<Control-Shift-Key-X>", self.cut_selected)
-        self.root.bind("<Control-Shift-Key-L>", self.clear_selected)
-        self.root.bind("<Control-Shift-Key-Z>", self.undo_change)
         self.root.bind("<Control-Shift-Key-A>", self.select_all)
         self.root.bind("<Control-Shift-Key-S>", self.save_program_as)
-        self.root.bind("<Control-Shift-Key-I>", self.initialize_data)
-        self.root.bind("<Control-Shift-Key-D>", self.delete_selected)
+        self.root.bind("<Control-Key-z>", self.undo_change)
+        self.root.bind("<Control-Key-l>", self.clear_selected)
+        self.root.bind("<Control-Key-n>", self.new_program)
+        self.root.bind("<Control-Key-d>", self.delete_selected)
         self.root.bind("<Control-Key-o>", self.open_program)
         self.root.bind("<Control-Key-s>", self.save_program)
+        self.root.bind("<Control-Key-g>", self.goto_line)
         self.root.bind("<Control-Key-q>", self.close_window)
         self.root.bind("<Control-Key-,>", self.edit_config)
         self.root.bind("<Key-F1>", self.show_document)
@@ -1068,6 +1109,9 @@ line: {index+1}, {widget.__class__.__name__}\n\
 
         # FILEメニューの作成
         filemenu = tk.Menu(self.menubar, tearoff=0, font=menu_font)
+        filemenu.add_command(label="新規",
+                             accelerator="Ctrl+N",
+                             command=self.new_program)
         filemenu.add_command(label="開く",
                              accelerator="Ctrl+O",
                              command=self.open_program)
@@ -1078,10 +1122,6 @@ line: {index+1}, {widget.__class__.__name__}\n\
                              accelerator="Ctrl+Shift+S",
                              command=self.save_program_as)
         filemenu.add_separator()
-        filemenu.add_command(label="初期化",
-                             accelerator="Ctrl+Shift+I",
-                             command=self.initialize_data)
-        filemenu.add_separator()
         filemenu.add_command(label="終了",
                              accelerator="Ctrl+Q",
                              command=self.close_window)
@@ -1089,7 +1129,7 @@ line: {index+1}, {widget.__class__.__name__}\n\
 
         # EDITメニューの作成
         editmenu = tk.Menu(self.menubar, tearoff=0, font=menu_font)
-        editmenu.add_command(label="元に戻す", accelerator="Ctrl+Shift+Z",
+        editmenu.add_command(label="元に戻す", accelerator="Ctrl+Z",
                              command=self.undo_change)
         editmenu.add_separator()
         editmenu.add_command(label="切り取り",
@@ -1102,14 +1142,19 @@ line: {index+1}, {widget.__class__.__name__}\n\
                              accelerator="Ctrl+Shift+V",
                              command=self.paste_widgets)
         editmenu.add_command(label="削除",
-                             accelerator="Ctrl+Shift+D",
+                             accelerator="Ctrl+D",
                              command=self.delete_selected)
+        editmenu.add_separator()
         editmenu.add_command(label="すべて選択",
                              accelerator="Ctrl+Shift+A",
                              command=self.select_all)
         editmenu.add_command(label="選択解除",
-                             accelerator="Ctrl+Shift+L",
+                             accelerator="Ctrl+L",
                              command=self.clear_selected)
+        editmenu.add_separator()
+        editmenu.add_command(label="行へ移動",
+                             accelerator="Ctrl+G",
+                             command=self.goto_line)
         self.menubar.add_cascade(label="編集", menu=editmenu)
 
         # RUNメニューの作成
@@ -1210,9 +1255,10 @@ line: {index+1}, {widget.__class__.__name__}\n\
 class Widget:
     def __init__(self, parent, data=None, index=-1):
         """初期化"""
+        self.p = parent
+        self.info = GET_WIDGET_INFO(self)
         self.pressed_x = self.pressed_y = 0
         self.item_id = -1
-        self.p = parent
 
         if self.TYPE == "variable":
             self.background = "#F7C7A7"
@@ -1275,7 +1321,7 @@ class Widget:
         # ウィジェットの説明を表示
         self.bln1 = tk.BooleanVar()
         self.bln1.set(self.check)
-        lab1 = tk.Label(self.cv, text=self.TEXT, font=FONT, bg=self.background)
+        lab1 = tk.Label(self.cv, text=self.info, font=FONT, bg=self.background)
         self.binder(lab1)
         lab1.place(x=EXPAND(50), y=EXPAND(10))
         self.check_enabled()
@@ -4003,9 +4049,12 @@ class Undefined(Widget):
         pass
 
 
-def get_widget_info(widget):
+def GET_WIDGET_INFO(widget):
     length = 14
-    name = widget.__name__
+    if type(widget) == type:
+        name = widget.__name__
+    else:
+        name = widget.__class__.__name__
     space = " " * (length - len(name))
     info = name + space + widget.TEXT
     return info
@@ -4024,7 +4073,7 @@ Widgets = (
     ShowTurtle, HideTurtle, IsVisible,
     TurtleSize, Write, Bye, ExitOnClick,
     Bell, Sleep, Comment)
-Texts = tuple([get_widget_info(c) for c in Widgets])
+Texts = tuple([GET_WIDGET_INFO(c) for c in Widgets])
 Names = tuple([c.__name__ for c in Widgets])
 
 
