@@ -1,5 +1,5 @@
 
-# ©2021 Ryo Fujinami.
+# ©2020-2021 Ryo Fujinami.
 
 import re
 import platform
@@ -169,7 +169,7 @@ def EXPAND(num): return int(round(num * WIN_MAG))
 
 FONT = (FONT_TYPE1, EXPAND(12), "bold")
 
-__version__ = (5, 4, "0a2")
+__version__ = (5, 4, 0)
 
 
 class EasyTurtle:
@@ -1167,6 +1167,7 @@ line: {index+1}, {widget.__class__.__name__}\n\
         othermenu = tk.Menu(self.menubar, tearoff=0, font=menu_font)
         othermenu.add_command(label="設定", accelerator="Ctrl+,",
                               command=self.edit_config)
+        othermenu.add_separator()
         othermenu.add_command(label="ヘルプの表示", accelerator="F1",
                               command=self.show_document)
         othermenu.add_command(label="バージョン情報", command=self.version_info)
@@ -1197,7 +1198,7 @@ line: {index+1}, {widget.__class__.__name__}\n\
         # 画面右側下段を作成
         frame4 = tk.Frame(frame3)
         frame4.pack(fill="x", side=tk.BOTTOM)
-        lab1 = tk.Label(frame4, text='©2021 Ryo Fujinami.',
+        lab1 = tk.Label(frame4, text='©2020-2021 Ryo Fujinami.',
                         font=(FONT_TYPE2, EXPAND(12), "italic"))
         lab1.pack(side=tk.RIGHT, padx=EXPAND(20))
         joined_version = ".".join([str(n) for n in __version__])
