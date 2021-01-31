@@ -22,8 +22,6 @@ import urllib.request
 import threading
 import traceback
 
-# ChangePoint: Menu
-
 SIZE = 8
 HEIGHT = 72
 WIDTH = 520
@@ -92,13 +90,13 @@ if SYSTEM == "Windows":
         else:
             DOCUMENTS = os.path.join("C:/Users", getpass.getuser(),
                                      "Documents/EasyTurtle/")
+        samples = os.path.join(DOCUMENTS, "Samples")
+        if os.path.exists(samples) is True:
+            shutil.rmtree(samples)
+        shutil.copytree('./Samples', samples)
     else:
         DOCUMENTS = os.path.abspath("./")
     os.makedirs(DOCUMENTS, exist_ok=True)
-
-    samples = os.path.join(DOCUMENTS, "Samples")
-    if os.path.exists(samples) is False:
-        shutil.copytree('./Samples', samples)
 
     SYSTEM_WIDTH = windll.user32.GetSystemMetrics(0)
     SYSTEM_HEIGHT = windll.user32.GetSystemMetrics(1)
@@ -170,7 +168,7 @@ def EXPAND(num): return int(round(num * WIN_MAG))
 
 FONT = (FONT_TYPE1, EXPAND(12), "bold")
 
-__version__ = (5, 3, 0)
+__version__ = (5, 4, "0a1")
 
 
 class EasyTurtle:
@@ -772,6 +770,8 @@ line: {index+1}, {widget.__class__.__name__}\n\
         name = data["_name"]
         if name in Names:
             Widgets[Names.index(name)](self, data, index)
+        elif (name == "Geometry") and (version < (5, 0)):
+            ScreenSize(self, data, index)
         else:
             Undefined(self, {"_name": name, **data}, index)
 
@@ -916,9 +916,14 @@ line: {index+1}, {widget.__class__.__name__}\n\
             return "OtherError"
         return data
 
-    def show_release(self, event):
+    def show_release(self, event=None):
         """リリースページの表示"""
         url = "http://github.com/RyoFuji2005/EasyTurtle/releases/latest"
+        webbrowser.open_new(url)
+
+    def show_github(self, event=None):
+        """GitHubページの表示"""
+        url = "http://github.com/RyoFuji2005/EasyTurtle/"
         webbrowser.open_new(url)
 
     def update_starting(self):
@@ -1035,8 +1040,6 @@ line: {index+1}, {widget.__class__.__name__}\n\
         self.root.protocol("WM_DELETE_WINDOW", self.close_window)
         self.icon = tk.PhotoImage(file=ICON_FILE)
         self.root.tk.call('wm', 'iconphoto', self.root._w, self.icon)
-        self.menubar = tk.Menu(self.root)
-        self.root.config(menu=self.menubar)
         frame1 = tk.Frame(self.root)
         frame1.pack()
 
@@ -1054,11 +1057,17 @@ line: {index+1}, {widget.__class__.__name__}\n\
         self.root.bind("<Control-Key-o>", self.open_program)
         self.root.bind("<Control-Key-s>", self.save_program)
         self.root.bind("<Control-Key-q>", self.close_window)
+        self.root.bind("<Control-Key-,>", self.edit_config)
         self.root.bind("<Key-F1>", self.show_document)
         self.root.bind("<Key-F5>", self.run_program)
 
+        # Menubarの作成
+        self.menubar = tk.Menu(self.root)
+        self.root.config(menu=self.menubar)
+        menu_font = (FONT_TYPE1, 10)
+
         # FILEメニューの作成
-        filemenu = tk.Menu(self.menubar, tearoff=0)
+        filemenu = tk.Menu(self.menubar, tearoff=0, font=menu_font)
         filemenu.add_command(label="開く",
                              accelerator="Ctrl+O",
                              command=self.open_program)
@@ -1079,7 +1088,7 @@ line: {index+1}, {widget.__class__.__name__}\n\
         self.menubar.add_cascade(label="ファイル", menu=filemenu)
 
         # EDITメニューの作成
-        editmenu = tk.Menu(self.menubar, tearoff=0)
+        editmenu = tk.Menu(self.menubar, tearoff=0, font=menu_font)
         editmenu.add_command(label="元に戻す", accelerator="Ctrl+Shift+Z",
                              command=self.undo_change)
         editmenu.add_separator()
@@ -1104,17 +1113,19 @@ line: {index+1}, {widget.__class__.__name__}\n\
         self.menubar.add_cascade(label="編集", menu=editmenu)
 
         # RUNメニューの作成
-        runmenu = tk.Menu(self.menubar, tearoff=0)
+        runmenu = tk.Menu(self.menubar, tearoff=0, font=menu_font)
         runmenu.add_command(label="実行", accelerator="F5",
                             command=self.run_program)
         self.menubar.add_cascade(label="実行", menu=runmenu)
 
         # OPTIONSメニューの追加
-        othermenu = tk.Menu(self.menubar, tearoff=0)
-        othermenu.add_command(label="設定", command=self.edit_config)
+        othermenu = tk.Menu(self.menubar, tearoff=0, font=menu_font)
+        othermenu.add_command(label="設定", accelerator="Ctrl+,",
+                              command=self.edit_config)
         othermenu.add_command(label="ヘルプの表示", accelerator="F1",
                               command=self.show_document)
         othermenu.add_command(label="バージョン情報", command=self.version_info)
+        othermenu.add_command(label="GitHubの表示", command=self.show_github)
         self.menubar.add_cascade(label="オプション", menu=othermenu)
 
         # 画面の左側を作成
@@ -1671,7 +1682,7 @@ line: {self.p.widgets.index(self)+1}, {self.__class__.__name__}\n\
 
 
 class VarNumber(Widget):
-    TEXT = "VarNumber   変数①を数値②にする"
+    TEXT = "変数①を数値②にする"
     TYPE = "variable"
     VALUES = {"name": "num", "value": "0"}
 
@@ -1725,7 +1736,7 @@ class VarNumber(Widget):
 
 
 class VarString(Widget):
-    TEXT = "VarString   変数①を文字列②にする"
+    TEXT = "変数①を文字列②にする"
     TYPE = "variable"
     VALUES = {"name": "str", "value": "text"}
 
@@ -1779,7 +1790,7 @@ class VarString(Widget):
 
 
 class VarBoolean(Widget):
-    TEXT = "VarBoolean  変数①を真理値②にする"
+    TEXT = "変数①を真理値②にする"
     TYPE = "variable"
     VALUES = {"name": "bool", "value": "True"}
 
@@ -1835,7 +1846,7 @@ class VarBoolean(Widget):
 
 
 class Title(Widget):
-    TEXT = "Title       画面タイトルを①にする"
+    TEXT = "画面タイトルを①にする"
     TYPE = "normalset"
     VALUES = {"title": "Turtle"}
 
@@ -1873,7 +1884,7 @@ class Title(Widget):
 
 
 class ScreenSize(Widget):
-    TEXT = "ScreenSize  画面を横幅①、高さ②にする"
+    TEXT = "画面を横幅①、高さ②にする"
     TYPE = "normalset"
     VALUES = {"width": "600", "height": "600"}
 
@@ -1968,7 +1979,7 @@ line: {self.p.widgets.index(self)+1}, {self.__class__.__name__}\n\
 
 
 class Forward(Widget):
-    TEXT = "Forward     前方向に①移動する"
+    TEXT = "前方向に①移動する"
     TYPE = "normalset"
     VALUES = {"distance": "0"}
 
@@ -2006,7 +2017,7 @@ class Forward(Widget):
 
 
 class Backward(Widget):
-    TEXT = "Backward    後方向に①移動する"
+    TEXT = "後方向に①移動する"
     TYPE = "normalset"
     VALUES = {"distance": "0"}
 
@@ -2044,7 +2055,7 @@ class Backward(Widget):
 
 
 class Right(Widget):
-    TEXT = "Right       右方向に①度曲げる"
+    TEXT = "右方向に①度曲げる"
     TYPE = "normalset"
     VALUES = {"angle": "0"}
 
@@ -2082,7 +2093,7 @@ class Right(Widget):
 
 
 class Left(Widget):
-    TEXT = "Left        左方向に①度曲げる"
+    TEXT = "左方向に①度曲げる"
     TYPE = "normalset"
     VALUES = {"angle": "0"}
 
@@ -2120,7 +2131,7 @@ class Left(Widget):
 
 
 class GoTo(Widget):
-    TEXT = "GoTo        ｘ座標①、ｙ座標②に移動する"
+    TEXT = "ｘ座標①、ｙ座標②に移動する"
     TYPE = "normalset"
     VALUES = {"x": "0", "y": "0"}
 
@@ -2174,7 +2185,7 @@ class GoTo(Widget):
 
 
 class SetX(Widget):
-    TEXT = "SetX        ｘ座標①に移動する"
+    TEXT = "ｘ座標①に移動する"
     TYPE = "normalset"
     VALUES = {"x": "0"}
 
@@ -2212,7 +2223,7 @@ class SetX(Widget):
 
 
 class SetY(Widget):
-    TEXT = "SetY        ｙ座標①に移動する"
+    TEXT = "ｙ座標①に移動する"
     TYPE = "normalset"
     VALUES = {"y": "0"}
 
@@ -2250,7 +2261,7 @@ class SetY(Widget):
 
 
 class SetHeading(Widget):
-    TEXT = "SetHeading  向きを①度に変更する"
+    TEXT = "向きを①度に変更する"
     TYPE = "normalset"
     VALUES = {"angle": "0"}
 
@@ -2288,7 +2299,7 @@ class SetHeading(Widget):
 
 
 class Home(Widget):
-    TEXT = "Home        座標と角度を初期状態に戻す"
+    TEXT = "座標と角度を初期状態に戻す"
     TYPE = "normalset"
 
     def set_data(self, data):
@@ -2313,7 +2324,7 @@ class Home(Widget):
 
 
 class Position(Widget):
-    TEXT = "Position    座標ｘを①、ｙを②に代入する"
+    TEXT = "座標ｘを①、ｙを②に代入する"
     TYPE = "normalget"
     VALUES = {"x": "xcor", "y": "ycor"}
 
@@ -2369,7 +2380,7 @@ class Position(Widget):
 
 
 class ToWards(Widget):
-    TEXT = "ToWards     ｘ①、ｙ②への角度を③に代入する"
+    TEXT = "ｘ①、ｙ②への角度を③に代入する"
     TYPE = "normalget"
     VALUES = {"x": "0",
               "y": "0",
@@ -2442,7 +2453,7 @@ class ToWards(Widget):
 
 
 class Distance(Widget):
-    TEXT = "Distance    ｘ①、ｙ②への距離を③に代入する"
+    TEXT = "ｘ①、ｙ②への距離を③に代入する"
     TYPE = "normalget"
     VALUES = {"x": "0",
               "y": "0",
@@ -2515,7 +2526,7 @@ class Distance(Widget):
 
 
 class XCor(Widget):
-    TEXT = "XCor        ｘ座標を①に代入する"
+    TEXT = "ｘ座標を①に代入する"
     TYPE = "normalget"
     VALUES = {"x": "xcor"}
 
@@ -2555,7 +2566,7 @@ class XCor(Widget):
 
 
 class YCor(Widget):
-    TEXT = "YCor        ｙ座標を①に代入する"
+    TEXT = "ｙ座標を①に代入する"
     TYPE = "normalget"
     VALUES = {"y": "ycor"}
 
@@ -2595,7 +2606,7 @@ class YCor(Widget):
 
 
 class Heading(Widget):
-    TEXT = "Heading     角度を①に代入する"
+    TEXT = "角度を①に代入する"
     TYPE = "normalget"
     VALUES = {"angle": "angle"}
 
@@ -2634,7 +2645,7 @@ class Heading(Widget):
 
 
 class Circle(Widget):
-    TEXT = "Circle      半径①の円を角度②度描く"
+    TEXT = "半径①の円を角度②度描く"
     TYPE = "normalset"
     VALUES = {"radius": "0", "extent": "360"}
 
@@ -2690,7 +2701,7 @@ class Circle(Widget):
 
 
 class Dot(Widget):
-    TEXT = "Dot         直径①の円を描く"
+    TEXT = "直径①の円を描く"
     TYPE = "normalset"
     VALUES = {"size": "0"}
 
@@ -2728,7 +2739,7 @@ class Dot(Widget):
 
 
 class Stamp(Widget):
-    TEXT = "Stamp       亀のスタンプを押す"
+    TEXT = "亀のスタンプを押す"
     TYPE = "normalset"
 
     def set_data(self, data):
@@ -2753,7 +2764,7 @@ class Stamp(Widget):
 
 
 class Speed(Widget):
-    TEXT = "Speed       速度を①に変更する"
+    TEXT = "速度を①に変更する"
     TYPE = "normalset"
     VALUES = {"speed": "3"}
 
@@ -2792,7 +2803,7 @@ class Speed(Widget):
 
 
 class PenDown(Widget):
-    TEXT = "PenDown     動いた線を引くようにする"
+    TEXT = "動いた線を引くようにする"
     TYPE = "normalset"
 
     def set_data(self, data):
@@ -2818,7 +2829,7 @@ class PenDown(Widget):
 
 
 class PenUp(Widget):
-    TEXT = "PenUp       動いた線を引かなくする"
+    TEXT = "動いた線を引かなくする"
     TYPE = "normalset"
 
     def set_data(self, data):
@@ -2844,7 +2855,7 @@ class PenUp(Widget):
 
 
 class IsDown(Widget):
-    TEXT = "IsDown      動いた線を引くか①に代入する"
+    TEXT = "動いた線を引くか①に代入する"
     TYPE = "normalget"
     VALUES = {"down": "down"}
 
@@ -2883,7 +2894,7 @@ class IsDown(Widget):
 
 
 class PenSize(Widget):
-    TEXT = "PenSize     ペン先の太さを①にする"
+    TEXT = "ペン先の太さを①にする"
     TYPE = "normalset"
     VALUES = {"width": "1"}
 
@@ -2921,7 +2932,7 @@ class PenSize(Widget):
 
 
 class Color(Widget):
-    TEXT = "Color       ペンと背景の色を①にする"
+    TEXT = "ペンと背景の色を①にする"
     TYPE = "normalset"
     VALUES = {"color": "black"}
 
@@ -3003,7 +3014,7 @@ line: {self.p.widgets.index(self)+1}, {self.__class__.__name__}\n\
 
 
 class PenColor(Widget):
-    TEXT = "PenColor    ペンの色を①にする"
+    TEXT = "ペンの色を①にする"
     TYPE = "normalset"
     VALUES = {"color": "black"}
 
@@ -3085,7 +3096,7 @@ line: {self.p.widgets.index(self)+1}, {self.__class__.__name__}\n\
 
 
 class FillColor(Widget):
-    TEXT = "FillColor   塗りつぶしの色を①にする"
+    TEXT = "塗りつぶしの色を①にする"
     TYPE = "normalset"
     VALUES = {"color": "black"}
 
@@ -3167,7 +3178,7 @@ line: {self.p.widgets.index(self)+1}, {self.__class__.__name__}\n\
 
 
 class BGColor(Widget):
-    TEXT = "BGColor     背景色を①に変更する"
+    TEXT = "背景色を①に変更する"
     TYPE = "normalset"
     VALUES = {"color": "white"}
 
@@ -3249,7 +3260,7 @@ line: {self.p.widgets.index(self)+1}, {self.__class__.__name__}\n\
 
 
 class GetPenColor(Widget):
-    TEXT = "GetPenColor ペンの色を①に代入する"
+    TEXT = "ペンの色を①に代入する"
     TYPE = "normalget"
     VALUES = {"color": "color"}
 
@@ -3288,7 +3299,7 @@ class GetPenColor(Widget):
 
 
 class GetFillColor(Widget):
-    TEXT = "GetFillColor塗りつぶしの色を①に代入する"
+    TEXT = "塗りつぶしの色を①に代入する"
     TYPE = "normalget"
     VALUES = {"color": "color"}
 
@@ -3327,7 +3338,7 @@ class GetFillColor(Widget):
 
 
 class GetBGColor(Widget):
-    TEXT = "GetBGColor  背景色を①に代入する"
+    TEXT = "背景色を①に代入する"
     TYPE = "normalget"
     VALUES = {"color": "color"}
 
@@ -3366,7 +3377,7 @@ class GetBGColor(Widget):
 
 
 class BeginFill(Widget):
-    TEXT = "BeginFill   塗りつぶしを始める"
+    TEXT = "塗りつぶしを始める"
     TYPE = "normalset"
 
     def set_data(self, data):
@@ -3391,7 +3402,7 @@ class BeginFill(Widget):
 
 
 class EndFill(Widget):
-    TEXT = "EndFill     塗りつぶしを終える"
+    TEXT = "塗りつぶしを終える"
     TYPE = "normalset"
 
     def set_data(self, data):
@@ -3416,7 +3427,7 @@ class EndFill(Widget):
 
 
 class Filling(Widget):
-    TEXT = "Filling     塗りつぶしするか①に代入する"
+    TEXT = "塗りつぶしするか①に代入する"
     TYPE = "normalget"
     VALUES = {"fill": "fill"}
 
@@ -3455,7 +3466,7 @@ class Filling(Widget):
 
 
 class ShowTurtle(Widget):
-    TEXT = "ShowTurtle  カメを表示モードにする"
+    TEXT = "カメを表示モードにする"
     TYPE = "normalset"
 
     def set_data(self, data):
@@ -3480,7 +3491,7 @@ class ShowTurtle(Widget):
 
 
 class HideTurtle(Widget):
-    TEXT = "HideTurtle  カメを非表示モードにする"
+    TEXT = "カメを非表示モードにする"
     TYPE = "normalset"
 
     def set_data(self, data):
@@ -3505,7 +3516,7 @@ class HideTurtle(Widget):
 
 
 class IsVisible(Widget):
-    TEXT = "IsVisible   表示モードか①に代入する"
+    TEXT = "表示モードか①に代入する"
     TYPE = "normalget"
     VALUES = {"shown": "shown"}
 
@@ -3544,7 +3555,7 @@ class IsVisible(Widget):
 
 
 class TurtleSize(Widget):
-    TEXT = "TurtleSize  亀の大きさを①にする"
+    TEXT = "亀の大きさを①にする"
     TYPE = "normalset"
     VALUES = {"size": "1"}
 
@@ -3582,7 +3593,7 @@ class TurtleSize(Widget):
 
 
 class Write(Widget):
-    TEXT = "Write       文字列①を大きさ②で書く"
+    TEXT = "文字列①を大きさ②で書く"
     TYPE = "normalset"
     VALUES = {
         "text": "Sample",
@@ -3767,7 +3778,7 @@ class Write(Widget):
 
 
 class Bye(Widget):
-    TEXT = "Bye         プログラムを終了する"
+    TEXT = "プログラムを終了する"
     TYPE = "normalset"
 
     def set_data(self, data):
@@ -3792,7 +3803,7 @@ class Bye(Widget):
 
 
 class ExitOnClick(Widget):
-    TEXT = "ExitOnClick クリックで終了する"
+    TEXT = "クリックで終了する"
     TYPE = "normalset"
 
     def set_data(self, data):
@@ -3820,7 +3831,7 @@ class ExitOnClick(Widget):
 
 
 class Bell(Widget):
-    TEXT = "Bell        システムサウンドを鳴らす"
+    TEXT = "システムサウンドを鳴らす"
     TYPE = "normalset"
 
     def set_data(self, data):
@@ -3845,7 +3856,7 @@ class Bell(Widget):
 
 
 class Sleep(Widget):
-    TEXT = "Sleep       操作を①秒停止する"
+    TEXT = "操作を①秒停止する"
     TYPE = "normalset"
     VALUES = {"second": "0"}
 
@@ -3883,7 +3894,7 @@ class Sleep(Widget):
 
 
 class Comment(Widget):
-    TEXT = "Comment     実行されないコメント文"
+    TEXT = "実行されないコメント文"
     TYPE = "comment"
     VALUES = {"comment": "Comment"}
 
@@ -3946,7 +3957,7 @@ class Comment(Widget):
 
 
 class Undefined(Widget):
-    TEXT = "Undefined   対応していない不明なクラス"
+    TEXT = "対応していない不明なクラス"
     TYPE = "undefined"
 
     def set_data(self, data):
@@ -3992,6 +4003,14 @@ class Undefined(Widget):
         pass
 
 
+def get_widget_info(widget):
+    length = 14
+    name = widget.__name__
+    space = " " * (length - len(name))
+    info = name + space + widget.TEXT
+    return info
+
+
 # クラスをまとめる
 Widgets = (
     VarNumber, VarString, VarBoolean, Title, ScreenSize,
@@ -4005,7 +4024,7 @@ Widgets = (
     ShowTurtle, HideTurtle, IsVisible,
     TurtleSize, Write, Bye, ExitOnClick,
     Bell, Sleep, Comment)
-Texts = tuple([c.TEXT for c in Widgets])
+Texts = tuple([get_widget_info(c) for c in Widgets])
 Names = tuple([c.__name__ for c in Widgets])
 
 
