@@ -58,10 +58,10 @@
                     <p><a href="./Photos/photo1.png"><img src="./Photos/photo1.png" alt="photo" width="400"
                                 height="200"></a></p>
                     <h2>基本説明</h2>
-                    <h3>ウィジェットを追加する</h3>
+                    <h3>ウィジェットの追加</h3>
                     <p>右側のリストでウィジェットを選択すると左側のリストにウィジェットが追加されます。</p>
                     <p><img src="./Photos/photo2.png" alt="photo" width="400" height="200"></p>
-                    <h3>ウィジェットを変更する</h3>
+                    <h3>ウィジェットの変更</h3>
                     <p>ウィジェットを右クリックすることでメニューが表示されます。</p>
                     <p><img src="./Photos/photo13.png" alt="photo" width="400" height="200"></p>
                     <table border="1">
@@ -124,6 +124,17 @@
                     </table>
                     <p><b>※１：一部のウィジェットのみで有効です。</b></p>
                     <p><b>※２：有効にできないウィジェットもあります。</b></p>
+                    <h3>ウィジェットの追加位置</h3>
+                    <p>ウィジェットの追加・ペースト位置を指定します</p>
+                    <h4>プログラムの最初</h4>
+                    <p>プログラムの最初に追加します。</p>
+                    <h4>プログラムの最後</h4>
+                    <p>プログラムの最後に追加します。</p>
+                    <h4>指定位置</h4>
+                    <p>指定した位置に追加します。</p>
+                    <p>指定できる値は１～プログラムの最後までです。</p>
+                    <h4>位置の自動調整</h4>
+                    <p>位置を自動で調整するかどうかを指定します。</p>
                     <h3>メニューバー</h3>
                     <p><img src="./Photos/photo3.png" alt="photo" width="400" height="200"></p>
                     <h4>ファイル</h4>
@@ -136,6 +147,11 @@
                         </tr>
                     </thead>
                     <tbody>
+                        <tr>
+                            <td>新規</td>
+                            <td>画面を初期化する</td>
+                            <td><code>Ctrl</code>+<code>N</code></td>
+                        </tr>
                         <tr>
                             <td>開く</td>
                             <td>プログラムを開く</td>
@@ -150,11 +166,6 @@
                             <td>名前を付けて保存</td>
                             <td>プログラムを名前を付けて保存する</td>
                             <td><code>Ctrl</code>+<code>Shift</code>+<code>S</code></td>
-                        </tr>
-                        <tr>
-                            <td>初期化</td>
-                            <td>画面を初期化する</td>
-                            <td><code>Ctrl</code>+<code>I</code></td>
                         </tr>
                         <tr>
                             <td>終了</td>
@@ -176,7 +187,7 @@
                         <tr>
                             <td>元に戻す</td>
                             <td>動作を一つ戻す</td>
-                            <td><code>Ctrl</code>+<code>Shift</code>+<code>Z</code></td>
+                            <td><code>Ctrl</code>+<code>Z</code></td>
                         </tr>
                         <tr>
                             <td>切り取り</td>
@@ -196,7 +207,7 @@
                         <tr>
                             <td>削除</td>
                             <td>アプリを終了する</td>
-                            <td><code>Ctrl</code>+<code>Shift</code>+<code>D</code></td>
+                            <td><code>Ctrl</code>+<code>D</code></td>
                         </tr>
                         <tr>
                             <td>すべて選択</td>
@@ -206,7 +217,12 @@
                         <tr>
                             <td>選択解除</td>
                             <td>アプリを終了する</td>
-                            <td><code>Ctrl</code>+<code>Shift</code>+<code>L</code></td>
+                            <td><code>Ctrl</code>+<code>L</code></td>
+                        </tr>
+                        <tr>
+                            <td>行へ移動</td>
+                            <td>指定した行に移動する</td>
+                            <td><code>Ctrl</code>+<code>G</code></td>
                         </tr>
                     </tbody>
                     </table>
@@ -240,7 +256,7 @@
                         <tr>
                             <td>設定</td>
                             <td>設定を開く</td>
-                            <td></td>
+                            <td><code>Ctrl</code>+<code>,</code></td>
                         </tr>
                         <tr>
                             <td>ヘルプの表示</td>
@@ -250,6 +266,11 @@
                         <tr>
                             <td>バージョン情報</td>
                             <td>バージョン情報を開く</td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td>GitHubで表示</td>
+                            <td>ブラウザでGitHubのページを開く</td>
                             <td></td>
                         </tr>
                     </tbody>
@@ -517,15 +538,15 @@
                         </tr>
                     </tbody>
                     </table>
-                    <p>※１：このウィジェットはコメント用です。</p>
-                    <p>※２：このウィジェットが表示されたときにはJsonファイルが破損していないか確認してください。</p>
+                    <p><b>※１：このウィジェットはコメント用です。</b></p>
+                    <p><b>※２：このウィジェットが表示されたときにはJsonファイルが破損していないか確認してください。</b></p>
                 </article>
             </div>
         </section>
 <!--------->
 </body>
 <footer>
-    <p>Copyright © 2021 Ryo Fujinami, Ryota Furukawa. All rights reserved.</p>
+    <p>Copyright ©2020-2021 Ryo Fujinami, Ryota Furukawa. All rights reserved.</p>
 </footer>
 
 </html>
