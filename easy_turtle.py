@@ -22,7 +22,7 @@ import urllib.request
 import threading
 import traceback
 
-# ChangePoint: AutoUpdate
+# ChangePoint: Menu
 
 SIZE = 8
 HEIGHT = 72
@@ -170,7 +170,7 @@ def EXPAND(num): return int(round(num * WIN_MAG))
 
 FONT = (FONT_TYPE1, EXPAND(12), "bold")
 
-__version__ = (5, 3, "0b1")
+__version__ = (5, 3, 0)
 
 
 class EasyTurtle:
@@ -419,7 +419,7 @@ GNU FreeFontのインストールをおすすめします。")
     def listbox_selected(self, event):
         """リストボックス選択時の動作"""
         before_index = self.index
-        
+
         mode = self.var2.get()
         if mode == 1:
             index = 0
@@ -752,6 +752,11 @@ line: {index+1}, {widget.__class__.__name__}\n\
             # バックアップを空にする
             self.backed_up = []
 
+            # 設定を初期化
+            self.var2.set(2)
+            self.var3.set(True)
+            self.ent1.delete(0, tk.END)
+
             self.set_title()
         except Exception:
             # コピーを復元
@@ -1075,7 +1080,8 @@ line: {index+1}, {widget.__class__.__name__}\n\
 
         # EDITメニューの作成
         editmenu = tk.Menu(self.menubar, tearoff=0)
-        editmenu.add_command(label="元に戻す", accelerator="Ctrl+Shift+Z", command=self.undo_change)
+        editmenu.add_command(label="元に戻す", accelerator="Ctrl+Shift+Z",
+                             command=self.undo_change)
         editmenu.add_separator()
         editmenu.add_command(label="切り取り",
                              accelerator="Ctrl+Shift+X",
@@ -1099,13 +1105,15 @@ line: {index+1}, {widget.__class__.__name__}\n\
 
         # RUNメニューの作成
         runmenu = tk.Menu(self.menubar, tearoff=0)
-        runmenu.add_command(label="実行", accelerator="F5", command=self.run_program)
+        runmenu.add_command(label="実行", accelerator="F5",
+                            command=self.run_program)
         self.menubar.add_cascade(label="実行", menu=runmenu)
 
         # OPTIONSメニューの追加
         othermenu = tk.Menu(self.menubar, tearoff=0)
         othermenu.add_command(label="設定", command=self.edit_config)
-        othermenu.add_command(label="ヘルプの表示", accelerator="F1", command=self.show_document)
+        othermenu.add_command(label="ヘルプの表示", accelerator="F1",
+                              command=self.show_document)
         othermenu.add_command(label="バージョン情報", command=self.version_info)
         self.menubar.add_cascade(label="オプション", menu=othermenu)
 
@@ -1389,16 +1397,15 @@ class Widget:
 
     def delete(self, back_up=True):
         """ウィジェットの削除"""
+        if self in self.p.last_shown:
+            self.p.last_shown.remove(self)
         self.cv.place_forget()
         self.p.widgets.remove(self)
         self.p.all_redraw(back_up)
 
     def place_cv(self):
         """キャンバスを描き直す"""
-        if self in self.p.widgets:
-            index = self.p.widgets.index(self) - self.p.index
-        else:
-            return 1
+        index = self.p.widgets.index(self) - self.p.index
         if 0 <= index < SIZE:
             self.cv.place(x=0, y=EXPAND(HEIGHT*index))
             self.lab4.config(text=f"{self.p.widgets.index(self)+1:03}")
@@ -2113,7 +2120,7 @@ class Left(Widget):
 
 
 class GoTo(Widget):
-    TEXT = "GoTo        ｘ座標①，ｙ座標②に移動する"
+    TEXT = "GoTo        ｘ座標①、ｙ座標②に移動する"
     TYPE = "normalset"
     VALUES = {"x": "0", "y": "0"}
 

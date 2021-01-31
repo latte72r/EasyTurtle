@@ -1,136 +1,169 @@
 {
   "version": [
-    4,
-    11
+    5,
+    3
   ],
   "body": [
     {
-      "_name": "VarNumber",
       "name": "num",
-      "value": "60"
+      "value": "60",
+      "_name": "VarNumber",
+      "_enabled": true
     },
     {
+      "title": "JapaneseFlag",
       "_name": "Title",
-      "title": "JapaneseFlag"
+      "_enabled": true
     },
     {
-      "_name": "ScreenSize",
       "width": "[num]*8",
-      "height": "[num]*6"
+      "height": "[num]*6",
+      "_name": "ScreenSize",
+      "_enabled": true
     },
     {
-      "_name": "PenUp"
+      "_name": "PenUp",
+      "_enabled": true
     },
     {
+      "angle": "90",
       "_name": "Right",
-      "angle": "90"
+      "_enabled": true
     },
     {
+      "distance": "[num]//2",
       "_name": "Forward",
-      "distance": "[num]//2"
+      "_enabled": true
     },
     {
+      "angle": "90",
       "_name": "Left",
-      "angle": "90"
+      "_enabled": true
     },
     {
-      "_name": "PenDown"
+      "_name": "PenDown",
+      "_enabled": true
     },
     {
+      "color": "red",
       "_name": "Color",
-      "color": "red"
+      "_enabled": true
     },
     {
-      "_name": "BeginFill"
+      "_name": "BeginFill",
+      "_enabled": true
     },
     {
-      "_name": "Circle",
       "radius": "[num]",
-      "extent": "360"
+      "extent": "360",
+      "_name": "Circle",
+      "_enabled": true
     },
     {
-      "_name": "EndFill"
+      "_name": "EndFill",
+      "_enabled": true
     },
     {
-      "_name": "PenUp"
+      "_name": "PenUp",
+      "_enabled": true
     },
     {
+      "width": "1",
       "_name": "PenSize",
-      "width": "1"
+      "_enabled": true
     },
     {
+      "color": "black",
       "_name": "Color",
-      "color": "black"
+      "_enabled": true
     },
     {
+      "angle": "90",
       "_name": "Right",
-      "angle": "90"
+      "_enabled": true
     },
     {
+      "distance": "[num]",
       "_name": "Forward",
-      "distance": "[num]"
+      "_enabled": true
     },
     {
-      "_name": "PenDown"
+      "_name": "PenDown",
+      "_enabled": true
     },
     {
+      "angle": "90",
       "_name": "Left",
-      "angle": "90"
+      "_enabled": true
     },
     {
+      "distance": "[num]*3",
       "_name": "Forward",
-      "distance": "[num]*3"
+      "_enabled": true
     },
     {
+      "angle": "90",
       "_name": "Left",
-      "angle": "90"
+      "_enabled": true
     },
     {
+      "distance": "[num]*4",
       "_name": "Forward",
-      "distance": "[num]*4"
+      "_enabled": true
     },
     {
+      "angle": "90",
       "_name": "Left",
-      "angle": "90"
+      "_enabled": true
     },
     {
+      "distance": "[num]*6",
       "_name": "Forward",
-      "distance": "[num]*6"
+      "_enabled": true
     },
     {
+      "angle": "90",
       "_name": "Left",
-      "angle": "90"
+      "_enabled": true
     },
     {
+      "distance": "[num]*4",
       "_name": "Forward",
-      "distance": "[num]*4"
+      "_enabled": true
     },
     {
+      "angle": "90",
       "_name": "Left",
-      "angle": "90"
+      "_enabled": true
     },
     {
+      "distance": "[num]*3",
       "_name": "Forward",
-      "distance": "[num]*3"
+      "_enabled": true
     },
     {
-      "_name": "PenUp"
+      "_name": "PenUp",
+      "_enabled": true
     },
     {
+      "angle": "90",
       "_name": "Right",
-      "angle": "90"
+      "_enabled": true
     },
     {
+      "distance": "[num]",
       "_name": "Forward",
-      "distance": "[num]"
+      "_enabled": true
     },
     {
-      "_name": "Write",
       "text": "Japan",
-      "size": "[num]//2"
+      "size": "[num]//2",
+      "_name": "Write",
+      "_enabled": true
     },
     {
-      "_name": "HideTurtle"
+      "_name": "HideTurtle",
+      "_enabled": true
     }
   ]
 }
