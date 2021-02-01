@@ -169,7 +169,7 @@ def EXPAND(num): return int(round(num * WIN_MAG))
 
 FONT = (FONT_TYPE1, EXPAND(12), "bold")
 
-__version__ = (5, 4, 0)
+__version__ = (5, 5, "0a1")
 
 
 class EasyTurtle:
@@ -182,6 +182,7 @@ class EasyTurtle:
         self.copied_widgets = []
         self.default_data = []
         self.backed_up = []
+        self.canceled_changes = []
         self.warning_ignore = False
         self.running_program = False
         self.program_name = None
@@ -200,10 +201,6 @@ class EasyTurtle:
             self.open_program(file)
 
         self.root.mainloop()
-
-    def __str__(self):
-        """文字列を定義"""
-        return "EasyTurtleObject"
 
     def __repr__(self):
         """コンストラクタの文字列定義"""
@@ -352,32 +349,87 @@ class EasyTurtle:
             self.back_up()
 
     def set_title(self):
+        """タイトルを設定する"""
         if [d.get_data(more=False) for d in self.widgets] == self.default_data:
             self.root.title(f"{self.basename} - EasyTurtle")
         else:
             self.root.title(f"*{self.basename}* - EasyTurtle")
 
+    def without_check(self, data):
+        """チェックを除く"""
+        new = []
+        for d in data:
+            if "_check" in d:
+                del d["_check"]
+            new.append(d)
+        return new
+
     def back_up(self):
         """バックアップ"""
+        # データを取得
         data = self.get_data()
+
+        # バックアップがなければ追加
         if len(self.backed_up) == 0:
             self.backed_up.append(data)
-        elif self.backed_up[-1]["body"] != data["body"]:
+
+        # 前回と違ければ追加
+        elif self.without_check(self.backed_up[-1]["body"]) != \
+             self.without_check(data["body"]):
             self.backed_up.append(data)
 
     def undo_change(self, event=None):
         """一回戻る"""
         if (type(event) == tk.Event) and (self.running_program is True):
             return
+
+        # データを取得
+        self.back_up()
         data = self.get_data()
+
+        # バックアップがあり、変更されているとき
         if (len(self.backed_up) > 0) and \
-           (self.backed_up[-1]["body"] != data["body"]):
+           (self.without_check(self.backed_up[-1]["body"]) != \
+            self.without_check(data["body"])):
+            self.canceled_changes.append(data)
             self.set_data(self.backed_up[-1])
             self.backed_up = self.backed_up[:-1]
+
+        # バックアップが２つ以上あり、変更されているとき
         elif (len(self.backed_up) > 1) and \
-             (self.backed_up[-2]["body"] != data["body"]):
+             (self.without_check(self.backed_up[-2]["body"]) != \
+              self.without_check(data["body"])):
+            self.canceled_changes.append(data)
             self.set_data(self.backed_up[-2])
             self.backed_up = self.backed_up[:-2]
+
+        # それ以外ならエラー音
+        else:
+           self.root.bell()
+           return 1
+
+        self.all_redraw()
+
+    def redo_change(self, event=None):
+        """やり直し"""
+        if (type(event) == tk.Event) and (self.running_program is True):
+            return
+
+        # データを取得
+        self.back_up()
+        data = self.get_data()
+
+        # キャンセルがあり、変更されているとき
+        if (len(self.canceled_changes) > 0) and \
+           (self.without_check(self.canceled_changes[-1]["body"]) != \
+            self.without_check(data["body"])):
+            self.set_data(self.canceled_changes[-1])
+            self.canceled_changes = self.canceled_changes[:-1]
+        # それ以外ならエラー音
+        else:
+           self.root.bell()
+           return 1
+
         self.all_redraw()
 
     def get_data(self):
@@ -564,7 +616,7 @@ line: {index+1}, {widget.__class__.__name__}\n\
         widgets = [w for w in self.widgets]
         for d in widgets:
             d.delete(back_up=False)
-        self.all_redraw()
+        self.all_redraw(change=False)
 
     def save_program(self, file=None):
         """上書き保存"""
@@ -638,6 +690,8 @@ line: {index+1}, {widget.__class__.__name__}\n\
                 "version": __version__[:2],
                 "copy": self.copied_widgets,
                 "index": self.index,
+                "backedup": self.backed_up,
+                "canceled": self.canceled_changes,
                 "addmode": self.var2.get(),
                 "adjust": self.var3.get(),
                 "position": self.ent1.get(),
@@ -723,6 +777,10 @@ line: {index+1}, {widget.__class__.__name__}\n\
             # コピーされたウィジェットを設定
             self.copied_widgets = data["copy"] if "copy" in data else []
 
+            # バックアップデータを設定
+            self.backed_up = data["backedup"] if "backedup" in data else []
+            self.canceled_changes = data["canceled"] if "canceled" in data else []
+
             # 追加位置を設定
             addmode = data["addmode"] if "addmode" in data else 2
             adjust = data["adjust"] if "adjust" in data else True
@@ -748,9 +806,6 @@ line: {index+1}, {widget.__class__.__name__}\n\
             # プログラムの名称設定
             self.program_name = file
             self.basename = os.path.basename(self.program_name)
-
-            # バックアップを空にする
-            self.backed_up = []
 
             self.set_title()
         except Exception:
@@ -1056,6 +1111,7 @@ line: {index+1}, {widget.__class__.__name__}\n\
         self.copied_widgets = []
         self.default_data = []
         self.backed_up = []
+        self.canceled_changes = []
         self.warning_ignore = False
         self.running_program = False
         self.program_name = None
@@ -1090,6 +1146,7 @@ line: {index+1}, {widget.__class__.__name__}\n\
         self.root.bind("<Control-Shift-Key-X>", self.cut_selected)
         self.root.bind("<Control-Shift-Key-A>", self.select_all)
         self.root.bind("<Control-Shift-Key-S>", self.save_program_as)
+        self.root.bind("<Control-Shift-Key-Z>", self.redo_change)
         self.root.bind("<Control-Key-z>", self.undo_change)
         self.root.bind("<Control-Key-l>", self.clear_selected)
         self.root.bind("<Control-Key-n>", self.new_program)
@@ -1109,21 +1166,16 @@ line: {index+1}, {widget.__class__.__name__}\n\
 
         # FILEメニューの作成
         filemenu = tk.Menu(self.menubar, tearoff=0, font=menu_font)
-        filemenu.add_command(label="新規",
-                             accelerator="Ctrl+N",
+        filemenu.add_command(label="新規", accelerator="Ctrl+N",
                              command=self.new_program)
-        filemenu.add_command(label="開く",
-                             accelerator="Ctrl+O",
+        filemenu.add_command(label="開く", accelerator="Ctrl+O",
                              command=self.open_program)
-        filemenu.add_command(label="上書き保存",
-                             accelerator="Ctrl+S",
+        filemenu.add_command(label="上書き保存", accelerator="Ctrl+S",
                              command=self.save_program)
-        filemenu.add_command(label="名前を付けて保存",
-                             accelerator="Ctrl+Shift+S",
+        filemenu.add_command(label="名前を付けて保存", accelerator="Ctrl+Shift+S",
                              command=self.save_program_as)
         filemenu.add_separator()
-        filemenu.add_command(label="終了",
-                             accelerator="Ctrl+Q",
+        filemenu.add_command(label="終了", accelerator="Ctrl+Q",
                              command=self.close_window)
         self.menubar.add_cascade(label="ファイル", menu=filemenu)
 
@@ -1131,29 +1183,24 @@ line: {index+1}, {widget.__class__.__name__}\n\
         editmenu = tk.Menu(self.menubar, tearoff=0, font=menu_font)
         editmenu.add_command(label="元に戻す", accelerator="Ctrl+Z",
                              command=self.undo_change)
+        editmenu.add_command(label="やり直し", accelerator="Ctrl+Shift+Z",
+                             command=self.redo_change)
         editmenu.add_separator()
-        editmenu.add_command(label="切り取り",
-                             accelerator="Ctrl+Shift+X",
+        editmenu.add_command(label="切り取り", accelerator="Ctrl+Shift+X",
                              command=self.cut_selected)
-        editmenu.add_command(label="コピー",
-                             accelerator="Ctrl+Shift+C",
+        editmenu.add_command(label="コピー", accelerator="Ctrl+Shift+C",
                              command=self.copy_selected)
-        editmenu.add_command(label="貼り付け",
-                             accelerator="Ctrl+Shift+V",
+        editmenu.add_command(label="貼り付け", accelerator="Ctrl+Shift+V",
                              command=self.paste_widgets)
-        editmenu.add_command(label="削除",
-                             accelerator="Ctrl+D",
+        editmenu.add_command(label="削除", accelerator="Ctrl+D",
                              command=self.delete_selected)
         editmenu.add_separator()
-        editmenu.add_command(label="すべて選択",
-                             accelerator="Ctrl+Shift+A",
+        editmenu.add_command(label="すべて選択", accelerator="Ctrl+Shift+A",
                              command=self.select_all)
-        editmenu.add_command(label="選択解除",
-                             accelerator="Ctrl+L",
+        editmenu.add_command(label="選択解除", accelerator="Ctrl+L",
                              command=self.clear_selected)
         editmenu.add_separator()
-        editmenu.add_command(label="行へ移動",
-                             accelerator="Ctrl+G",
+        editmenu.add_command(label="行へ移動", accelerator="Ctrl+G",
                              command=self.goto_line)
         self.menubar.add_cascade(label="編集", menu=editmenu)
 
@@ -1282,10 +1329,6 @@ class Widget:
         self.set_data(data)
 
         self.draw()
-
-    def __str__(self):
-        """文字列定義"""
-        return str(self.get_data())
 
     def __repr__(self):
         """コンストラクタの文字列定義"""
@@ -1447,11 +1490,13 @@ class Widget:
         "ウィジェットの有効化"
         self.enabled = True
         self.check_enabled()
+        self.p.back_up()
 
     def disable(self):
         "ウィジェットの無効化"
         self.enabled = False
         self.check_enabled()
+        self.p.back_up()
 
     def delete(self, back_up=True):
         """ウィジェットの削除"""
