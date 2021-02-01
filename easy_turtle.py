@@ -22,14 +22,16 @@ import getpass
 import urllib.request
 import threading
 import traceback
+import subprocess
 
 SIZE = 8
 HEIGHT = 72
 WIDTH = 520
 
 
-def GET_CONFIG():
+def UPDATE_CONFIG():
     """設定を取得"""
+    global CONFIG
     if os.path.exists(CONFIG_FILE) is True:
         with open(CONFIG_FILE, "r", encoding="UTF-8")as f:
             data = json.load(f)
@@ -43,7 +45,7 @@ def GET_CONFIG():
         config = DEFAULT_CONFIG
     with open(CONFIG_FILE, "w", encoding="UTF-8")as f:
         json.dump(config, f, indent=4)
-    return config
+    CONFIG = config
 
 
 SYSTEM = platform.system()
@@ -81,7 +83,7 @@ if SYSTEM == "Windows":
         "user_document": True,
         "auto_update": True}
 
-    CONFIG = GET_CONFIG()
+    UPDATE_CONFIG()
 
     if CONFIG["user_document"] is True:
         if os.path.exists(os.path.join("C:/Users", getpass.getuser(),
@@ -131,7 +133,7 @@ elif SYSTEM == "Linux":
         "user_document": False,
         "auto_update": True}
 
-    CONFIG = GET_CONFIG()
+    UPDATE_CONFIG()
 
     if CONFIG["user_document"] is True:
         if os.path.exists(os.path.join("/home/", getpass.getuser(),
@@ -169,7 +171,7 @@ def EXPAND(num): return int(round(num * WIN_MAG))
 
 FONT = (FONT_TYPE1, EXPAND(12), "bold")
 
-__version__ = (5, 5, "0a1")
+__version__ = (5, 5, "0a2")
 
 
 class EasyTurtle:
@@ -239,8 +241,7 @@ class EasyTurtle:
 
     def edit_config(self, event=None):
         """設定を編集"""
-        global CONFIG
-        CONFIG = GET_CONFIG()
+        UPDATE_CONFIG()
         self.win = tk.Toplevel(self.root)
         self.win.tk.call('wm', 'iconphoto', self.win._w, self.icon)
         self.win.title("設定 - EasyTurtle")
@@ -329,6 +330,7 @@ class EasyTurtle:
 
     def all_redraw(self, change=True):
         """全部描き直し"""
+        UPDATE_CONFIG()
         data = self.widgets
 
         if (self.index < 0) or (len(data) < SIZE):
@@ -599,8 +601,8 @@ class EasyTurtle:
                     if widget.enabled is True:
                         widget.do(tur)
                 else:
-                    return 1
-        except tk.TclError:
+                    return 0
+        except Exception:
             if self.killed_runner is True:
                 return 0
             else:
@@ -723,7 +725,7 @@ line: {index+1}, {widget.__class__.__name__}\n\
         # データが変更されていれば保存するか確認する
         data = [d.get_data(more=False) for d in self.widgets]
         if self.default_data != data:
-            res = messagebox.askyesno("確認", "保存しますか？")
+            res = messagebox.askyesnocancel("確認", "保存しますか？")
             if res is None:
                 return
             elif res is True:
@@ -815,7 +817,7 @@ line: {index+1}, {widget.__class__.__name__}\n\
             # エラー表示
             messagebox.showerror("エラー", "変換エラーが発生しました。")
             traceback.print_exc()
-            return
+            return 1
 
     def make_match_class(self, data, index=-1, version=tuple(__version__[:2])):
         """ウィジェットを作成"""
@@ -1126,6 +1128,14 @@ line: {index+1}, {widget.__class__.__name__}\n\
         self.default_data = [d.get_data(more=False)
                              for d in self.widgets]
 
+    def new_window(self, event=None):
+        """新規ウィンドウを起動"""
+        if sys.argv[0][-14:] == "EasyTurtle.exe":
+            command = [sys.argv[0]]
+        else:
+            command = [sys.executable, sys.argv[0]]
+        subprocess.Popen(command)
+
     def setup(self):
         """セットアップ"""
         # 基本ウィンドウを作成
@@ -1147,6 +1157,7 @@ line: {index+1}, {widget.__class__.__name__}\n\
         self.root.bind("<Control-Shift-Key-A>", self.select_all)
         self.root.bind("<Control-Shift-Key-S>", self.save_program_as)
         self.root.bind("<Control-Shift-Key-Z>", self.redo_change)
+        self.root.bind("<Control-Shift-Key-N>", self.new_window)
         self.root.bind("<Control-Key-z>", self.undo_change)
         self.root.bind("<Control-Key-l>", self.clear_selected)
         self.root.bind("<Control-Key-n>", self.new_program)
@@ -1166,9 +1177,12 @@ line: {index+1}, {widget.__class__.__name__}\n\
 
         # FILEメニューの作成
         filemenu = tk.Menu(self.menubar, tearoff=0, font=menu_font)
-        filemenu.add_command(label="新規", accelerator="Ctrl+N",
+        filemenu.add_command(label="新規ファイル", accelerator="Ctrl+N",
                              command=self.new_program)
-        filemenu.add_command(label="開く", accelerator="Ctrl+O",
+        filemenu.add_command(label="新しいウィンドウ", accelerator="Ctrl+Shift+N",
+                             command=self.new_window)
+        filemenu.add_separator()
+        filemenu.add_command(label="ファイルを開く", accelerator="Ctrl+O",
                              command=self.open_program)
         filemenu.add_command(label="上書き保存", accelerator="Ctrl+S",
                              command=self.save_program)
@@ -1634,7 +1648,7 @@ class Widget:
                 messagebox.showerror("エラー", f'\
 line: {self.p.widgets.index(self)+1}, {self.__class__.__name__}\n\
 変数"{name}"は定義されていません。')
-                return ""
+                self.p.kill_runner()
             elif (self.p.variable_datas[name][1] == "S") or \
                  (CONFIG["show_warning"] is False):
                 string = string.replace(
@@ -1657,6 +1671,7 @@ line: {self.p.widgets.index(self)+1}, {self.__class__.__name__}\n\
                 messagebox.showerror("エラー", f'\
 line: {self.p.widgets.index(self)+1}, {self.__class__.__name__}\n\
 変数"{name}"は定義されていません。')
+                self.p.kill_runner()
             elif (self.p.variable_datas[name][1] == "B") or \
                  (CONFIG["show_warning"] is False):
                 string = string.replace(
@@ -1675,6 +1690,7 @@ line: {self.p.widgets.index(self)+1}, {self.__class__.__name__}\n\
             messagebox.showerror("エラー", f'\
 line: {self.p.widgets.index(self)+1}, {self.__class__.__name__}\n\
 {string}はBoolean型ではありません。')
+            self.p.kill_runner()
         return boolean
 
     def var_converter(self, string):
@@ -1685,7 +1701,7 @@ line: {self.p.widgets.index(self)+1}, {self.__class__.__name__}\n\
                 messagebox.showerror("エラー", f'\
 line: {self.p.widgets.index(self)+1}, {self.__class__.__name__}\n\
 変数"{name}"は定義されていません。')
-                return 0
+                self.p.kill_runner()
             elif (self.p.variable_datas[name][1] == "N") or \
                  (CONFIG["show_warning"] is False):
                 string = string.replace(
@@ -1705,7 +1721,7 @@ line: {self.p.widgets.index(self)+1}, {self.__class__.__name__}\n\
             messagebox.showerror("エラー", f'\
 line: {self.p.widgets.index(self)+1}, {self.__class__.__name__}\n\
 値が入力されていません。')
-            return 0
+            self.p.kill_runner()
         operators = ["**", "*", "//", "/", "%", "+", "-", "(", ")"]
         formulas = [string]
         for ope in operators:
@@ -1737,8 +1753,7 @@ line: {self.p.widgets.index(self)+1}, {self.__class__.__name__}\n\
             messagebox.showerror("エラー", f'\
 line: {self.p.widgets.index(self)+1}, {self.__class__.__name__}\n\
 "{string}"を数値に変換できませんでした。')
-            traceback.print_exc()
-            return 0
+            self.p.kill_runner()
 
     def stoint(self, string):
         """文字列を整数に変換"""
@@ -1757,7 +1772,7 @@ line: {self.p.widgets.index(self)+1}, {self.__class__.__name__}\n\
             messagebox.showerror("エラー", f'\
 line: {self.p.widgets.index(self)+1}, {self.__class__.__name__}\n\
 値は正の整数でなければなりません。')
-            return 0
+            self.p.kill_runner()
         else:
             return num
 
@@ -1768,7 +1783,7 @@ line: {self.p.widgets.index(self)+1}, {self.__class__.__name__}\n\
             messagebox.showerror("エラー", f'\
 line: {self.p.widgets.index(self)+1}, {self.__class__.__name__}\n\
 値は正の小数でなければなりません。')
-            return 0
+            self.p.kill_runner()
         else:
             return num
 
@@ -3103,6 +3118,7 @@ class Color(Widget):
             messagebox.showerror("エラー", f'\
 line: {self.p.widgets.index(self)+1}, {self.__class__.__name__}\n\
 "{self.color}"を色として認識できませんでした。', parent=self.p.root)
+            self.p.kill_runner()
 
 
 class PenColor(Widget):
@@ -3185,6 +3201,7 @@ class PenColor(Widget):
             messagebox.showerror("エラー", f'\
 line: {self.p.widgets.index(self)+1}, {self.__class__.__name__}\n\
 "{self.color}"を色として認識できませんでした。', parent=self.p.root)
+            self.p.kill_runner()
 
 
 class FillColor(Widget):
@@ -3267,6 +3284,7 @@ class FillColor(Widget):
             messagebox.showerror("エラー", f'\
 line: {self.p.widgets.index(self)+1}, {self.__class__.__name__}\n\
 "{self.color}"を色として認識できませんでした。', parent=self.p.root)
+            self.p.kill_runner()
 
 
 class BGColor(Widget):
@@ -3349,6 +3367,7 @@ class BGColor(Widget):
             messagebox.showerror("エラー", f'\
 line: {self.p.widgets.index(self)+1}, {self.__class__.__name__}\n\
 "{self.color}"を色として認識できませんでした。', parent=self.p.root)
+            self.p.kill_runner()
 
 
 class GetPenColor(Widget):
