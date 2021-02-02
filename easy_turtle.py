@@ -18,7 +18,6 @@ from tkinter import scrolledtext
 from tkinter import simpledialog
 import shutil
 import pprint
-import getpass
 import urllib.request
 import threading
 import traceback
@@ -86,13 +85,11 @@ if SYSTEM == "Windows":
     UPDATE_CONFIG()
 
     if CONFIG["user_document"] is True:
-        if os.path.exists(os.path.join("C:/Users", getpass.getuser(),
-                                       "onedrive/ドキュメント/")) is True:
-            DOCUMENTS = os.path.join("C:/Users", getpass.getuser(),
-                                     "onedrive/ドキュメント/EasyTurtle/")
+        user = os.environ['USERPROFILE']
+        if os.path.exists(os.path.join(user, "onedrive/ドキュメント/")) is True:
+            DOCUMENTS = os.path.join(user, "onedrive/ドキュメント/EasyTurtle/")
         else:
-            DOCUMENTS = os.path.join("C:/Users", getpass.getuser(),
-                                     "Documents/EasyTurtle/")
+            DOCUMENTS = os.path.join(user, "Documents/EasyTurtle/")
         samples = os.path.join(DOCUMENTS, "Samples")
         if os.path.exists(samples) is True:
             shutil.rmtree(samples)
@@ -112,6 +109,7 @@ if SYSTEM == "Windows":
 # システムがLinuxの場合
 elif SYSTEM == "Linux":
     import subprocess
+    import getpass
 
     FONT_TYPE1 = "FreeMono"
     FONT_TYPE2 = "FreeSerif"
@@ -136,13 +134,11 @@ elif SYSTEM == "Linux":
     UPDATE_CONFIG()
 
     if CONFIG["user_document"] is True:
-        if os.path.exists(os.path.join("/home/", getpass.getuser(),
-                                       "/ドキュメント/")) is True:
-            DOCUMENTS = os.path.join("/home/", getpass.getuser(),
-                                     "/ドキュメント/EasyTurtle/")
+        user = getpass.getuser()
+        if os.path.exists(os.path.join("/home/", user, "/ドキュメント/")) is True:
+            DOCUMENTS = os.path.join("/home/", user, "/ドキュメント/EasyTurtle/")
         else:
-            DOCUMENTS = os.path.join("/home/", getpass.getuser(),
-                                     "/Documents/EasyTurtle/")
+            DOCUMENTS = os.path.join("/home/", user, "/Documents/EasyTurtle/")
     else:
         DOCUMENTS = os.path.abspath("./")
     os.makedirs(DOCUMENTS, exist_ok=True)
@@ -171,7 +167,7 @@ def EXPAND(num): return int(round(num * WIN_MAG))
 
 FONT = (FONT_TYPE1, EXPAND(12), "bold")
 
-__version__ = (5, 5, 0)
+__version__ = (5, 5, 1)
 
 
 class EasyTurtle:
