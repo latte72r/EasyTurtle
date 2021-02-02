@@ -171,7 +171,7 @@ def EXPAND(num): return int(round(num * WIN_MAG))
 
 FONT = (FONT_TYPE1, EXPAND(12), "bold")
 
-__version__ = (5, 5, "0a2")
+__version__ = (5, 5, 0)
 
 
 class EasyTurtle:
