@@ -169,7 +169,7 @@ def EXPAND(num):
 
 FONT = (FONT_TYPE1, EXPAND(12), "bold")
 
-__version__ = (5, 6, "0a2")
+__version__ = (5, 6, 0)
 
 
 class EasyTurtle:
@@ -355,15 +355,6 @@ class EasyTurtle:
         else:
             self.root.title(f"*{self.basename}* - EasyTurtle")
 
-    def without_check(self, data):
-        """チェックを除く"""
-        new = []
-        for d in data:
-            if "_check" in d:
-                del d["_check"]
-            new.append(d)
-        return new
-
     def back_up(self):
         """バックアップ"""
         # データを取得
@@ -374,8 +365,7 @@ class EasyTurtle:
             self.backed_up.append(data)
 
         # 前回と違ければ追加
-        elif self.without_check(self.backed_up[-1]["body"]) != \
-                self.without_check(data["body"]):
+        elif self.backed_up[-1]["body"] != data["body"]:
             self.backed_up.append(data)
 
     def undo_change(self, event=None):
@@ -389,16 +379,14 @@ class EasyTurtle:
 
         # バックアップがあり、変更されているとき
         if (len(self.backed_up) > 0) and \
-           (self.without_check(self.backed_up[-1]["body"]) !=
-                self.without_check(data["body"])):
+           (self.backed_up[-1]["body"] != data["body"]):
             self.canceled_changes.append(data)
             self.set_data(self.backed_up[-1])
             self.backed_up = self.backed_up[:-1]
 
         # バックアップが２つ以上あり、変更されているとき
         elif (len(self.backed_up) > 1) and \
-             (self.without_check(self.backed_up[-2]["body"]) !=
-              self.without_check(data["body"])):
+             (self.backed_up[-2]["body"] != data["body"]):
             self.canceled_changes.append(data)
             self.set_data(self.backed_up[-2])
             self.backed_up = self.backed_up[:-2]
@@ -421,8 +409,7 @@ class EasyTurtle:
 
         # キャンセルがあり、変更されているとき
         if (len(self.canceled_changes) > 0) and \
-           (self.without_check(self.canceled_changes[-1]["body"]) !=
-                self.without_check(data["body"])):
+           (self.canceled_changes[-1]["body"] != data["body"]):
             self.set_data(self.canceled_changes[-1])
             self.canceled_changes = self.canceled_changes[:-1]
         # それ以外ならエラー音
@@ -1213,7 +1200,7 @@ download/v{joined_version}/EasyTurtle-{joined_version}-amd64.msi"
         self.root.bind("<Control-Key-s>", self.save_program)
         self.root.bind("<Control-Key-g>", self.goto_line)
         self.root.bind("<Control-Key-q>", self.close_window)
-        self.root.bind("<Control-Key-,>", self.edit_config)
+        self.root.bind("<Control-Key-comma>", self.edit_config)
         self.root.bind("<Key-F1>", self.show_document)
         self.root.bind("<Key-F5>", self.run_program)
 
@@ -1442,10 +1429,16 @@ class Widget:
                               cursor="hand2", bg=self.background,
                               font=(FONT_TYPE2, EXPAND(10)))
         self.binder(chk1)
-        chk1.bind("<Shift-Button-1>", self.shift_check)
+        chk1.bind("<Button-1>", self.check_clicked)
         chk1.place(x=EXPAND(12), y=EXPAND(HEIGHT//2+8))
 
-    def shift_check(self, event):
+    def check_clicked(self, event):
+        if (hasattr(event, "state")) and (event.state == 1):
+            self.shift_check()
+        else:
+            self.p.back_up()
+
+    def shift_check(self):
         """Shift+右クリック"""
         selected = self.p.get_selected()
         sindex = self.p.widgets.index(self)
