@@ -81,7 +81,7 @@ if SYSTEM == "Windows":
         "ask_save_new": True,
         "user_document": True,
         "auto_update": True}
-    
+
     CONFIG = DEFAULT_CONFIG
     UPDATE_CONFIG()
 
@@ -109,8 +109,6 @@ if SYSTEM == "Windows":
 
 # システムがLinuxの場合
 elif SYSTEM == "Linux":
-    import subprocess
-    import getpass
 
     FONT_TYPE1 = "FreeMono"
     FONT_TYPE2 = "FreeSerif"
@@ -136,7 +134,7 @@ elif SYSTEM == "Linux":
     UPDATE_CONFIG()
 
     if CONFIG["user_document"] is True:
-        user = getpass.getuser()
+        user = os.environ['USER']
         if os.path.exists(os.path.join("/home/", user, "/ドキュメント/")) is True:
             DOCUMENTS = os.path.join("/home/", user, "/ドキュメント/EasyTurtle/")
         else:
@@ -164,12 +162,14 @@ else:
     messagebox.showerror("エラー", f"{SYSTEM}には対応していません。")
 
 
-def EXPAND(num): return int(round(num * WIN_MAG))
+def EXPAND(num):
+    """画面を拡大"""
+    return int(round(num * WIN_MAG))
 
 
 FONT = (FONT_TYPE1, EXPAND(12), "bold")
 
-__version__ = (5, 6, "0a1")
+__version__ = (5, 6, "0a2")
 
 
 class EasyTurtle:
@@ -375,7 +375,7 @@ class EasyTurtle:
 
         # 前回と違ければ追加
         elif self.without_check(self.backed_up[-1]["body"]) != \
-             self.without_check(data["body"]):
+                self.without_check(data["body"]):
             self.backed_up.append(data)
 
     def undo_change(self, event=None):
@@ -389,15 +389,15 @@ class EasyTurtle:
 
         # バックアップがあり、変更されているとき
         if (len(self.backed_up) > 0) and \
-           (self.without_check(self.backed_up[-1]["body"]) != \
-            self.without_check(data["body"])):
+           (self.without_check(self.backed_up[-1]["body"]) !=
+                self.without_check(data["body"])):
             self.canceled_changes.append(data)
             self.set_data(self.backed_up[-1])
             self.backed_up = self.backed_up[:-1]
 
         # バックアップが２つ以上あり、変更されているとき
         elif (len(self.backed_up) > 1) and \
-             (self.without_check(self.backed_up[-2]["body"]) != \
+             (self.without_check(self.backed_up[-2]["body"]) !=
               self.without_check(data["body"])):
             self.canceled_changes.append(data)
             self.set_data(self.backed_up[-2])
@@ -405,8 +405,8 @@ class EasyTurtle:
 
         # それ以外ならエラー音
         else:
-           self.root.bell()
-           return 1
+            self.root.bell()
+            return 1
 
         self.all_redraw()
 
@@ -421,14 +421,14 @@ class EasyTurtle:
 
         # キャンセルがあり、変更されているとき
         if (len(self.canceled_changes) > 0) and \
-           (self.without_check(self.canceled_changes[-1]["body"]) != \
-            self.without_check(data["body"])):
+           (self.without_check(self.canceled_changes[-1]["body"]) !=
+                self.without_check(data["body"])):
             self.set_data(self.canceled_changes[-1])
             self.canceled_changes = self.canceled_changes[:-1]
         # それ以外ならエラー音
         else:
-           self.root.bell()
-           return 1
+            self.root.bell()
+            return 1
 
         self.all_redraw()
 
@@ -779,7 +779,8 @@ line: {index+1}, {widget.__class__.__name__}\n\
 
             # バックアップデータを設定
             self.backed_up = data["backedup"] if "backedup" in data else []
-            self.canceled_changes = data["canceled"] if "canceled" in data else []
+            self.canceled_changes = data["canceled"] if "canceled" in data else [
+            ]
 
             # 追加位置を設定
             addmode = data["addmode"] if "addmode" in data else 2
@@ -994,7 +995,7 @@ line: {index+1}, {widget.__class__.__name__}\n\
             else:
                 self.ask_update_page(new_version)
         except TypeError:
-                messagebox.showerror("エラー", "\
+            messagebox.showerror("エラー", "\
 正規リリースでないため確認できません。")
 
     def ask_update_msi(self, new_version, start=False):
@@ -1423,8 +1424,6 @@ class Widget:
                                  EXPAND(42), EXPAND(HEIGHT), width=EXPAND(2))
 
         # ウィジェットの説明を表示
-        self.bln1 = tk.BooleanVar()
-        self.bln1.set(self.check)
         lab1 = tk.Label(self.cv, text=self.info, font=FONT, bg=self.background)
         self.binder(lab1)
         lab1.place(x=EXPAND(50), y=EXPAND(10))
@@ -1437,11 +1436,53 @@ class Widget:
         self.lab4.place(x=EXPAND(5), y=EXPAND(HEIGHT//2-8))
 
         # チェックボックスを表示
+        self.bln1 = tk.BooleanVar()
+        self.bln1.set(self.check)
         chk1 = tk.Checkbutton(self.cv, variable=self.bln1,
                               cursor="hand2", bg=self.background,
                               font=(FONT_TYPE2, EXPAND(10)))
-        chk1.place(x=EXPAND(12), y=EXPAND(HEIGHT//2+8))
         self.binder(chk1)
+        chk1.bind("<Shift-Button-1>", self.shift_check)
+        chk1.place(x=EXPAND(12), y=EXPAND(HEIGHT//2+8))
+
+    def shift_check(self, event):
+        """Shift+右クリック"""
+        selected = self.p.get_selected()
+        sindex = self.p.widgets.index(self)
+        if len(selected) == 0:
+            return
+        elif len(selected) == 1:
+            dindex = self.p.widgets.index(selected[0])
+            if sindex < dindex:
+                self.range_check(sindex, dindex, exc=sindex)
+            else:
+                self.range_check(dindex, sindex, exc=sindex)
+        else:
+            lindex = None
+            for new in selected:
+                nindex = self.p.widgets.index(new)
+                if lindex is None:
+                    if sindex < nindex:
+                        self.range_check(sindex, nindex, exc=sindex)
+                        return
+                elif lindex < sindex < nindex:
+                    if (sindex - lindex) < (nindex - sindex):
+                        self.range_check(lindex, sindex, exc=sindex)
+                    else:
+                        self.range_check(sindex, nindex, exc=sindex)
+                    return
+                lindex = nindex
+            if sindex > lindex:
+                self.range_check(lindex, sindex, exc=sindex)
+
+    def range_check(self, first, last, exc=None):
+        """指定範囲をチェック"""
+        for widget in self.p.widgets:
+            widget.bln1.set(False)
+        for widget in self.p.widgets[first: last + 1]:
+            widget.bln1.set(True)
+        if exc is not None:
+            self.p.widgets[exc].bln1.set(False)
 
     def check_enabled(self):
         """有効・無効の表示"""
