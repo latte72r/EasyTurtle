@@ -81,7 +81,8 @@ if SYSTEM == "Windows":
         "ask_save_new": True,
         "user_document": True,
         "auto_update": True}
-
+    
+    CONFIG = DEFAULT_CONFIG
     UPDATE_CONFIG()
 
     if CONFIG["user_document"] is True:
@@ -131,6 +132,7 @@ elif SYSTEM == "Linux":
         "user_document": False,
         "auto_update": True}
 
+    CONFIG = DEFAULT_CONFIG
     UPDATE_CONFIG()
 
     if CONFIG["user_document"] is True:
@@ -167,7 +169,7 @@ def EXPAND(num): return int(round(num * WIN_MAG))
 
 FONT = (FONT_TYPE1, EXPAND(12), "bold")
 
-__version__ = (5, 5, 1)
+__version__ = (5, 6, "0a1")
 
 
 class EasyTurtle:
@@ -939,7 +941,7 @@ line: {index+1}, {widget.__class__.__name__}\n\
             data = data[-1].replace("v", "")
             data = data.split(".")
             data = tuple([int(d) for d in data])
-        except AttributeError:
+        except (AttributeError, ValueError):
             return "OtherError"
         return data
 
@@ -956,75 +958,123 @@ line: {index+1}, {widget.__class__.__name__}\n\
     def update_starting(self):
         "開始時に確認"
         new_version = self.get_new_release()
-        new_joined_version = '.'.join([str(n) for n in new_version])
-        old_joined_version = '.'.join([str(n) for n in __version__])
-        if type(new_version) == str:
-            return
-        elif new_version > __version__:
-            self.win = tk.Toplevel(self.root)
-            self.win.tk.call('wm', 'iconphoto', self.win._w, self.icon)
-            self.win.title("アップデート - EasyTurtle")
-            self.win.grab_set()
-            lab1 = tk.Label(self.win, font=FONT,
-                            text="新しいバージョンが見つかりました")
-            lab1.pack(anchor=tk.NW, padx=EXPAND(20), pady=(0, EXPAND(10)))
-            lab2 = tk.Label(self.win, font=FONT,
-                            text=f"お使いのバージョン：{old_joined_version}")
-            lab2.pack(anchor=tk.NW, padx=EXPAND(20), pady=(0, EXPAND(10)))
-            lab3 = tk.Label(self.win, font=FONT,
-                            text=f"最新のバージョン　：{new_joined_version}")
-            lab3.pack(anchor=tk.NW, padx=EXPAND(20), pady=(0, EXPAND(10)))
-            lab4 = tk.Label(self.win, font=FONT,
-                            text="下記サイトよりダウンロードしてください")
-            lab4.pack(anchor=tk.NW, padx=EXPAND(20), pady=(0, EXPAND(10)))
-            font = (FONT_TYPE1, EXPAND(12), "bold", "underline")
-            lab5 = tk.Label(self.win, font=font, fg="blue", cursor="hand2",
-                            text="EasyTurtle Latest Release")
-            lab5.bind("<Button-1>", self.show_release)
-            lab5.pack(anchor=tk.NW, padx=EXPAND(20), pady=(0, EXPAND(10)))
-            self.win.resizable(0, 0)
+
+        try:
+            if type(new_version) == str:
+                return 1
+            elif new_version <= __version__:
+                return 0
+            elif sys.argv[0][-14:] == "EasyTurtle.exe":
+                self.ask_update_msi(new_version, start=True)
+            else:
+                self.ask_update_page(new_version, start=True)
+        except TypeError:
+            pass
 
     def check_update(self, event=None):
         "アップデートを確認"
         new_version = self.get_new_release()
-        new_joined_version = '.'.join([str(n) for n in new_version])
         old_joined_version = '.'.join([str(n) for n in __version__])
-        if new_version == "ConnectionError":
-            messagebox.showerror("エラー", "\
+
+        try:
+            if new_version == "ConnectionError":
+                messagebox.showerror("エラー", "\
 エラーが発生しました。\n\
 ネットワーク接続を確認してください。")
-        elif new_version == "OtherError":
+            elif new_version == "OtherError":
+                messagebox.showerror("\
+エラーが発生しました。\n\
+しばらくしてからもう一度お試しください。")
+            elif new_version <= __version__:
+                messagebox.showinfo("アップデート", f"\
+バージョン：{old_joined_version}\n\
+お使いのバージョンは最新です。")
+            elif sys.argv[0][-14:] == "EasyTurtle.exe":
+                self.ask_update_msi(new_version)
+            else:
+                self.ask_update_page(new_version)
+        except TypeError:
+                messagebox.showerror("エラー", "\
+正規リリースでないため確認できません。")
+
+    def ask_update_msi(self, new_version, start=False):
+        """自動アップデートするか尋ねる"""
+        new_joined_version = '.'.join([str(n) for n in new_version])
+        old_joined_version = '.'.join([str(n) for n in __version__])
+
+        if start is True:
+            self.win2 = tk.Toplevel(self.root)
+        else:
+            self.win2 = tk.Toplevel(self.win)
+
+        self.win2.tk.call('wm', 'iconphoto', self.win2, self.icon)
+        self.win2.title("アップデート - EasyTurtle")
+        self.win2.grab_set()
+        lab1 = tk.Label(self.win2, font=FONT,
+                        text="新しいバージョンが見つかりました")
+        lab1.pack(anchor=tk.NW, padx=EXPAND(20), pady=(0, EXPAND(10)))
+        lab2 = tk.Label(self.win2, font=FONT,
+                        text=f"お使いのバージョン：{old_joined_version}")
+        lab2.pack(anchor=tk.NW, padx=EXPAND(20), pady=(0, EXPAND(10)))
+        lab3 = tk.Label(self.win2, font=FONT,
+                        text=f"最新のバージョン  ：{new_joined_version}")
+        lab3.pack(anchor=tk.NW, padx=EXPAND(20), pady=(0, EXPAND(10)))
+        font = (FONT_TYPE1, EXPAND(12), "bold", "underline")
+        lab5 = tk.Label(self.win2, font=font, fg="blue", cursor="hand2",
+                        text="今すぐアップデートする")
+        lab5.bind("<Button-1>", lambda e: self.auto_update_msi(new_version))
+        lab5.pack(anchor=tk.N, pady=(0, EXPAND(10)))
+        self.win2.resizable(0, 0)
+
+    def auto_update_msi(self, new_version):
+        """MSI自動アップデート"""
+        joined_version = '.'.join([str(n) for n in new_version])
+
+        url = f"\
+https://github.com/RyoFuji2005/EasyTurtle/releases/\
+download/v{joined_version}/EasyTurtle-{joined_version}-amd64.msi"
+        file_name = os.path.join(os.environ['USERPROFILE'], "downloads",
+                                 f"EasyTurtle-{joined_version}-amd64.msi")
+        try:
+            urllib.request.urlretrieve(url, file_name)
+        except AttributeError:
             messagebox.showerror("\
 エラーが発生しました。\n\
 しばらくしてからもう一度お試しください。")
-        elif new_version > __version__:
-            self.win2 = tk.Toplevel(self.win)
-            self.win2.tk.call('wm', 'iconphoto', self.win._w, self.icon)
-            self.win2.title("アップデート - EasyTurtle")
-            self.win2.wait_visibility()
-            self.win2.grab_set()
-            lab1 = tk.Label(self.win2, font=FONT,
-                            text="新しいバージョンが見つかりました")
-            lab1.pack(anchor=tk.NW, padx=EXPAND(20), pady=(0, EXPAND(10)))
-            lab2 = tk.Label(self.win2, font=FONT,
-                            text=f"お使いのバージョン：{old_joined_version}")
-            lab2.pack(anchor=tk.NW, padx=EXPAND(20), pady=(0, EXPAND(10)))
-            lab3 = tk.Label(self.win2, font=FONT,
-                            text=f"最新のバージョン  ：{new_joined_version}")
-            lab3.pack(anchor=tk.NW, padx=EXPAND(20), pady=(0, EXPAND(10)))
-            lab4 = tk.Label(self.win2, font=FONT,
-                            text="下記サイトよりダウンロードしてください")
-            lab4.pack(anchor=tk.NW, padx=EXPAND(20), pady=(0, EXPAND(10)))
-            font = (FONT_TYPE1, EXPAND(12), "bold", "underline")
-            lab5 = tk.Label(self.win2, font=font, fg="blue", cursor="hand2",
-                            text="EasyTurtle Latest Release")
-            lab5.bind("<Button-1>", self.show_release)
-            lab5.pack(anchor=tk.NW, padx=EXPAND(20), pady=(0, EXPAND(10)))
-            self.win2.resizable(0, 0)
+            traceback.print_exc()
+
+        subprocess.Popen(["cmd", "/c", file_name])
+
+        self.close_window()
+
+    def ask_update_page(self, new_version, start=False):
+        """アップデートページを表示するか尋ねる"""
+        new_joined_version = '.'.join([str(n) for n in new_version])
+        old_joined_version = '.'.join([str(n) for n in __version__])
+
+        if start is True:
+            self.win2 = tk.Toplevel(self.root)
         else:
-            messagebox.showinfo("アップデート", f"\
-バージョン：{old_joined_version}\n\
-お使いのバージョンは最新です。")
+            self.win2 = tk.Toplevel(self.win)
+
+        self.win2.tk.call('wm', 'iconphoto', self.win2, self.icon)
+        self.win2.title("アップデート - EasyTurtle")
+        self.win2.grab_set()
+        lab1 = tk.Label(self.win2, font=FONT,
+                        text="新しいバージョンが見つかりました")
+        lab1.pack(anchor=tk.NW, padx=EXPAND(20), pady=(0, EXPAND(10)))
+        lab2 = tk.Label(self.win2, font=FONT,
+                        text=f"お使いのバージョン：{old_joined_version}")
+        lab2.pack(anchor=tk.NW, padx=EXPAND(20), pady=(0, EXPAND(10)))
+        lab3 = tk.Label(self.win2, font=FONT,
+                        text=f"最新のバージョン  ：{new_joined_version}")
+        lab3.pack(anchor=tk.NW, padx=EXPAND(20), pady=(0, EXPAND(10)))
+        font = (FONT_TYPE1, EXPAND(12), "bold", "underline")
+        lab5 = tk.Label(self.win2, font=font, fg="blue", cursor="hand2",
+                        text="今すぐ確認する")
+        lab5.bind("<Button-1>", self.show_release)
+        lab5.pack(anchor=tk.N, pady=(0, EXPAND(10)))
+        self.win2.resizable(0, 0)
 
     def convert_rgb(self, color):
         """RGB値に変換する"""
