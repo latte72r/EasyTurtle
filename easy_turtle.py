@@ -16,6 +16,7 @@ from tkinter import filedialog
 from tkinter import ttk
 from tkinter import scrolledtext
 from tkinter import simpledialog
+from tkinter import font as tkfont
 import shutil
 import pprint
 import urllib.request
@@ -169,7 +170,7 @@ def EXPAND(num):
 
 FONT = (FONT_TYPE1, EXPAND(12), "bold")
 
-__version__ = (5, 6, 0)
+__version__ = (5, 7, "0a2")
 
 
 class EasyTurtle:
@@ -907,6 +908,26 @@ line: {index+1}, {widget.__class__.__name__}\n\
         self.copy_selected()
         self.delete_selected()
 
+    def enable_selected(self, event=None):
+        """選択されたデータを有効化"""
+        if (type(event) == tk.Event) and (self.running_program is True):
+            return
+        if len(self.get_selected()) == 0:
+            return
+        for d in self.get_selected():
+            d.enable(back_up=False)
+        self.back_up()
+
+    def disable_selected(self, event=None):
+        """選択されたデータを無効化"""
+        if (type(event) == tk.Event) and (self.running_program is True):
+            return
+        if len(self.get_selected()) == 0:
+            return
+        for d in self.get_selected():
+            d.disable(back_up=False)
+        self.back_up()
+
     def destroy(self):
         """ウィンドウを削除"""
         self.root.destroy()
@@ -1192,6 +1213,8 @@ download/v{joined_version}/EasyTurtle-{joined_version}-amd64.msi"
         self.root.bind("<Control-Shift-Key-S>", self.save_program_as)
         self.root.bind("<Control-Shift-Key-Z>", self.redo_change)
         self.root.bind("<Control-Shift-Key-N>", self.new_window)
+        self.root.bind("<Control-Shift-Key-E>", self.enable_selected)
+        self.root.bind("<Control-Shift-Key-D>", self.disable_selected)
         self.root.bind("<Control-Key-z>", self.undo_change)
         self.root.bind("<Control-Key-l>", self.clear_selected)
         self.root.bind("<Control-Key-n>", self.new_program)
@@ -1242,6 +1265,11 @@ download/v{joined_version}/EasyTurtle-{joined_version}-amd64.msi"
                              command=self.paste_widgets)
         editmenu.add_command(label="削除", accelerator="Ctrl+D",
                              command=self.delete_selected)
+        editmenu.add_separator()
+        editmenu.add_command(label="有効化", accelerator="Ctrl+Shift+E",
+                             command=self.enable_selected)
+        editmenu.add_command(label="無効化", accelerator="Ctrl+Shift+D",
+                             command=self.disable_selected)
         editmenu.add_separator()
         editmenu.add_command(label="すべて選択", accelerator="Ctrl+Shift+A",
                              command=self.select_all)
@@ -1530,6 +1558,20 @@ class Widget:
 
         self.p.all_redraw()
 
+    def duplicate(self):
+        """複製"""
+        before_index = self.p.index
+
+        index = self.p.widgets.index(self) + 1
+        self.p.make_match_class(self.get_data(), index=index)
+
+        if (index < before_index) or (index > before_index + SIZE - 1):
+            self.p.index = index
+        else:
+            self.p.index = before_index
+
+        self.p.all_redraw()
+
     def show_popup2(self, event):
         "ポップアップメニュー"
         if hasattr(self.p, "menu") is True:
@@ -1537,7 +1579,8 @@ class Widget:
 
         index = self.p.widgets.index(self)
 
-        self.p.menu = tk.Menu(self.p.root, tearoff=False)
+        menu_font = (FONT_TYPE1, 10)
+        self.p.menu = tk.Menu(self.p.root, tearoff=0, font=menu_font)
 
         states = ["active" for i in range(5)]
         if index <= 0:
@@ -1547,50 +1590,56 @@ class Widget:
         if len(self.p.copied_widgets) == 0:
             states[4] = "disabled"
 
-        self.p.menu.add_command(label=' Top', command=self.top,
+        self.p.menu.add_command(label='１番上に移動', command=self.top,
                                 state=states[0])
-        self.p.menu.add_command(label=' Bottom', command=self.bottom,
+        self.p.menu.add_command(label='１番下に移動', command=self.bottom,
                                 state=states[1])
-        self.p.menu.add_command(label=' Up', command=self.up,
+        self.p.menu.add_command(label='１個上に移動', command=self.up,
                                 state=states[2])
-        self.p.menu.add_command(label=' Down', command=self.down,
+        self.p.menu.add_command(label='１個下に移動', command=self.down,
                                 state=states[3])
+
         self.p.menu.add_separator()
-        self.p.menu.add_command(label=' Copy', command=self.copy)
-        self.p.menu.add_command(label=' Cut', command=self.cut)
-        self.p.menu.add_command(label=' Delete', command=self.delete)
+        self.p.menu.add_command(label='コピー', command=self.copy)
+        self.p.menu.add_command(label='切り取り', command=self.cut)
+        self.p.menu.add_command(label='削除', command=self.delete)
+
+        self.p.menu.add_separator()
+        self.p.menu.add_command(label='複製', command=self.duplicate)
 
         if hasattr(self, "show_option") is True:
             self.p.menu.add_separator()
-            self.p.menu.add_command(label=' Option', command=self.show_option)
+            self.p.menu.add_command(label='オプション', command=self.show_option)
 
         self.p.menu.add_separator()
         if (self.TYPE == "undefined") or (self.TYPE == "comment"):
-            self.p.menu.add_command(label=' Enable', state="disabled")
+            self.p.menu.add_command(label='有効化', state="disabled")
         elif self.enabled is True:
-            self.p.menu.add_command(label=' Disable', command=self.disable)
+            self.p.menu.add_command(label='無効化', command=self.disable)
         else:
-            self.p.menu.add_command(label=' Enable', command=self.enable)
+            self.p.menu.add_command(label='有効化', command=self.enable)
 
         self.p.menu.add_separator()
-        self.p.menu.add_command(label='⇧Paste⇧', command=self.paste_up,
+        self.p.menu.add_command(label='上にペースト', command=self.paste_up,
                                 state=states[4])
-        self.p.menu.add_command(label='⇩Paste⇩', command=self.paste_down,
+        self.p.menu.add_command(label='下にペースト', command=self.paste_down,
                                 state=states[4])
 
         self.p.menu.post(event.x_root, event.y_root)
 
-    def enable(self):
+    def enable(self, back_up=True):
         "ウィジェットの有効化"
         self.enabled = True
         self.check_enabled()
-        self.p.back_up()
+        if back_up is True:
+            self.p.back_up()
 
-    def disable(self):
+    def disable(self, back_up=True):
         "ウィジェットの無効化"
         self.enabled = False
         self.check_enabled()
-        self.p.back_up()
+        if back_up is True:
+            self.p.back_up()
 
     def delete(self, back_up=True):
         """ウィジェットの削除"""
@@ -1683,9 +1732,11 @@ class Widget:
             data["_check"] = self.bln1.get()
         elif "_check" in data:
             del data["_check"]
+
+        data["_enabled"] = self.enabled
+
         if self.__class__.__name__ != "Undefined":
             data["_name"] = self.__class__.__name__
-            data["_enabled"] = self.enabled
         return data
 
     def copy_entry(self, entry):
@@ -1713,14 +1764,17 @@ class Widget:
                 paste = "disabled"
         except tk.TclError:
             paste = "disabled"
-        self.p.menu = tk.Menu(self.cv, tearoff=False)
+
+        menu_font = (FONT_TYPE1, 10)
+        self.p.menu = tk.Menu(self.p.root, tearoff=0, font=menu_font)
+
         self.p.menu.add_command(
-            label='Copy', command=lambda: self.copy_entry(entry))
-        self.p.menu.add_command(label='Paste', state=paste,
+            label='コピー', command=lambda: self.copy_entry(entry))
+        self.p.menu.add_command(label='ペースト', state=paste,
                                 command=lambda: self.paste_entry(entry))
         self.p.menu.post(event.x_root, event.y_root)
 
-    def stostr(self, string):
+    def str2str(self, string):
         """変数を埋め込み"""
         for var in re.findall(r'\[\w*\]', string):
             name = var[1:-1] if len(var) > 2 else ""
@@ -1741,7 +1795,7 @@ line: {self.p.widgets.index(self)+1}, {self.__class__.__name__}\n\
                     var, str(self.p.variable_datas[name][0]))
         return string
 
-    def stobool(self, string):
+    def str2bool(self, string):
         """変数を埋め込み"""
         match = re.fullmatch(r'\[\w*\]', string)
         if match is not None:
@@ -1825,7 +1879,7 @@ line: {self.p.widgets.index(self)+1}, {self.__class__.__name__}\n\
                 string += str(float(form))
         return float(eval(string))
 
-    def stofloat(self, string):
+    def str2float(self, string):
         """文字列を小数に変換"""
         try:
             return self.calculator(string)
@@ -1835,9 +1889,9 @@ line: {self.p.widgets.index(self)+1}, {self.__class__.__name__}\n\
 "{string}"を数値に変換できませんでした。')
             self.p.kill_runner()
 
-    def stoint(self, string):
+    def str2int(self, string):
         """文字列を整数に変換"""
-        num = self.stofloat(string)
+        num = self.str2float(string)
         if (float(num).is_integer() is False) and \
            (CONFIG["show_warning"] is True):
             messagebox.showwarning("警告", f'\
@@ -1845,9 +1899,9 @@ line: {self.p.widgets.index(self)+1}, {self.__class__.__name__}\n\
 値は整数でなければなりません。')
         return int(round(num))
 
-    def stouint(self, string):
+    def str2uint(self, string):
         """文字列を符号なし整数に変換"""
-        num = self.stoint(string)
+        num = self.str2int(string)
         if num < 0:
             messagebox.showerror("エラー", f'\
 line: {self.p.widgets.index(self)+1}, {self.__class__.__name__}\n\
@@ -1856,9 +1910,9 @@ line: {self.p.widgets.index(self)+1}, {self.__class__.__name__}\n\
         else:
             return num
 
-    def stoufloat(self, string):
+    def str2ufloat(self, string):
         """文字列を符号なし小数に変換"""
-        num = self.stofloat(string)
+        num = self.str2float(string)
         if num < 0:
             messagebox.showerror("エラー", f'\
 line: {self.p.widgets.index(self)+1}, {self.__class__.__name__}\n\
@@ -1919,7 +1973,7 @@ class VarNumber(Widget):
 
     def do(self, tur):
         self.save_data()
-        self.p.variable_datas[self.name] = (self.stofloat(self.value), "N")
+        self.p.variable_datas[self.name] = (self.str2float(self.value), "N")
 
 
 class VarString(Widget):
@@ -1973,7 +2027,7 @@ class VarString(Widget):
 
     def do(self, tur):
         self.save_data()
-        self.p.variable_datas[self.name] = (self.stostr(self.value), "S")
+        self.p.variable_datas[self.name] = (self.str2str(self.value), "S")
 
 
 class VarBoolean(Widget):
@@ -2029,7 +2083,7 @@ class VarBoolean(Widget):
 
     def do(self, tur):
         self.save_data()
-        self.p.variable_datas[self.name] = (self.stobool(self.value), "B")
+        self.p.variable_datas[self.name] = (self.str2bool(self.value), "B")
 
 
 class Title(Widget):
@@ -2067,7 +2121,7 @@ class Title(Widget):
 
     def do(self, tur):
         self.save_data()
-        self.p.win.title(self.stostr(self.title))
+        self.p.win.title(self.str2str(self.title))
 
 
 class ScreenSize(Widget):
@@ -2124,8 +2178,8 @@ class ScreenSize(Widget):
         self.save_data()
 
         # 画面サイズを取得
-        width = self.stouint(self.width)
-        height = self.stouint(self.height)
+        width = self.str2uint(self.width)
+        height = self.str2uint(self.height)
 
         # 警告を表示
         if width > SYSTEM_WIDTH:
@@ -2200,7 +2254,7 @@ class Forward(Widget):
 
     def do(self, tur):
         self.save_data()
-        tur.forward(self.stoint(self.distance))
+        tur.forward(self.str2int(self.distance))
 
 
 class Backward(Widget):
@@ -2238,7 +2292,7 @@ class Backward(Widget):
 
     def do(self, tur):
         self.save_data()
-        tur.backward(self.stoint(self.distance))
+        tur.backward(self.str2int(self.distance))
 
 
 class Right(Widget):
@@ -2276,7 +2330,7 @@ class Right(Widget):
 
     def do(self, tur):
         self.save_data()
-        tur.right(self.stoint(self.angle))
+        tur.right(self.str2int(self.angle))
 
 
 class Left(Widget):
@@ -2314,7 +2368,7 @@ class Left(Widget):
 
     def do(self, tur):
         self.save_data()
-        tur.left(self.stoint(self.angle))
+        tur.left(self.str2int(self.angle))
 
 
 class GoTo(Widget):
@@ -2367,8 +2421,8 @@ class GoTo(Widget):
     def do(self, tur):
         self.save_data()
         tur.goto(
-            self.stoint(self.x) + self.p.runner_size[0] // 2,
-            self.stoint(self.y) - self.p.runner_size[1] // 2)
+            self.str2int(self.x) + self.p.runner_size[0] // 2,
+            self.str2int(self.y) - self.p.runner_size[1] // 2)
 
 
 class SetX(Widget):
@@ -2406,7 +2460,7 @@ class SetX(Widget):
 
     def do(self, tur):
         self.save_data()
-        tur.setx(self.stoint(self.x) + self.p.runner_size[0] // 2)
+        tur.setx(self.str2int(self.x) + self.p.runner_size[0] // 2)
 
 
 class SetY(Widget):
@@ -2444,7 +2498,7 @@ class SetY(Widget):
 
     def do(self, tur):
         self.save_data()
-        tur.sety(self.stoint(self.y) - self.p.runner_size[1] // 2)
+        tur.sety(self.str2int(self.y) - self.p.runner_size[1] // 2)
 
 
 class SetHeading(Widget):
@@ -2482,7 +2536,7 @@ class SetHeading(Widget):
 
     def do(self, tur):
         self.save_data()
-        tur.setheading(self.stoint(self.angle))
+        tur.setheading(self.str2int(self.angle))
 
 
 class Home(Widget):
@@ -2634,8 +2688,8 @@ class ToWards(Widget):
     def do(self, tur):
         self.save_data()
         angle = tur.towards(
-            self.stoint(self.x) + self.p.runner_size[0] // 2,
-            self.stoint(self.y) - self.p.runner_size[1] // 2)
+            self.str2int(self.x) + self.p.runner_size[0] // 2,
+            self.str2int(self.y) - self.p.runner_size[1] // 2)
         self.p.variable_datas[self.angle] = (angle, "N")
 
 
@@ -2707,8 +2761,8 @@ class Distance(Widget):
     def do(self, tur):
         self.save_data()
         distance = tur.distance(
-            self.stoint(self.x) + self.p.runner_size[0] // 2,
-            self.stoint(self.y) - self.p.runner_size[1] // 2)
+            self.str2int(self.x) + self.p.runner_size[0] // 2,
+            self.str2int(self.y) - self.p.runner_size[1] // 2)
         self.p.variable_datas[self.distance] = (distance, "N")
 
 
@@ -2883,8 +2937,8 @@ class Circle(Widget):
     def do(self, tur):
         self.save_data()
         tur.circle(
-            self.stoint(self.radius),
-            self.stoint(self.extent))
+            self.str2int(self.radius),
+            self.str2int(self.extent))
 
 
 class Dot(Widget):
@@ -2922,7 +2976,7 @@ class Dot(Widget):
 
     def do(self, tur):
         self.save_data()
-        tur.dot(self.stouint(self.size))
+        tur.dot(self.str2uint(self.size))
 
 
 class Stamp(Widget):
@@ -2985,7 +3039,7 @@ class Speed(Widget):
 
     def do(self, tur):
         self.save_data()
-        self.p.runner_speed = self.stoint(self.speed)
+        self.p.runner_speed = self.str2int(self.speed)
         tur.speed(self.p.runner_speed)
 
 
@@ -3115,7 +3169,7 @@ class PenSize(Widget):
 
     def do(self, tur):
         self.save_data()
-        tur.pensize(self.stouint(self.width))
+        tur.pensize(self.str2uint(self.width))
 
 
 class Color(Widget):
@@ -3160,7 +3214,7 @@ class Color(Widget):
                 text = text[:-1]
             elif repr(event.char)[1] != "\\":
                 text += repr(event.char)[1:-1]
-        color = self.stostr(text)
+        color = self.str2str(text)
         if color == "":
             color = "white"
         self.cv.delete("highlight")
@@ -3179,7 +3233,7 @@ class Color(Widget):
         color = self.ent1.get()
         try:
             color = colorchooser.askcolor(
-                color=self.stostr(color), parent=self.p.root)
+                color=self.str2str(color), parent=self.p.root)
         except tk.TclError:
             color = colorchooser.askcolor(parent=self.p.root)
         if color != (None, None):
@@ -3193,7 +3247,7 @@ class Color(Widget):
     def do(self, tur):
         self.save_data()
         try:
-            tur.color(self.stostr(self.color))
+            tur.color(self.str2str(self.color))
         except turtle.TurtleGraphicsError:
             messagebox.showerror("エラー", f'\
 line: {self.p.widgets.index(self)+1}, {self.__class__.__name__}\n\
@@ -3243,7 +3297,7 @@ class PenColor(Widget):
                 text = text[:-1]
             elif repr(event.char)[1] != "\\":
                 text += repr(event.char)[1:-1]
-        color = self.stostr(text)
+        color = self.str2str(text)
         if color == "":
             color = "white"
         self.cv.delete("highlight")
@@ -3262,7 +3316,7 @@ class PenColor(Widget):
         color = self.ent1.get()
         try:
             color = colorchooser.askcolor(
-                color=self.stostr(color), parent=self.p.root)
+                color=self.str2str(color), parent=self.p.root)
         except tk.TclError:
             color = colorchooser.askcolor(parent=self.p.root)
         if color != (None, None):
@@ -3276,7 +3330,7 @@ class PenColor(Widget):
     def do(self, tur):
         self.save_data()
         try:
-            tur.pencolor(self.stostr(self.color))
+            tur.pencolor(self.str2str(self.color))
         except turtle.TurtleGraphicsError:
             messagebox.showerror("エラー", f'\
 line: {self.p.widgets.index(self)+1}, {self.__class__.__name__}\n\
@@ -3326,7 +3380,7 @@ class FillColor(Widget):
                 text = text[:-1]
             elif repr(event.char)[1] != "\\":
                 text += repr(event.char)[1:-1]
-        color = self.stostr(text)
+        color = self.str2str(text)
         if color == "":
             color = "white"
         self.cv.delete("highlight")
@@ -3345,7 +3399,7 @@ class FillColor(Widget):
         color = self.ent1.get()
         try:
             color = colorchooser.askcolor(
-                color=self.stostr(color), parent=self.p.root)
+                color=self.str2str(color), parent=self.p.root)
         except tk.TclError:
             color = colorchooser.askcolor(parent=self.p.root)
         if color != (None, None):
@@ -3359,7 +3413,7 @@ class FillColor(Widget):
     def do(self, tur):
         self.save_data()
         try:
-            tur.fillcolor(self.stostr(self.color))
+            tur.fillcolor(self.str2str(self.color))
         except turtle.TurtleGraphicsError:
             messagebox.showerror("エラー", f'\
 line: {self.p.widgets.index(self)+1}, {self.__class__.__name__}\n\
@@ -3409,7 +3463,7 @@ class BGColor(Widget):
                 text = text[:-1]
             elif repr(event.char)[1] != "\\":
                 text += repr(event.char)[1:-1]
-        color = self.stostr(text)
+        color = self.str2str(text)
         if color == "":
             color = "white"
         self.cv.delete("highlight")
@@ -3428,7 +3482,7 @@ class BGColor(Widget):
         color = self.ent1.get()
         try:
             color = colorchooser.askcolor(
-                color=self.stostr(color), parent=self.p.root)
+                color=self.str2str(color), parent=self.p.root)
         except tk.TclError:
             color = colorchooser.askcolor(parent=self.p.root)
         if color != (None, None):
@@ -3442,7 +3496,7 @@ class BGColor(Widget):
     def do(self, tur):
         self.save_data()
         try:
-            tur.getscreen().bgcolor(self.stostr(self.color))
+            tur.getscreen().bgcolor(self.str2str(self.color))
         except turtle.TurtleGraphicsError:
             messagebox.showerror("エラー", f'\
 line: {self.p.widgets.index(self)+1}, {self.__class__.__name__}\n\
@@ -3780,7 +3834,7 @@ class TurtleSize(Widget):
 
     def do(self, tur):
         self.save_data()
-        tur.turtlesize(self.stoint(self.size))
+        tur.turtlesize(self.str2int(self.size))
 
 
 class Write(Widget):
@@ -3877,73 +3931,137 @@ class Write(Widget):
         # ウィンドウを作成する
         self.win = tk.Toplevel(self.p.root)
         self.win.tk.call('wm', 'iconphoto', self.win._w, self.p.icon)
-        self.win.geometry(f"{EXPAND(400)}x{EXPAND(380)}")
-        self.win.resizable(0, 0)
         self.win.wait_visibility()
         self.win.grab_set()
-
+        frame0 = tk.Frame(self.win)
+        frame0.pack(anchor=tk.N, side=tk.TOP)
         font = (FONT_TYPE1, EXPAND(16), "bold")
-        lab0 = tk.Label(self.win, text="Options",
-                        font=(FONT_TYPE2, EXPAND(30), "bold"))
-        lab0.place(x=EXPAND(140), y=EXPAND(20))
-        lab1 = tk.Label(self.win, text="text   <= ", font=font)
-        lab1.place(x=EXPAND(30), y=EXPAND(90))
-        ent1 = tk.Entry(self.win, font=font, width=12, justify=tk.RIGHT)
-        ent1.insert(tk.END, self.text)
-        ent1.bind('<Button-3>', lambda e: self.show_popup1(e, ent1))
-        ent1.place(x=EXPAND(160), y=EXPAND(90))
-        lab2 = tk.Label(self.win, text="move   <= ", font=font)
-        lab2.place(x=EXPAND(30), y=EXPAND(120))
-        self.var1 = tk.StringVar()
-        cb1 = ttk.Combobox(self.win, textvariable=self.var1,
-                           font=font, width=12)
-        cb1['values'] = ("True", "False")
-        cb1.set(self.move)
-        cb1.place(x=EXPAND(160), y=EXPAND(120))
-        lab3 = tk.Label(self.win, text="align  <= ", font=font)
-        lab3.place(x=EXPAND(30), y=EXPAND(150))
-        ent3 = tk.Entry(self.win, font=font, width=12, justify=tk.RIGHT)
-        ent3.insert(tk.END, self.align)
-        ent3.bind('<Button-3>', lambda e: self.show_popup1(e, ent1))
-        ent3.place(x=EXPAND(160), y=EXPAND(150))
-        lab4 = tk.Label(self.win, text="family <= ", font=font)
-        lab4.place(x=EXPAND(30), y=EXPAND(180))
-        ent4 = tk.Entry(self.win, font=font, width=12, justify=tk.RIGHT)
-        ent4.insert(tk.END, self.family)
-        ent4.bind('<Button-3>', lambda e: self.show_popup1(e, ent1))
-        ent4.place(x=EXPAND(160), y=EXPAND(180))
-        lab5 = tk.Label(self.win, text="size   <= ", font=font)
-        lab5.place(x=EXPAND(30), y=EXPAND(210))
-        ent5 = tk.Entry(self.win, font=font, width=12, justify=tk.RIGHT)
-        ent5.insert(tk.END, self.size)
-        ent5.bind('<Button-3>', lambda e: self.show_popup1(e, ent1))
-        ent5.place(x=EXPAND(160), y=EXPAND(210))
-        lab6 = tk.Label(self.win, text="weight <= ", font=font)
-        lab6.place(x=EXPAND(30), y=EXPAND(240))
-        ent6 = tk.Entry(self.win, font=font, width=12, justify=tk.RIGHT)
-        ent6.insert(tk.END, self.weight)
-        ent6.bind('<Button-3>', lambda e: self.show_popup1(e, ent1))
-        ent6.place(x=EXPAND(160), y=EXPAND(240))
-        lab7 = tk.Label(self.win, text="slant  <= ", font=font)
-        lab7.place(x=EXPAND(30), y=EXPAND(270))
-        ent7 = tk.Entry(self.win, font=font, width=12, justify=tk.RIGHT)
-        ent7.insert(tk.END, self.slant)
-        ent7.bind('<Button-3>', lambda e: self.show_popup1(e, ent1))
-        ent7.place(x=EXPAND(160), y=EXPAND(270))
-        entries = (ent1, cb1, ent3, ent4, ent5, ent6, ent7)
 
-        but1 = tk.Button(self.win, text="決定", font=font, width=8,
-                         command=lambda: self.decide_option(entries))
-        but1.place(x=140, y=310)
+        # タイトル
+        lab0 = tk.Label(frame0, text="Options",
+                        font=(FONT_TYPE2, EXPAND(32), "bold"))
+        lab0.pack(side=tk.TOP, pady=EXPAND(10))
+
+        # 決定ボタン
+        but1 = tk.Button(frame0, text="決定", font=font, width=8,
+                         command=self.decide_option)
+        but1.pack(side=tk.BOTTOM, pady=EXPAND(10))
+
+        # 左側のライン
+        frame1 = tk.Frame(frame0)
+        frame1.pack(anchor=tk.NW, side=tk.LEFT)
+
+        fra1 = tk.Frame(frame1)
+        fra1.pack(anchor=tk.W, padx=(EXPAND(60), 0), pady=EXPAND(10))
+        lab1 = tk.Label(fra1, text="text    = ", font=font)
+        lab1.pack(side=tk.LEFT)
+        self.opt1 = tk.Entry(fra1, font=font, width=12, justify=tk.RIGHT)
+        self.opt1.insert(tk.END, self.text)
+        self.opt1.bind('<Button-3>', lambda e: self.show_popup1(e, self.opt1))
+        self.opt1.pack(side=tk.LEFT)
+
+        fra2 = tk.Frame(frame1)
+        fra2.pack(anchor=tk.W, padx=(EXPAND(60), 0), pady=EXPAND(10))
+        lab2 = tk.Label(fra2, text="move    = ", font=font)
+        lab2.pack(side=tk.LEFT)
+        self.opt2 = ttk.Combobox(fra2, font=font, width=12)
+        self.opt2['values'] = ("True", "False")
+        self.opt2.set(self.move)
+        self.opt2.pack(side=tk.LEFT)
+
+        fra3 = tk.Frame(frame1)
+        fra3.pack(anchor=tk.W, padx=(EXPAND(60), 0), pady=EXPAND(10))
+        lab3 = tk.Label(fra3, text="align   = ", font=font)
+        lab3.pack(side=tk.LEFT)
+        self.opt3 = tk.Entry(fra3, font=font, width=12, justify=tk.RIGHT)
+        self.opt3.insert(tk.END, self.align)
+        self.opt3.bind('<Button-3>', lambda e: self.show_popup1(e, self.opt3))
+        self.opt3.pack(side=tk.LEFT)
+
+        fra4 = tk.Frame(frame1)
+        fra4.pack(anchor=tk.W, padx=(EXPAND(60), 0), pady=EXPAND(10))
+        lab4 = tk.Label(fra4, text="sideway = ", font=font)
+        lab4.pack(side=tk.LEFT)
+        self.opt4 = ttk.Combobox(fra4, font=font, width=12)
+        self.opt4['values'] = ("True", "False")
+        self.opt4.set(self.move)
+        self.opt4.pack(side=tk.LEFT)
+
+        fra5 = tk.Frame(frame1)
+        fra5.pack(anchor=tk.W, padx=(EXPAND(60), 0), pady=EXPAND(10))
+        lab5 = tk.Label(fra5, text="size    = ", font=font)
+        lab5.pack(side=tk.LEFT)
+        self.opt5 = tk.Entry(fra5, font=font, width=12, justify=tk.RIGHT)
+        self.opt5.insert(tk.END, self.size)
+        self.opt5.bind('<Button-3>', lambda e: self.show_popup1(e, self.opt5))
+        self.opt5.pack(side=tk.LEFT)
+
+        fra6 = tk.Frame(frame1)
+        fra6.pack(anchor=tk.W, padx=(EXPAND(60), 0), pady=EXPAND(10))
+        lab6 = tk.Label(fra6, text="weight  = ", font=font)
+        lab6.pack(side=tk.LEFT)
+        self.opt6 = tk.Entry(fra6, font=font, width=12, justify=tk.RIGHT)
+        self.opt6.insert(tk.END, self.weight)
+        self.opt6.bind('<Button-3>', lambda e: self.show_popup1(e, self.opt6))
+        self.opt6.pack(side=tk.LEFT)
+
+        fra7 = tk.Frame(frame1)
+        fra7.pack(anchor=tk.W, padx=(EXPAND(60), 0), pady=EXPAND(10))
+        lab7 = tk.Label(fra7, text="slant   = ", font=font)
+        lab7.pack(side=tk.LEFT)
+        self.opt7 = tk.Entry(fra7, font=font, width=12, justify=tk.RIGHT)
+        self.opt7.insert(tk.END, self.slant)
+        self.opt7.bind('<Button-3>', lambda e: self.show_popup1(e, self.opt7))
+        self.opt7.pack(side=tk.LEFT)
+
+        # 中央のライン
+        frame2 = tk.Frame(frame0)
+        frame2.pack(anchor=tk.NW, side=tk.LEFT)
+
+        fra8 = tk.Frame(frame2)
+        fra8.pack(anchor=tk.W, padx=(EXPAND(20), 0), pady=EXPAND(10))
+        lab8 = tk.Label(fra8, text="family  = ", font=font)
+        lab8.pack(side=tk.LEFT)
+        self.opt8 = tk.Entry(fra8, font=font, width=12, justify=tk.RIGHT)
+        self.opt8.insert(tk.END, self.family)
+        self.opt8.bind('<Button-3>', lambda e: self.show_popup1(e, self.opt8))
+        self.opt8.pack(side=tk.LEFT)
+
+        fra9 = tk.Frame(frame2)
+        fra9.pack(anchor=tk.W, padx=(EXPAND(20), 0), pady=EXPAND(10))
+        var1 = tk.StringVar()
+        var1.set(value=self.without_atmark())
+        self.lsb1 = tk.Listbox(fra9, listvariable=var1, height=12,
+                               width=26, selectmode='single',
+                               font=(FONT_TYPE1, EXPAND(14)))
+        self.lsb1.bind('<<ListboxSelect>>', self.listbox_selected)
+        self.lsb1.pack(fill='y', side=tk.LEFT)
+        scr1 = ttk.Scrollbar(fra9, orient=tk.VERTICAL,
+                             command=self.lsb1.yview)
+        self.lsb1['yscrollcommand'] = scr1.set
+        scr1.pack(fill='y', side=tk.LEFT)
+
+        self.win.resizable(0, 0)
+
+    def without_atmark(self):
+        new = []
+        for font in tkfont.families():
+            if font[0] != "@":
+                new.append(font)
+        return new
+
+    def listbox_selected(self):
+        print("Hello")
 
     def decide_option(self, entries):
-        self.text = entries[0].get()
-        self.move = entries[1].get()
-        self.align = entries[2].get()
-        self.family = entries[3].get()
-        self.size = entries[4].get()
-        self.weight = entries[5].get()
-        self.slant = entries[6].get()
+        self.text = self.opt1.get()
+        self.move = self.opt2.get()
+        self.align = self.opt3.get()
+        self.sideway = self.opt4.get()
+        self.size = self.opt5.get()
+        self.weight = self.opt6.get()
+        self.slant = self.opt7.get()
+        self.family = self.opt8.get()
         self.ent1.delete(0, tk.END)
         self.ent1.insert(0, self.text)
         self.ent2.delete(0, tk.END)
@@ -3957,15 +4075,16 @@ class Write(Widget):
 
     def do(self, tur):
         self.save_data()
+        mark = "@" if self.str2bool(self.sideway) else ""
         tur.write(
-            self.stostr(self.text),
-            move=self.stobool(self.move),
-            align=self.stostr(self.align),
+            self.str2str(self.text),
+            move=self.str2bool(self.move),
+            align=self.str2str(self.align),
             font=(
-                self.stostr(self.family),
-                self.stoint(self.size),
-                self.stostr(self.weight),
-                self.stostr(self.slant)))
+                mark + self.str2str(self.family),
+                self.str2int(self.size),
+                self.str2str(self.weight),
+                self.str2str(self.slant)))
 
 
 class Bye(Widget):
@@ -4081,7 +4200,7 @@ class Sleep(Widget):
 
     def do(self, tur):
         self.save_data()
-        time.sleep(self.stoufloat(self.second))
+        time.sleep(self.str2ufloat(self.second))
 
 
 class Comment(Widget):
