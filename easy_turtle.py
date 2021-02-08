@@ -533,7 +533,8 @@ class EasyTurtle:
         """実行停止の動作"""
         self.killed_runner = True
         self.running_program = False
-        self.win.destroy()
+        if hasattr(self, "win") is True:
+            self.win.destroy()
 
     def run_program(self, event=None):
         """実行"""
@@ -767,8 +768,8 @@ line: {index+1}, {widget.__class__.__name__}\n\
 
             # バックアップデータを設定
             self.backed_up = data["backedup"] if "backedup" in data else []
-            self.canceled_changes = data["canceled"] if "canceled" in data else [
-            ]
+            self.canceled_changes = data["canceled"]\
+                if "canceled" in data else []
 
             # 追加位置を設定
             addmode = data["addmode"] if "addmode" in data else 2
@@ -3199,15 +3200,15 @@ class Color(Widget):
         strvar = tk.StringVar()
         self.ent1 = tk.Entry(self.cv, font=FONT, width=12, justify=tk.RIGHT,
                              validate='all', textvariable=strvar,
-                             vcmd=self.color_highlight)
+                             vcmd=self.preview_color)
         strvar.set(self.color)
         self.binder(self.ent1)
         self.ent1.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent1))
-        self.ent1.bind("<KeyPress>", self.color_highlight)
+        self.ent1.bind("<KeyPress>", self.preview_color)
         self.ent1.place(x=EXPAND(70), y=EXPAND(HEIGHT//2+8))
-        self.color_highlight()
+        self.preview_color()
 
-    def color_highlight(self, event=None):
+    def preview_color(self, event=None):
         text = self.ent1.get()
         if event is not None:
             if event.char == "\x08":
@@ -3239,7 +3240,7 @@ class Color(Widget):
         if color != (None, None):
             self.ent1.delete(0, tk.END)
             self.ent1.insert(0, color[1].upper())
-        self.color_highlight()
+        self.preview_color()
 
     def save_data(self):
         self.color = self.ent1.get()
@@ -3282,15 +3283,15 @@ class PenColor(Widget):
         strvar = tk.StringVar()
         self.ent1 = tk.Entry(self.cv, font=FONT, width=12, justify=tk.RIGHT,
                              validate='all', textvariable=strvar,
-                             vcmd=self.color_highlight)
+                             vcmd=self.preview_color)
         strvar.set(self.color)
         self.binder(self.ent1)
         self.ent1.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent1))
-        self.ent1.bind("<KeyPress>", self.color_highlight)
+        self.ent1.bind("<KeyPress>", self.preview_color)
         self.ent1.place(x=EXPAND(70), y=EXPAND(HEIGHT//2+8))
-        self.color_highlight()
+        self.preview_color()
 
-    def color_highlight(self, event=None):
+    def preview_color(self, event=None):
         text = self.ent1.get()
         if event is not None:
             if event.char == "\x08":
@@ -3322,7 +3323,7 @@ class PenColor(Widget):
         if color != (None, None):
             self.ent1.delete(0, tk.END)
             self.ent1.insert(0, color[1].upper())
-        self.color_highlight()
+        self.preview_color()
 
     def save_data(self):
         self.color = self.ent1.get()
@@ -3365,15 +3366,15 @@ class FillColor(Widget):
         strvar = tk.StringVar()
         self.ent1 = tk.Entry(self.cv, font=FONT, width=12, justify=tk.RIGHT,
                              validate='all', textvariable=strvar,
-                             vcmd=self.color_highlight)
+                             vcmd=self.preview_color)
         strvar.set(self.color)
         self.binder(self.ent1)
         self.ent1.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent1))
-        self.ent1.bind("<KeyPress>", self.color_highlight)
+        self.ent1.bind("<KeyPress>", self.preview_color)
         self.ent1.place(x=EXPAND(70), y=EXPAND(HEIGHT//2+8))
-        self.color_highlight()
+        self.preview_color()
 
-    def color_highlight(self, event=None):
+    def preview_color(self, event=None):
         text = self.ent1.get()
         if event is not None:
             if event.char == "\x08":
@@ -3405,7 +3406,7 @@ class FillColor(Widget):
         if color != (None, None):
             self.ent1.delete(0, tk.END)
             self.ent1.insert(0, color[1].upper())
-        self.color_highlight()
+        self.preview_color()
 
     def save_data(self):
         self.color = self.ent1.get()
@@ -3448,15 +3449,15 @@ class BGColor(Widget):
         strvar = tk.StringVar()
         self.ent1 = tk.Entry(self.cv, font=FONT, width=12, justify=tk.RIGHT,
                              validate='all', textvariable=strvar,
-                             vcmd=self.color_highlight)
+                             vcmd=self.preview_color)
         strvar.set(self.color)
         self.binder(self.ent1)
         self.ent1.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent1))
-        self.ent1.bind("<KeyPress>", self.color_highlight)
+        self.ent1.bind("<KeyPress>", self.preview_color)
         self.ent1.place(x=EXPAND(70), y=EXPAND(HEIGHT//2+8))
-        self.color_highlight()
+        self.preview_color()
 
-    def color_highlight(self, event=None):
+    def preview_color(self, event=None):
         text = self.ent1.get()
         if event is not None:
             if event.char == "\x08":
@@ -3488,7 +3489,7 @@ class BGColor(Widget):
         if color != (None, None):
             self.ent1.delete(0, tk.END)
             self.ent1.insert(0, color[1].upper())
-        self.color_highlight()
+        self.preview_color()
 
     def save_data(self):
         self.color = self.ent1.get()
@@ -3945,14 +3946,14 @@ class Write(Widget):
         # 決定ボタン
         but1 = tk.Button(frame0, text="決定", font=font, width=8,
                          command=self.decide_option)
-        but1.pack(side=tk.BOTTOM, pady=EXPAND(10))
+        but1.pack(side=tk.BOTTOM, pady=(EXPAND(10), EXPAND(20)))
 
         # 左側のライン
         frame1 = tk.Frame(frame0)
-        frame1.pack(anchor=tk.NW, side=tk.LEFT)
+        frame1.pack(anchor=tk.NW, side=tk.LEFT, padx=(EXPAND(60), 0))
 
         fra1 = tk.Frame(frame1)
-        fra1.pack(anchor=tk.W, padx=(EXPAND(60), 0), pady=EXPAND(10))
+        fra1.pack(anchor=tk.W, pady=EXPAND(10))
         lab1 = tk.Label(fra1, text="text    = ", font=font)
         lab1.pack(side=tk.LEFT)
         self.opt1 = tk.Entry(fra1, font=font, width=12, justify=tk.RIGHT)
@@ -3961,7 +3962,7 @@ class Write(Widget):
         self.opt1.pack(side=tk.LEFT)
 
         fra2 = tk.Frame(frame1)
-        fra2.pack(anchor=tk.W, padx=(EXPAND(60), 0), pady=EXPAND(10))
+        fra2.pack(anchor=tk.W, pady=EXPAND(10))
         lab2 = tk.Label(fra2, text="move    = ", font=font)
         lab2.pack(side=tk.LEFT)
         self.opt2 = ttk.Combobox(fra2, font=font, width=12)
@@ -3970,7 +3971,7 @@ class Write(Widget):
         self.opt2.pack(side=tk.LEFT)
 
         fra3 = tk.Frame(frame1)
-        fra3.pack(anchor=tk.W, padx=(EXPAND(60), 0), pady=EXPAND(10))
+        fra3.pack(anchor=tk.W, pady=EXPAND(10))
         lab3 = tk.Label(fra3, text="align   = ", font=font)
         lab3.pack(side=tk.LEFT)
         self.opt3 = tk.Entry(fra3, font=font, width=12, justify=tk.RIGHT)
@@ -3978,26 +3979,8 @@ class Write(Widget):
         self.opt3.bind('<Button-3>', lambda e: self.show_popup1(e, self.opt3))
         self.opt3.pack(side=tk.LEFT)
 
-        fra4 = tk.Frame(frame1)
-        fra4.pack(anchor=tk.W, padx=(EXPAND(60), 0), pady=EXPAND(10))
-        lab4 = tk.Label(fra4, text="sideway = ", font=font)
-        lab4.pack(side=tk.LEFT)
-        self.opt4 = ttk.Combobox(fra4, font=font, width=12)
-        self.opt4['values'] = ("True", "False")
-        self.opt4.set(self.move)
-        self.opt4.pack(side=tk.LEFT)
-
-        fra5 = tk.Frame(frame1)
-        fra5.pack(anchor=tk.W, padx=(EXPAND(60), 0), pady=EXPAND(10))
-        lab5 = tk.Label(fra5, text="size    = ", font=font)
-        lab5.pack(side=tk.LEFT)
-        self.opt5 = tk.Entry(fra5, font=font, width=12, justify=tk.RIGHT)
-        self.opt5.insert(tk.END, self.size)
-        self.opt5.bind('<Button-3>', lambda e: self.show_popup1(e, self.opt5))
-        self.opt5.pack(side=tk.LEFT)
-
         fra6 = tk.Frame(frame1)
-        fra6.pack(anchor=tk.W, padx=(EXPAND(60), 0), pady=EXPAND(10))
+        fra6.pack(anchor=tk.W, pady=EXPAND(10))
         lab6 = tk.Label(fra6, text="weight  = ", font=font)
         lab6.pack(side=tk.LEFT)
         self.opt6 = tk.Entry(fra6, font=font, width=12, justify=tk.RIGHT)
@@ -4006,7 +3989,7 @@ class Write(Widget):
         self.opt6.pack(side=tk.LEFT)
 
         fra7 = tk.Frame(frame1)
-        fra7.pack(anchor=tk.W, padx=(EXPAND(60), 0), pady=EXPAND(10))
+        fra7.pack(anchor=tk.W, pady=EXPAND(10))
         lab7 = tk.Label(fra7, text="slant   = ", font=font)
         lab7.pack(side=tk.LEFT)
         self.opt7 = tk.Entry(fra7, font=font, width=12, justify=tk.RIGHT)
@@ -4016,24 +3999,46 @@ class Write(Widget):
 
         # 中央のライン
         frame2 = tk.Frame(frame0)
-        frame2.pack(anchor=tk.NW, side=tk.LEFT)
+        frame2.pack(anchor=tk.NW, side=tk.LEFT, padx=EXPAND(20))
+
+        fra4 = tk.Frame(frame2)
+        fra4.pack(anchor=tk.W, pady=EXPAND(10))
+        lab4 = tk.Label(fra4, text="sideway = ", font=font)
+        lab4.pack(side=tk.LEFT)
+        self.opt4 = ttk.Combobox(fra4, font=font, width=12)
+        self.opt4['values'] = ("True", "False")
+        self.opt4.set(self.move)
+        self.opt4.bind("<KeyPress>", self.preview_font)
+        self.opt4.pack(side=tk.LEFT)
+
+        fra5 = tk.Frame(frame2)
+        fra5.pack(anchor=tk.W, pady=EXPAND(10))
+        lab5 = tk.Label(fra5, text="size    = ", font=font)
+        lab5.pack(side=tk.LEFT)
+        self.opt5 = tk.Entry(fra5, font=font, width=12, justify=tk.RIGHT)
+        self.opt5.insert(tk.END, self.size)
+        self.opt5.bind('<Button-3>', lambda e: self.show_popup1(e, self.opt5))
+        self.opt5.bind("<KeyPress>", self.preview_font)
+        self.opt5.pack(side=tk.LEFT)
 
         fra8 = tk.Frame(frame2)
-        fra8.pack(anchor=tk.W, padx=(EXPAND(20), 0), pady=EXPAND(10))
+        fra8.pack(anchor=tk.W, pady=EXPAND(10))
         lab8 = tk.Label(fra8, text="family  = ", font=font)
         lab8.pack(side=tk.LEFT)
         self.opt8 = tk.Entry(fra8, font=font, width=12, justify=tk.RIGHT)
         self.opt8.insert(tk.END, self.family)
         self.opt8.bind('<Button-3>', lambda e: self.show_popup1(e, self.opt8))
+        self.opt8.bind("<KeyPress>", self.preview_font)
         self.opt8.pack(side=tk.LEFT)
 
         fra9 = tk.Frame(frame2)
-        fra9.pack(anchor=tk.W, padx=(EXPAND(20), 0), pady=EXPAND(10))
+        fra9.pack(anchor=tk.W, pady=EXPAND(10))
+        self.font_list = self.without_atmark()
         var1 = tk.StringVar()
-        var1.set(value=self.without_atmark())
-        self.lsb1 = tk.Listbox(fra9, listvariable=var1, height=12,
-                               width=26, selectmode='single',
-                               font=(FONT_TYPE1, EXPAND(14)))
+        var1.set(value=self.font_list)
+        self.lsb1 = tk.Listbox(fra9, listvariable=var1, height=3,
+                               width=22, selectmode='single',
+                               font=(FONT_TYPE1, EXPAND(16)))
         self.lsb1.bind('<<ListboxSelect>>', self.listbox_selected)
         self.lsb1.pack(fill='y', side=tk.LEFT)
         scr1 = ttk.Scrollbar(fra9, orient=tk.VERTICAL,
@@ -4041,6 +4046,14 @@ class Write(Widget):
         self.lsb1['yscrollcommand'] = scr1.set
         scr1.pack(fill='y', side=tk.LEFT)
 
+        # 右側のライン
+        frame3 = tk.Frame(frame0)
+        frame3.pack(anchor=tk.NW, side=tk.LEFT, padx=(0, EXPAND(60)))
+
+        self.cv1 = tk.Canvas(frame3, width=240, height=240, bg="white")
+        self.cv1.pack()
+
+        self.preview_font()
         self.win.resizable(0, 0)
 
     def without_atmark(self):
@@ -4050,10 +4063,29 @@ class Write(Widget):
                 new.append(font)
         return new
 
-    def listbox_selected(self):
-        print("Hello")
+    def preview_font(self, event=None):
+        mark = "@" if self.opt4.get() == "True" else ""
+        try:
+            size = int(self.opt5.get())
+        except ValueError:
+            size = int(self.VALUES["size"])
+        font = (mark + self.opt8.get(), size, self.opt6.get(), self.opt7.get())
 
-    def decide_option(self, entries):
+        self.cv1.delete("preview")
+        self.cv1.create_text(120, 120, text="abc ABC 123\nあいう 甲乙",
+                             font=font, tag="preview")
+
+    def listbox_selected(self, event):
+        selected = self.lsb1.curselection()
+        if len(selected) > 0:
+            font = self.font_list[selected[0]]
+        else:
+            return 1
+        self.opt8.delete(0, tk.END)
+        self.opt8.insert(0, font)
+        self.preview_font()
+
+    def decide_option(self):
         self.text = self.opt1.get()
         self.move = self.opt2.get()
         self.align = self.opt3.get()
