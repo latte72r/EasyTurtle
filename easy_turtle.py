@@ -93,12 +93,16 @@ if SYSTEM == "Windows":
         else:
             DOCUMENTS = os.path.join(user, "Documents/EasyTurtle/")
         samples = os.path.join(DOCUMENTS, "Samples")
+        os.makedirs(DOCUMENTS, exist_ok=True)
         if os.path.exists(samples) is True:
             shutil.rmtree(samples)
-        shutil.copytree('./Samples', samples)
+        try:
+            shutil.copytree('./Samples', samples)
+        except FileExistsError:
+            pass
     else:
         DOCUMENTS = os.path.abspath("./")
-    os.makedirs(DOCUMENTS, exist_ok=True)
+        os.makedirs(DOCUMENTS, exist_ok=True)
 
     SYSTEM_WIDTH = windll.user32.GetSystemMetrics(0)
     SYSTEM_HEIGHT = windll.user32.GetSystemMetrics(1)
@@ -140,13 +144,17 @@ elif SYSTEM == "Linux":
             DOCUMENTS = os.path.join("/home/", user, "/ドキュメント/EasyTurtle/")
         else:
             DOCUMENTS = os.path.join("/home/", user, "/Documents/EasyTurtle/")
+        os.makedirs(DOCUMENTS, exist_ok=True)
+        samples = os.path.join(DOCUMENTS, "Samples")
+        if os.path.exists(samples) is True:
+            shutil.rmtree(samples)
+        try:
+            shutil.copytree('./Samples', samples)
+        except FileExistsError:
+            pass
     else:
         DOCUMENTS = os.path.abspath("./")
-    os.makedirs(DOCUMENTS, exist_ok=True)
-
-    samples = os.path.join(DOCUMENTS, "Samples")
-    if os.path.exists(samples) is False:
-        shutil.copytree('./Samples', samples)
+        os.makedirs(DOCUMENTS, exist_ok=True)
 
     response = subprocess.check_output("xrandr | fgrep '*'", shell=True)
     metrics = response.decode("utf8").split()[0].split("x")
@@ -170,7 +178,7 @@ def EXPAND(num):
 
 FONT = (FONT_TYPE1, EXPAND(12), "bold")
 
-__version__ = (5, 7, 0)
+__version__ = (5, 7, 1)
 
 
 class EasyTurtle:
@@ -3735,7 +3743,8 @@ class Write(Widget):
         "align": "center",
         "family": "Default",
         "weight": "bold",
-        "slant": "roman"}
+        "slant": "roman",
+        "sideway": "False"}
 
     def set_data(self, data):
         if "text" in data:
@@ -3766,6 +3775,10 @@ class Write(Widget):
             self.slant = data["slant"]
         else:
             self.slant = self.VALUES["slant"]
+        if "sideway" in data:
+            self.sideway = data["sideway"]
+        else:
+            self.sideway = self.VALUES["sideway"]
         self.set_common(data)
 
     def get_data(self, more=True):
@@ -3780,6 +3793,8 @@ class Write(Widget):
             data["weight"] = self.weight
         if (str(self.slant) != self.VALUES["slant"]) or (more is True):
             data["slant"] = self.slant
+        if (str(self.sideway) != self.VALUES["sideway"]) or (more is True):
+            data["sideway"] = self.sideway
         self.save_data()
         return self.get_class_data(data, more)
 
