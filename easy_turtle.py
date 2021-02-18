@@ -178,7 +178,7 @@ def EXPAND(num):
 
 FONT = (FONT_TYPE1, EXPAND(12), "bold")
 
-__version__ = (5, 7, 1)
+__version__ = (5, 8, "0a1")
 
 
 class EasyTurtle:
@@ -544,20 +544,34 @@ class EasyTurtle:
         if hasattr(self, "win") is True:
             self.win.destroy()
 
-    def run_program(self, event=None):
-        """実行"""
+    def standard_run(self, event=None):
+        """標準実行"""
         if (type(event) == tk.Event) and (self.running_program is True):
             return
+        self.run_program(fastest=False)
 
+    def fastest_run(self, event=None):
+        """高速実行"""
+        if (type(event) == tk.Event) and (self.running_program is True):
+            return
+        self.run_program(fastest=True)
+
+    def run_program(self, fastest=False):
+        """実行"""
         # 変数の格納場所
         self.variable_datas = {}
 
         # プログラムの情報
         self.runner_size = (600, 600)
-        self.runner_speed = 3
         self.killed_runner = False
         self.runner_pendown = True
         self.running_program = True
+        if fastest is True:
+            self.runner_speed = 0
+            self.running_fastest = True
+        else:
+            self.runner_speed = 3
+            self.running_fastest = False
 
         # ウインドウを作成
         self.win = tk.Toplevel(self.root)
@@ -588,6 +602,8 @@ class EasyTurtle:
         tur.goto(self.runner_size[0] // 2, self.runner_size[1] // -2)
         tur.pendown()
         tur.speed(self.runner_speed)
+        if fastest is True:
+            tur.getscreen().delay(0)
 
         # それぞれのウィジェットを実行
         try:
@@ -1035,7 +1051,7 @@ line: {index+1}, {widget.__class__.__name__}\n\
                         text=f"お使いのバージョン：{old_joined_version}")
         lab2.pack(anchor=tk.NW, padx=EXPAND(20), pady=(0, EXPAND(10)))
         lab3 = tk.Label(self.win2, font=FONT,
-                        text=f"最新のバージョン  ：{new_joined_version}")
+                        text=f"最新のバージョン　：{new_joined_version}")
         lab3.pack(anchor=tk.NW, padx=EXPAND(20), pady=(0, EXPAND(10)))
         font = (FONT_TYPE1, EXPAND(12), "bold", "underline")
         lab5 = tk.Label(self.win2, font=font, fg="blue", cursor="hand2",
@@ -1085,7 +1101,7 @@ download/v{joined_version}/EasyTurtle-{joined_version}-amd64.msi"
                         text=f"お使いのバージョン：{old_joined_version}")
         lab2.pack(anchor=tk.NW, padx=EXPAND(20), pady=(0, EXPAND(10)))
         lab3 = tk.Label(self.win2, font=FONT,
-                        text=f"最新のバージョン  ：{new_joined_version}")
+                        text=f"最新のバージョン　：{new_joined_version}")
         lab3.pack(anchor=tk.NW, padx=EXPAND(20), pady=(0, EXPAND(10)))
         font = (FONT_TYPE1, EXPAND(12), "bold", "underline")
         lab5 = tk.Label(self.win2, font=font, fg="blue", cursor="hand2",
@@ -1234,7 +1250,8 @@ download/v{joined_version}/EasyTurtle-{joined_version}-amd64.msi"
         self.root.bind("<Control-Key-q>", self.close_window)
         self.root.bind("<Control-Key-comma>", self.edit_config)
         self.root.bind("<Key-F1>", self.show_document)
-        self.root.bind("<Key-F5>", self.run_program)
+        self.root.bind("<Key-F5>", self.standard_run)
+        self.root.bind("<Shift-Key-F5>", self.fastest_run)
 
         # Menubarの作成
         self.menubar = tk.Menu(self.root)
@@ -1292,7 +1309,9 @@ download/v{joined_version}/EasyTurtle-{joined_version}-amd64.msi"
         # RUNメニューの作成
         runmenu = tk.Menu(self.menubar, tearoff=0, font=menu_font)
         runmenu.add_command(label="実行", accelerator="F5",
-                            command=self.run_program)
+                            command=self.standard_run)
+        runmenu.add_command(label="最速実行", accelerator="Shift+F5",
+                            command=self.fastest_run)
         self.menubar.add_cascade(label="実行", menu=runmenu)
 
         # OPTIONSメニューの追加
@@ -2971,8 +2990,9 @@ class Speed(Widget):
 
     def do(self, tur):
         self.save_data()
-        self.p.runner_speed = self.str2int(self.speed)
-        tur.speed(self.p.runner_speed)
+        if self.p.running_fastest is False:
+            self.p.runner_speed = self.str2int(self.speed)
+            tur.speed(self.p.runner_speed)
 
 
 class PenDown(Widget):
