@@ -1,28 +1,26 @@
 
 # ©2020-2021 Ryo Fujinami.
 
-import re
-import platform
-import sys
-import os
 import json
-import time
-import turtle
-import webbrowser
-import tkinter as tk
-from tkinter import colorchooser
-from tkinter import messagebox
-from tkinter import filedialog
-from tkinter import ttk
-from tkinter import scrolledtext
-from tkinter import simpledialog
-from tkinter import font as tkfont
-import shutil
+import os
+import platform
 import pprint
-import urllib.request
-import threading
-import traceback
+import re
+import shutil
 import subprocess
+import sys
+import threading
+import time
+import tkinter as tk
+import traceback
+import turtle
+import urllib.request
+import webbrowser
+from tkinter import colorchooser, filedialog
+from tkinter import font as tkfont
+from tkinter import messagebox, scrolledtext, simpledialog, ttk
+from typing import List as typeList
+from typing import TypeVar
 
 SIZE = 8
 HEIGHT = 72
@@ -94,10 +92,9 @@ if SYSTEM == "Windows":
             DOCUMENTS = os.path.join(user, "Documents/EasyTurtle/")
         samples = os.path.join(DOCUMENTS, "Samples")
         os.makedirs(DOCUMENTS, exist_ok=True)
-        if os.path.exists(samples) is True:
-            shutil.rmtree(samples)
         try:
-            shutil.copytree('./Samples', samples)
+            if os.path.exists(samples) is False:
+                shutil.copytree('./Samples', samples)
         except FileExistsError:
             pass
     else:
@@ -108,7 +105,9 @@ if SYSTEM == "Windows":
     SYSTEM_HEIGHT = windll.user32.GetSystemMetrics(1)
 
     if CONFIG["expand_window"] is True:
-        WIN_MAG = SYSTEM_WIDTH / 1280
+        width_mag = SYSTEM_WIDTH / 1280
+        height_mag = SYSTEM_HEIGHT / 720
+        WIN_MAG = width_mag if width_mag < height_mag else height_mag
     else:
         WIN_MAG = 1
 
@@ -146,10 +145,9 @@ elif SYSTEM == "Linux":
             DOCUMENTS = os.path.join("/home/", user, "/Documents/EasyTurtle/")
         os.makedirs(DOCUMENTS, exist_ok=True)
         samples = os.path.join(DOCUMENTS, "Samples")
-        if os.path.exists(samples) is True:
-            shutil.rmtree(samples)
         try:
-            shutil.copytree('./Samples', samples)
+            if os.path.exists(samples) is False:
+                shutil.copytree('./Samples', samples)
         except FileExistsError:
             pass
     else:
@@ -162,7 +160,9 @@ elif SYSTEM == "Linux":
     SYSTEM_HEIGHT = int(metrics[1])
 
     if CONFIG["expand_window"] is True:
-        WIN_MAG = SYSTEM_WIDTH / 1280
+        width_mag = SYSTEM_WIDTH / 1280
+        height_mag = SYSTEM_HEIGHT / 720
+        WIN_MAG = width_mag if width_mag < height_mag else height_mag
     else:
         WIN_MAG = 1
 
@@ -178,7 +178,7 @@ def EXPAND(num):
 
 FONT = (FONT_TYPE1, EXPAND(12), "bold")
 
-__version__ = (5, 8, "0a1")
+__version__ = (5, 8, "0a2")
 
 
 class EasyTurtle:
@@ -186,10 +186,10 @@ class EasyTurtle:
         """初期化"""
         # 変数を初期化する
         self.index = 0
-        self.last_shown = []
-        self.widgets = []
-        self.copied_widgets = []
-        self.default_data = []
+        self.last_shown: typeList[typeWidget] = []
+        self.widgets: typeList[typeWidget] = []
+        self.copied_widgets: typeList[typeWidget] = []
+        self.default_data: typeList[typeWidget] = []
         self.backed_up = []
         self.canceled_changes = []
         self.warning_ignore = False
@@ -229,20 +229,24 @@ class EasyTurtle:
         py_version = '.'.join(platform.python_version_tuple())
         et_version = '.'.join([str(v) for v in __version__])
         os_version = platform.system() + str(platform.release())
+        tcl_version = tk.Tcl().eval('info patchlevel')
         lab2 = tk.Label(self.win, font=FONT,
-                        text=f"EasyTurtleバージョン：{et_version}")
+                        text=f"EasyTurtleバージョン\t：{et_version}")
         lab2.pack(anchor=tk.NW, padx=EXPAND(20), pady=(0, EXPAND(10)))
         lab3 = tk.Label(self.win, font=FONT,
-                        text=f"Pythonバージョン：{py_version}")
+                        text=f"Pythonバージョン\t\t：{py_version}")
         lab3.pack(anchor=tk.NW, padx=EXPAND(20), pady=(0, EXPAND(10)))
         lab4 = tk.Label(self.win, font=FONT,
-                        text=f"OSバージョン：{os_version}")
+                        text=f"OSバージョン\t\t：{os_version}")
         lab4.pack(anchor=tk.NW, padx=EXPAND(20), pady=(0, EXPAND(10)))
+        lab5 = tk.Label(self.win, font=FONT,
+                        text=f"Tclバージョン\t\t：{tcl_version}")
+        lab5.pack(anchor=tk.NW, padx=EXPAND(20), pady=(0, EXPAND(10)))
         font = (FONT_TYPE1, EXPAND(12), "bold", "underline")
-        lab5 = tk.Label(self.win, font=font, fg="blue", cursor="hand2",
+        lab6 = tk.Label(self.win, font=font, fg="blue", cursor="hand2",
                         text="アップデートの確認")
-        lab5.bind("<Button-1>", self.check_update)
-        lab5.pack(side=tk.RIGHT, anchor=tk.NW,
+        lab6.bind("<Button-1>", self.check_update)
+        lab6.pack(side=tk.RIGHT, anchor=tk.NW,
                   padx=EXPAND(20), pady=(0, EXPAND(10)))
         self.win.resizable(0, 0)
 
@@ -610,7 +614,7 @@ class EasyTurtle:
             for index, widget in enumerate(self.widgets):
                 if self.killed_runner is False:
                     if widget.enabled is True:
-                        widget.do(tur)
+                        widget.run(tur)
                 else:
                     return 0
         except Exception:
@@ -691,14 +695,27 @@ line: {index+1}, {widget.__class__.__name__}\n\
         # 保存する
         self.save_file(file)
 
-    def save_file(self, file):
+    def save_file(self, file, reboot=None):
         """ファイルを保存する"""
         # データを取得
-        body = [d.get_data(more=CONFIG["save_more_info"])
+        body = [d.get_data(more=(reboot or CONFIG["save_more_info"]))
                 for d in self.widgets]
 
         # データを決定
-        if CONFIG["save_more_info"] is True:
+        if reboot is True:
+            data = {
+                "version": __version__[:2],
+                "copy": self.copied_widgets,
+                "index": self.index,
+                "backedup": self.backed_up,
+                "canceled": self.canceled_changes,
+                "addmode": self.var2.get(),
+                "adjust": self.var3.get(),
+                "position": self.ent1.get(),
+                "name": self.program_name,
+                "default": self.default_data,
+                "body": body}
+        elif CONFIG["save_more_info"] is True:
             data = {
                 "version": __version__[:2],
                 "copy": self.copied_widgets,
@@ -712,6 +729,9 @@ line: {index+1}, {widget.__class__.__name__}\n\
         else:
             data = {"version": __version__[:2], "body": body}
 
+        # フォルダを作成
+        os.makedirs(os.path.dirname(file), exist_ok=True)
+
         # データを書き込み
         with open(file, "w")as f:
             json.dump(data, f, indent=2)
@@ -720,8 +740,9 @@ line: {index+1}, {widget.__class__.__name__}\n\
         self.default_data = [d.get_data(more=False) for d in self.widgets]
 
         # プログラムの名称設定
-        self.program_name = file
-        self.basename = os.path.basename(self.program_name)
+        if reboot is not True:
+            self.program_name = file
+            self.basename = os.path.basename(self.program_name)
 
         self.set_title()
 
@@ -815,13 +836,25 @@ line: {index+1}, {widget.__class__.__name__}\n\
                     self.save_file(file)
 
             # 基本データを設定
-            self.default_data = [d.get_data(more=False) for d in self.widgets]
+            if "default" in data:
+                self.default_data = data["default"]
+                print(self.default_data)
+            else:
+                self.default_data = [d.get_data(
+                    more=False) for d in self.widgets]
 
             # プログラムの名称設定
-            self.program_name = file
-            self.basename = os.path.basename(self.program_name)
+            if "name" in data:
+                self.program_name = data["name"]
+            else:
+                self.program_name = file
+            if self.program_name is None:
+                self.basename = "無題"
+            else:
+                self.basename = os.path.basename(self.program_name)
 
             self.set_title()
+
         except Exception:
             # コピーを復元
             self.set_data(backed_cp)
@@ -968,7 +1001,7 @@ line: {index+1}, {widget.__class__.__name__}\n\
         try:
             with urllib.request.urlopen(url)as f:
                 text = f.geturl()
-        except AttributeError:
+        except (urllib.error.URLError, AttributeError):
             return "ConnectionError"
         try:
             data = text.split("/")
@@ -1216,12 +1249,34 @@ download/v{joined_version}/EasyTurtle-{joined_version}-amd64.msi"
             command = [sys.executable, sys.argv[0]]
         subprocess.Popen(command)
 
+    def reboot_program(self, event=None):
+        """再起動"""
+        # ファイルを決定
+        if PROGRA is False:
+            file = os.path.abspath("./cache/cache.json")
+        else:
+            file = "C:/ProgramData/EasyTurtle/config/cache.json"
+            os.makedirs("C:/ProgramData/EasyTurtle/cache/", exist_ok=True)
+
+        # データを保存
+        self.save_file(file, reboot=True)
+
+        # 新規ウィンドウを起動
+        if sys.argv[0][-14:] == "EasyTurtle.exe":
+            command = [sys.argv[0], file]
+        else:
+            command = [sys.executable, sys.argv[0], file]
+        subprocess.Popen(command)
+
+        # 画面を閉じる
+        self.close_window()
+
     def setup(self):
         """セットアップ"""
         # 基本ウィンドウを作成
         self.root = tk.Tk()
         self.root.title("無題 - EasyTurtle")
-        self.root.geometry(f"{EXPAND(1240)}x{EXPAND(600)}")
+        self.root.geometry(f"{EXPAND(1240)}x{EXPAND(620)}")
         self.root.minsize(EXPAND(1240), EXPAND(600))
         self.root.protocol("WM_DELETE_WINDOW", self.close_window)
         self.icon = tk.PhotoImage(file=ICON_FILE)
@@ -1248,6 +1303,7 @@ download/v{joined_version}/EasyTurtle-{joined_version}-amd64.msi"
         self.root.bind("<Control-Key-s>", self.save_program)
         self.root.bind("<Control-Key-g>", self.goto_line)
         self.root.bind("<Control-Key-q>", self.close_window)
+        self.root.bind("<Control-Key-r>", self.reboot_program)
         self.root.bind("<Control-Key-comma>", self.edit_config)
         self.root.bind("<Key-F1>", self.show_document)
         self.root.bind("<Key-F5>", self.standard_run)
@@ -1272,6 +1328,8 @@ download/v{joined_version}/EasyTurtle-{joined_version}-amd64.msi"
         filemenu.add_command(label="名前を付けて保存", accelerator="Ctrl+Shift+S",
                              command=self.save_program_as)
         filemenu.add_separator()
+        filemenu.add_command(label="再起動", accelerator="Ctrl+R",
+                             command=self.reboot_program)
         filemenu.add_command(label="終了", accelerator="Ctrl+Q",
                              command=self.close_window)
         self.menubar.add_cascade(label="ファイル", menu=filemenu)
@@ -1405,12 +1463,14 @@ download/v{joined_version}/EasyTurtle-{joined_version}-amd64.msi"
 
 
 class Widget:
-    def __init__(self, parent, data={}, index=-1):
+    def __init__(self, parent: EasyTurtle, data={}, index=-1):
         """初期化"""
         self.p = parent
         self.info = GET_WIDGET_INFO(self)
         self.pressed_x = self.pressed_y = 0
         self.item_id = -1
+
+        self.TYPE: str
 
         if self.TYPE == "variable":
             self.background = "#F7C7A7"
@@ -1438,6 +1498,21 @@ class Widget:
         """コンストラクタの文字列定義"""
         data = self.get_data()
         return f"{data['_name']}(self, data={data})"
+
+    def set_data(self, data):
+        """サブクラスで宣言される関数"""
+
+    def get_data(self, more=True):
+        """サブクラスで宣言される関数"""
+
+    def draw(self):
+        """サブクラスで宣言される関数"""
+
+    def save_data(self):
+        """サブクラスで宣言される関数"""
+
+    def run(self, tur):
+        """サブクラスで宣言される関数"""
 
     def binder(self, widget):
         """ボタンのバインド"""
@@ -1995,7 +2070,7 @@ class VarNumber(Widget):
         self.name = self.ent1.get()
         self.value = self.ent2.get()
 
-    def do(self, tur):
+    def run(self, tur):
         self.save_data()
         self.p.variable_datas[self.name] = (self.str2float(self.value), "N")
 
@@ -2045,7 +2120,7 @@ class VarString(Widget):
         self.name = self.ent1.get()
         self.value = self.ent2.get()
 
-    def do(self, tur):
+    def run(self, tur):
         self.save_data()
         self.p.variable_datas[self.name] = (self.str2str(self.value), "S")
 
@@ -2097,7 +2172,7 @@ class VarBoolean(Widget):
         self.name = self.ent1.get()
         self.value = self.var1.get()
 
-    def do(self, tur):
+    def run(self, tur):
         self.save_data()
         self.p.variable_datas[self.name] = (self.str2bool(self.value), "B")
 
@@ -2132,7 +2207,7 @@ class Title(Widget):
     def save_data(self):
         self.title = self.ent1.get()
 
-    def do(self, tur):
+    def run(self, tur):
         self.save_data()
         self.p.win.title(self.str2str(self.title))
 
@@ -2182,7 +2257,7 @@ class ScreenSize(Widget):
         self.width = self.ent1.get()
         self.height = self.ent2.get()
 
-    def do(self, tur):
+    def run(self, tur):
         # データを保存する
         self.save_data()
 
@@ -2258,7 +2333,7 @@ class Forward(Widget):
     def save_data(self):
         self.distance = self.ent1.get()
 
-    def do(self, tur):
+    def run(self, tur):
         self.save_data()
         tur.forward(self.str2int(self.distance))
 
@@ -2293,7 +2368,7 @@ class Backward(Widget):
     def save_data(self):
         self.distance = self.ent1.get()
 
-    def do(self, tur):
+    def run(self, tur):
         self.save_data()
         tur.backward(self.str2int(self.distance))
 
@@ -2328,7 +2403,7 @@ class Right(Widget):
     def save_data(self):
         self.angle = self.ent1.get()
 
-    def do(self, tur):
+    def run(self, tur):
         self.save_data()
         tur.right(self.str2int(self.angle))
 
@@ -2363,7 +2438,7 @@ class Left(Widget):
     def save_data(self):
         self.angle = self.ent1.get()
 
-    def do(self, tur):
+    def run(self, tur):
         self.save_data()
         tur.left(self.str2int(self.angle))
 
@@ -2411,7 +2486,7 @@ class GoTo(Widget):
         self.x = self.ent1.get()
         self.y = self.ent2.get()
 
-    def do(self, tur):
+    def run(self, tur):
         self.save_data()
         tur.goto(
             self.str2int(self.x) + self.p.runner_size[0] // 2,
@@ -2448,7 +2523,7 @@ class SetX(Widget):
     def save_data(self):
         self.x = self.ent1.get()
 
-    def do(self, tur):
+    def run(self, tur):
         self.save_data()
         tur.setx(self.str2int(self.x) + self.p.runner_size[0] // 2)
 
@@ -2483,7 +2558,7 @@ class SetY(Widget):
     def save_data(self):
         self.y = self.ent1.get()
 
-    def do(self, tur):
+    def run(self, tur):
         self.save_data()
         tur.sety(self.str2int(self.y) - self.p.runner_size[1] // 2)
 
@@ -2518,7 +2593,7 @@ class SetHeading(Widget):
     def save_data(self):
         self.angle = self.ent1.get()
 
-    def do(self, tur):
+    def run(self, tur):
         self.save_data()
         tur.setheading(self.str2int(self.angle))
 
@@ -2543,7 +2618,7 @@ class Home(Widget):
     def save_data(self):
         pass
 
-    def do(self, tur):
+    def run(self, tur):
         self.save_data()
         tur.goto(self.p.runner_size[0] // 2, self.p.runner_size[1] // -2)
 
@@ -2591,7 +2666,7 @@ class Position(Widget):
         self.x = self.ent1.get()
         self.y = self.ent2.get()
 
-    def do(self, tur):
+    def run(self, tur):
         self.save_data()
         xval, yval = tur.position()
         self.p.variable_datas[self.x] = (
@@ -2660,7 +2735,7 @@ class ToWards(Widget):
         self.y = self.ent2.get()
         self.angle = self.ent3.get()
 
-    def do(self, tur):
+    def run(self, tur):
         self.save_data()
         angle = tur.towards(
             self.str2int(self.x) + self.p.runner_size[0] // 2,
@@ -2721,14 +2796,14 @@ class Distance(Widget):
         self.ent3.insert(tk.END, self.distance)
         self.binder(self.ent1)
         self.ent3.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent1))
-        self.ent3.place(x=EXPAND(370), y=EXPAND(HEIGHT//2+8))
+        self.ent3.place(x=EXPAND(370), y=EXPAND(HEIGHT // 2 + 8))
 
     def save_data(self):
         self.x = self.ent1.get()
         self.y = self.ent2.get()
         self.distance = self.ent3.get()
 
-    def do(self, tur):
+    def run(self, tur):
         self.save_data()
         distance = tur.distance(
             self.str2int(self.x) + self.p.runner_size[0] // 2,
@@ -2766,7 +2841,7 @@ class XCor(Widget):
     def save_data(self):
         self.x = self.ent1.get()
 
-    def do(self, tur):
+    def run(self, tur):
         self.save_data()
         xval = tur.xcor()
         self.p.variable_datas[self.x] = (
@@ -2803,7 +2878,7 @@ class YCor(Widget):
     def save_data(self):
         self.y = self.ent1.get()
 
-    def do(self, tur):
+    def run(self, tur):
         self.save_data()
         yval = tur.ycor()
         self.p.variable_datas[self.y] = (
@@ -2840,7 +2915,7 @@ class Heading(Widget):
     def save_data(self):
         self.angle = self.ent1.get()
 
-    def do(self, tur):
+    def run(self, tur):
         self.save_data()
         aval = tur.heading()
         self.p.variable_datas[self.angle] = (aval, "N")
@@ -2891,7 +2966,7 @@ class Circle(Widget):
         self.radius = self.ent1.get()
         self.extent = self.ent2.get()
 
-    def do(self, tur):
+    def run(self, tur):
         self.save_data()
         tur.circle(
             self.str2int(self.radius),
@@ -2928,7 +3003,7 @@ class Dot(Widget):
     def save_data(self):
         self.size = self.ent1.get()
 
-    def do(self, tur):
+    def run(self, tur):
         self.save_data()
         tur.dot(self.str2uint(self.size))
 
@@ -2953,7 +3028,7 @@ class Stamp(Widget):
     def save_data(self):
         pass
 
-    def do(self, tur):
+    def run(self, tur):
         self.save_data()
         tur.stamp()
 
@@ -2988,7 +3063,7 @@ class Speed(Widget):
     def save_data(self):
         self.speed = self.ent1.get()
 
-    def do(self, tur):
+    def run(self, tur):
         self.save_data()
         if self.p.running_fastest is False:
             self.p.runner_speed = self.str2int(self.speed)
@@ -3015,7 +3090,7 @@ class PenDown(Widget):
     def save_data(self):
         pass
 
-    def do(self, tur):
+    def run(self, tur):
         self.save_data()
         self.p.runner_pendown = True
         tur.pendown()
@@ -3041,7 +3116,7 @@ class PenUp(Widget):
     def save_data(self):
         pass
 
-    def do(self, tur):
+    def run(self, tur):
         self.save_data()
         self.p.runner_pendown = False
         tur.penup()
@@ -3077,7 +3152,7 @@ class IsDown(Widget):
     def save_data(self):
         self.down = self.ent1.get()
 
-    def do(self, tur):
+    def run(self, tur):
         self.save_data()
         down = tur.isdown()
         self.p.variable_datas[self.down] = (down, "B")
@@ -3113,7 +3188,7 @@ class PenSize(Widget):
     def save_data(self):
         self.width = self.ent1.get()
 
-    def do(self, tur):
+    def run(self, tur):
         self.save_data()
         tur.pensize(self.str2uint(self.width))
 
@@ -3187,7 +3262,7 @@ class Color(Widget):
     def save_data(self):
         self.color = self.ent1.get()
 
-    def do(self, tur):
+    def run(self, tur):
         self.save_data()
         try:
             tur.color(self.str2str(self.color))
@@ -3267,7 +3342,7 @@ class PenColor(Widget):
     def save_data(self):
         self.color = self.ent1.get()
 
-    def do(self, tur):
+    def run(self, tur):
         self.save_data()
         try:
             tur.pencolor(self.str2str(self.color))
@@ -3347,7 +3422,7 @@ class FillColor(Widget):
     def save_data(self):
         self.color = self.ent1.get()
 
-    def do(self, tur):
+    def run(self, tur):
         self.save_data()
         try:
             tur.fillcolor(self.str2str(self.color))
@@ -3427,7 +3502,7 @@ class BGColor(Widget):
     def save_data(self):
         self.color = self.ent1.get()
 
-    def do(self, tur):
+    def run(self, tur):
         self.save_data()
         try:
             tur.getscreen().bgcolor(self.str2str(self.color))
@@ -3468,7 +3543,7 @@ class GetPenColor(Widget):
     def save_data(self):
         self.color = self.ent1.get()
 
-    def do(self, tur):
+    def run(self, tur):
         self.save_data()
         cval = tur.pencolor()
         self.p.variable_datas[self.color] = (self.p.convert_rgb(cval), "S")
@@ -3504,7 +3579,7 @@ class GetFillColor(Widget):
     def save_data(self):
         self.color = self.ent1.get()
 
-    def do(self, tur):
+    def run(self, tur):
         self.save_data()
         cval = tur.fillcolor()
         self.p.variable_datas[self.color] = (self.p.convert_rgb(cval), "S")
@@ -3540,7 +3615,7 @@ class GetBGColor(Widget):
     def save_data(self):
         self.color = self.ent1.get()
 
-    def do(self, tur):
+    def run(self, tur):
         self.save_data()
         cval = tur.getscreen().bgcolor()
         self.p.variable_datas[self.color] = (self.p.convert_rgb(cval), "S")
@@ -3566,7 +3641,7 @@ class BeginFill(Widget):
     def save_data(self):
         pass
 
-    def do(self, tur):
+    def run(self, tur):
         self.save_data()
         tur.begin_fill()
 
@@ -3591,7 +3666,7 @@ class EndFill(Widget):
     def save_data(self):
         pass
 
-    def do(self, tur):
+    def run(self, tur):
         self.save_data()
         tur.end_fill()
 
@@ -3626,7 +3701,7 @@ class Filling(Widget):
     def save_data(self):
         self.fill = self.ent1.get()
 
-    def do(self, tur):
+    def run(self, tur):
         self.save_data()
         fill = tur.filling()
         self.p.variable_datas[self.fill] = (fill, "B")
@@ -3652,7 +3727,7 @@ class ShowTurtle(Widget):
     def save_data(self):
         pass
 
-    def do(self, tur):
+    def run(self, tur):
         self.save_data()
         tur.showturtle()
 
@@ -3677,7 +3752,7 @@ class HideTurtle(Widget):
     def save_data(self):
         pass
 
-    def do(self, tur):
+    def run(self, tur):
         self.save_data()
         tur.hideturtle()
 
@@ -3712,7 +3787,7 @@ class IsVisible(Widget):
     def save_data(self):
         self.shown = self.ent1.get()
 
-    def do(self, tur):
+    def run(self, tur):
         self.save_data()
         shown = tur.isvisible()
         self.p.variable_datas[self.shown] = (shown, "B")
@@ -3748,7 +3823,7 @@ class TurtleSize(Widget):
     def save_data(self):
         self.size = self.ent1.get()
 
-    def do(self, tur):
+    def run(self, tur):
         self.save_data()
         tur.turtlesize(self.str2int(self.size))
 
@@ -4018,7 +4093,7 @@ class Write(Widget):
         self.text = self.ent1.get()
         self.size = self.ent2.get()
 
-    def do(self, tur):
+    def run(self, tur):
         self.save_data()
         mark = "@" if self.str2bool(self.sideway) else ""
         tur.write(
@@ -4052,7 +4127,7 @@ class Bye(Widget):
     def save_data(self):
         pass
 
-    def do(self, tur):
+    def run(self, tur):
         self.save_data()
         self.p.kill_runner()
 
@@ -4080,7 +4155,7 @@ class ExitOnClick(Widget):
     def kill(self, x, y):
         self.p.kill_runner()
 
-    def do(self, tur):
+    def run(self, tur):
         self.save_data()
         tur.getscreen().onclick(self.kill)
 
@@ -4105,7 +4180,7 @@ class Bell(Widget):
     def save_data(self):
         pass
 
-    def do(self, tur):
+    def run(self, tur):
         self.save_data()
         self.p.win.bell()
 
@@ -4140,7 +4215,7 @@ class Sleep(Widget):
     def save_data(self):
         self.second = self.ent1.get()
 
-    def do(self, tur):
+    def run(self, tur):
         self.save_data()
         time.sleep(self.str2ufloat(self.second))
 
@@ -4201,7 +4276,7 @@ class Comment(Widget):
         self.comment = "\n".join([self.ent1.get()] +
                                  self.comment.split("\n")[1:])
 
-    def do(self, tur):
+    def run(self, tur):
         pass
 
 
@@ -4245,7 +4320,7 @@ class Undefined(Widget):
     def save_data(self):
         pass
 
-    def do(self, tur):
+    def run(self, tur):
         pass
 
 
@@ -4275,6 +4350,9 @@ Widgets = (
     Bell, Sleep, Comment)
 Texts = tuple([GET_WIDGET_INFO(c) for c in Widgets])
 Names = tuple([c.__name__ for c in Widgets])
+
+# 型チェック用
+typeWidget = TypeVar("typeWidget", bound=Widget)
 
 
 # 実行
