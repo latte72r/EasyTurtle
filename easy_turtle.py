@@ -178,7 +178,7 @@ def EXPAND(num):
 
 FONT = (FONT_TYPE1, EXPAND(12), "bold")
 
-__version__ = (5, 8, "0a2")
+__version__ = (5, 8, 0)
 
 
 class EasyTurtle:
@@ -838,7 +838,6 @@ line: {index+1}, {widget.__class__.__name__}\n\
             # 基本データを設定
             if "default" in data:
                 self.default_data = data["default"]
-                print(self.default_data)
             else:
                 self.default_data = [d.get_data(
                     more=False) for d in self.widgets]
@@ -1279,6 +1278,7 @@ download/v{joined_version}/EasyTurtle-{joined_version}-amd64.msi"
         self.root.geometry(f"{EXPAND(1240)}x{EXPAND(620)}")
         self.root.minsize(EXPAND(1240), EXPAND(600))
         self.root.protocol("WM_DELETE_WINDOW", self.close_window)
+        self.root.focus_set()
         self.icon = tk.PhotoImage(file=ICON_FILE)
         self.root.tk.call('wm', 'iconphoto', self.root._w, self.icon)
         frame1 = tk.Frame(self.root)
@@ -1502,7 +1502,7 @@ class Widget:
     def set_data(self, data):
         """サブクラスで宣言される関数"""
 
-    def get_data(self, more=True):
+    def get_data(self, more=True) -> dict:
         """サブクラスで宣言される関数"""
 
     def draw(self):
