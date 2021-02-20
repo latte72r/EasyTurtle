@@ -14,10 +14,15 @@
         <li><a href="index.html">EasyTurtle Home</a></li>
         <li><a href="">Download</a>
             <ul>
-                <li><a href="licence.html">ライセンス</a></li>
                 <li><a href="download.html">ダウンロード</a></li>
                 <li><a href="install.win.html">Windows搭載環境での実行</a></li>
                 <li><a href="install.lin.html">Linux搭載環境での実行</a></li>
+            </ul>
+        </li>
+        <li><a href="">License</a>
+            <ul>
+                <li><a href="license.html">ライセンス</a></li>
+                <li><a href="notice.html">追加情報</a></li>
             </ul>
         </li>
         <li><a href="">Tutorial</a>
@@ -67,13 +72,10 @@
                     <p>ウィジェットを右クリックすることでメニューが表示されます。</p>
                     <p><img src="./Photos/photo13.png" alt="photo" width="400" height="200"></p>
                     <table border="1">
-                    <thead>
                         <tr>
                             <th>名称</th>
                             <th>説明</th>
                         </tr>
-                    </thead>
-                    <tbody>
                         <tr>
                             <td>一番上に移動</td>
                             <td>ウィジェットを一番上に移動する</td>
@@ -126,7 +128,6 @@
                             <td>下にペースト</td>
                             <td>ウィジェットを下にペーストする</td>
                         </tr>
-                    </tbody>
                     </table>
                     <p><b>※１：一部のウィジェットのみで有効です。</b></p>
                     <p><b>※２：有効にできないウィジェットもあります。</b></p>
@@ -147,14 +148,11 @@
                     <p><img src="./Photos/photo3.png" alt="photo" width="400" height="200"></p>
                     <h4>ファイル</h4>
                     <table border="1">
-                    <thead>
                         <tr>
                             <th>名称</th>
                             <th>説明</th>
                             <th>ショートカット</th>
                         </tr>
-                    </thead>
-                    <tbody>
                         <tr>
                             <td>新規ファイル</td>
                             <td>画面を初期化する</td>
@@ -185,18 +183,14 @@
                             <td>アプリを終了する</td>
                             <td><code>Ctrl</code>+<code>Q</code></td>
                         </tr>
-                    </tbody>
                     </table>
                     <h4>編集</h4>
                     <table border="1">
-                    <thead>
                         <tr>
                             <th>名称</th>
                             <th>説明</th>
                             <th>ショートカット</th>
                         </tr>
-                    </thead>
-                    <tbody>
                         <tr>
                             <td>取り消し</td>
                             <td>動作を一つ取り消す</td>
@@ -205,36 +199,46 @@
                         <tr>
                             <td>やり直し</td>
                             <td>取り消しを一つやり直す</td>
-                            <td><code>Ctrl</code>+<code>Z</code></td>
+                            <td><code>Ctrl</code>+<code>Shift</code>+<code>Z</code></td>
                         </tr>
                         <tr>
                             <td>コピー</td>
-                            <td>プログラムを名前を付けて保存する</td>
+                            <td>選択されたウィジェットをコピーする</td>
                             <td><code>Ctrl</code>+<code>Shift</code>+<code>C</code></td>
                         </tr>
                         <tr>
                             <td>切り取り</td>
-                            <td>プログラムを上書き保存する</td>
+                            <td>選択されたウィジェットを切り取る</td>
                             <td><code>Ctrl</code>+<code>Shift</code>+<code>X</code></td>
                         </tr>
                         <tr>
                             <td>貼り付け</td>
-                            <td>画面を初期化する</td>
+                            <td>コピーされたウィジェットを貼り付ける</td>
                             <td><code>Ctrl</code>+<code>Shift</code>+<code>V</code></td>
                         </tr>
                         <tr>
                             <td>削除</td>
-                            <td>アプリを終了する</td>
+                            <td>選択されたウィジェットを削除する</td>
                             <td><code>Ctrl</code>+<code>D</code></td>
                         </tr>
                         <tr>
+                            <td>有効化</td>
+                            <td>選択されたウィジェットを有効化する</td>
+                            <td><code>Ctrl</code>+<code>Shift</code>+<code>E</code></td>
+                        </tr>
+                        <tr>
+                            <td>無効化</td>
+                            <td>選択されたウィジェットを無効化する</td>
+                            <td><code>Ctrl</code>+<code>Shift</code>+<code>D</code></td>
+                        </tr>
+                        <tr>
                             <td>すべて選択</td>
-                            <td>画面を初期化する</td>
+                            <td>すべてのウィジェットを選択する</td>
                             <td><code>Ctrl</code>+<code>Shift</code>+<code>A</code></td>
                         </tr>
                         <tr>
                             <td>選択解除</td>
-                            <td>アプリを終了する</td>
+                            <td>すべてのウィジェットの選択を解除する</td>
                             <td><code>Ctrl</code>+<code>L</code></td>
                         </tr>
                         <tr>
@@ -242,35 +246,32 @@
                             <td>指定した行に移動する</td>
                             <td><code>Ctrl</code>+<code>G</code></td>
                         </tr>
-                    </tbody>
                     </table>
                     <h4>実行</h4>
                     <table border="1">
-                    <thead>
                         <tr>
                             <th>名称</th>
                             <th>説明</th>
                             <th>ショートカット</th>
                         </tr>
-                    </thead>
-                    <tbody>
                         <tr>
                             <td>実行</td>
                             <td>プログラムを実行する</td>
                             <td><code>F5</code></td>
                         </tr>
-                    </tbody>
+                        <tr>
+                            <td>最速実行</td>
+                            <td>プログラムを最大限高速に実行する</td>
+                            <td><code>Shift</code>+<code>F5</code></td>
+                        </tr>
                     </table>
                     <h4>オプション</h4>
                     <table border="1">
-                    <thead>
                         <tr>
                             <th>名称</th>
                             <th>説明</th>
                             <th>ショートカット</th>
                         </tr>
-                    </thead>
-                    <tbody>
                         <tr>
                             <td>設定</td>
                             <td>設定を開く</td>
@@ -291,7 +292,6 @@
                             <td>ブラウザでGitHubのページを開く</td>
                             <td></td>
                         </tr>
-                    </tbody>
                     </table>
                 </article>
             </div>
@@ -301,14 +301,11 @@
             <div>
                 <article>
                     <table border="1">
-                    <thead>
                         <tr>
                             <th>ウィジェット</th>
                             <th>説明</th>
                             <th>ドキュメント</th>
                         </tr>
-                    </thead>
-                    <tbody>
                         <tr>
                             <td>VarNumber</td>
                             <td>変数①を数値②にする</td>
@@ -554,7 +551,6 @@
                             <td>情報のない不明なクラス</td>
                             <td>オリジナル</td>
                         </tr>
-                    </tbody>
                     </table>
                     <p><b>※１：このウィジェットはコメント用です。</b></p>
                     <p><b>※２：このウィジェットが表示されたときにはJsonファイルが破損していないか確認してください。</b></p>

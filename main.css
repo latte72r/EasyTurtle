@@ -71,6 +71,19 @@ h1 {
   background-position: top center;
 }
 
+h3 {
+  font-size: 20px;
+}
+
+table {
+  border-collapse: collapse;
+}
+
+th, td {
+  border: solid 1px;
+  padding: 4px 16px;
+}
+
 .title {
   font-size: 25px;
   border-left-style: solid;
