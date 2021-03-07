@@ -59,13 +59,10 @@ if SYSTEM == "Windows":
     ICON_FILE = os.path.abspath("./Files/win_icon.gif")
     README_FILE = os.path.abspath("./Files/index.html")
 
-    try:
-        with open("./test", "w")as f:
-            f.write("\0")
-        os.remove("./test")
-        PROGRA = False
-    except PermissionError:
+    if sys.argv[0].split(".")[-1] == "exe":
         PROGRA = True
+    else:
+        PROGRA = False
 
     if PROGRA is False:
         CONFIG_FILE = os.path.abspath("./config.json")
@@ -79,7 +76,8 @@ if SYSTEM == "Windows":
         "expand_window": True,
         "ask_save_new": True,
         "user_document": True,
-        "auto_update": True}
+        "auto_update": True,
+        "open_last_file": False}
 
     CONFIG = DEFAULT_CONFIG
     UPDATE_CONFIG()
@@ -132,7 +130,8 @@ elif SYSTEM == "Linux":
         "expand_window": True,
         "ask_save_new": True,
         "user_document": False,
-        "auto_update": True}
+        "auto_update": True,
+        "open_last_file": False}
 
     CONFIG = DEFAULT_CONFIG
     UPDATE_CONFIG()
@@ -178,7 +177,7 @@ def EXPAND(num):
 
 FONT = (FONT_TYPE1, EXPAND(12), "bold")
 
-__version__ = (5, 8, 0)
+__version__ = (5, 9, "0a1")
 
 
 class EasyTurtle:
@@ -208,6 +207,15 @@ class EasyTurtle:
         # ファイルが指定されていれば開く
         if file is not None:
             self.open_program(file)
+
+        elif CONFIG["open_last_file"] is True:
+            if PROGRA is True:
+                file = "C:/ProgramData/EasyTurtle/config/boot.json"
+                os.makedirs("C:/ProgramData/EasyTurtle/cache/", exist_ok=True)
+            else:
+                file = os.path.abspath("./cache/boot.json")
+            if os.path.exists(file):
+                self.open_program(file)
 
         self.root.mainloop()
 
@@ -297,6 +305,12 @@ class EasyTurtle:
         chb6 = tk.Checkbutton(self.win, text=text,
                               font=FONT, variable=self.var6)
         chb6.pack(padx=EXPAND(10), pady=(0, EXPAND(10)), anchor=tk.NW)
+        self.var7 = tk.BooleanVar()
+        self.var7.set(CONFIG["open_last_file"])
+        text = "前回開いていたファイルを開く"
+        chb7 = tk.Checkbutton(self.win, text=text,
+                              font=FONT, variable=self.var7)
+        chb7.pack(padx=EXPAND(10), pady=(0, EXPAND(10)), anchor=tk.NW)
         but1 = tk.Button(self.win, text="決定", width=20,
                          font=FONT, command=self.decide_config)
         but1.pack(padx=EXPAND(10), pady=(0, EXPAND(20)))
@@ -316,7 +330,8 @@ class EasyTurtle:
             "show_warning":     self.var3.get(),
             "expand_window":    self.var4.get(),
             "user_document":    self.var5.get(),
-            "auto_update":      self.var6.get()}
+            "auto_update":      self.var6.get(),
+            "open_last_file":   self.var7.get()}
         with open(CONFIG_FILE, "w", encoding="UTF-8")as f:
             json.dump(CONFIG, f, indent=4)
         self.win.destroy()
@@ -325,21 +340,34 @@ class EasyTurtle:
         """終了時の定義"""
         if (type(event) == tk.Event) and (self.running_program is True):
             return
+
+        # 保存するか確認する
         data = [d.get_data(more=False) for d in self.widgets]
-        if self.default_data == data:
-            self.root.destroy()
-            sys.exit()
-        else:
+        if self.default_data != data:
             res = messagebox.askyesnocancel("確認", "保存しますか？")
             if res is None:
                 return
             elif res is True:
                 if self.save_program() == 1:
                     return
+
+        # ファイルを保存
+        if CONFIG["open_last_file"] is True:
+            # ファイルを決定
+            if PROGRA is True:
+                file = "C:/ProgramData/EasyTurtle/config/boot.json"
+                os.makedirs("C:/ProgramData/EasyTurtle/cache/", exist_ok=True)
+            else:
+                file = os.path.abspath("./cache/boot.json")
+
+            # データを保存
+            self.save_file(file, boot=True)
+
+        # 画面を閉じる
         self.root.destroy()
         sys.exit()
 
-    def all_redraw(self, change=True):
+    def redraw_widgets(self, change=True):
         """全部描き直し"""
         UPDATE_CONFIG()
         data = self.widgets
@@ -355,7 +383,7 @@ class EasyTurtle:
         for d in shown:
             d.place_cv()
         self.last_shown = shown
-        self.scroll_set()
+        self.set_scrollbar_posision()
         if change is True:
             self.check_length()
             self.set_title()
@@ -409,7 +437,7 @@ class EasyTurtle:
             self.root.bell()
             return 1
 
-        self.all_redraw()
+        self.redraw_widgets()
 
     def redo_change(self, event=None):
         """やり直し"""
@@ -430,7 +458,7 @@ class EasyTurtle:
             self.root.bell()
             return 1
 
-        self.all_redraw()
+        self.redraw_widgets()
 
     def get_data(self):
         """データを取得"""
@@ -440,7 +468,7 @@ class EasyTurtle:
 
     def set_data(self, data):
         """データをセット"""
-        self.all_delete()
+        self.delete_all_widgets()
         self.index = data["index"]
         self.copied_widgets = data["copy"]
         self.widgets = []
@@ -457,7 +485,7 @@ class EasyTurtle:
                 "警告", "大量のデータを保持すると正常に動作しなくなる可能性があります。")
             self.warning_ignore = True
 
-    def scroll_set(self):
+    def set_scrollbar_posision(self):
         """スクロールバーの位置をセット"""
         data = self.widgets
         if len(data) <= SIZE:
@@ -469,7 +497,7 @@ class EasyTurtle:
             last = first + per
         self.scr2.set(first, last)
 
-    def listbox_selected(self, event):
+    def append_new_widget(self, event):
         """リストボックス選択時の動作"""
         before_index = self.index
 
@@ -501,9 +529,9 @@ class EasyTurtle:
             self.ent1.insert(0, str(index + 2))
             self.var2.set(3)
 
-        self.all_redraw()
+        self.redraw_widgets()
 
-    def windows_scroll(self, event):
+    def scroll_on_windows(self, event):
         """Windowsでのスクロール時の動作"""
         data = self.widgets
         index = self.index - (event.delta // 120)
@@ -512,9 +540,9 @@ class EasyTurtle:
                       if (index > max_size) and (len(data) > SIZE)
                       else self.index
                       if len(data) <= SIZE else index)
-        self.all_redraw(change=False)
+        self.redraw_widgets(change=False)
 
-    def linux_scroll(self, event):
+    def scroll_on_linux(self, event):
         """Linuxでのスクロール時の動作"""
         data = self.widgets
         index = self.index - (1 if event.num == 4 else -1)
@@ -523,9 +551,9 @@ class EasyTurtle:
                       if (index > max_size) and (len(data) > SIZE)
                       else self.index
                       if len(data) <= SIZE else index)
-        self.all_redraw(change=False)
+        self.redraw_widgets(change=False)
 
-    def scroll_button(self, *event):
+    def scroll_button_clicked(self, *event):
         """スクロールバーボタンが押された時の動作"""
         data = self.widgets
         if event[0] == "scroll":
@@ -539,7 +567,7 @@ class EasyTurtle:
                       if (index > max_size) and (len(data) > SIZE)
                       else self.index
                       if len(data) <= SIZE else index)
-        self.all_redraw(change=False)
+        self.redraw_widgets(change=False)
 
     def kill_runner(self, event=None):
         """実行停止の動作"""
@@ -548,13 +576,13 @@ class EasyTurtle:
         if hasattr(self, "win") is True:
             self.win.destroy()
 
-    def standard_run(self, event=None):
+    def run_standard_mode(self, event=None):
         """標準実行"""
         if (type(event) == tk.Event) and (self.running_program is True):
             return
         self.run_program(fastest=False)
 
-    def fastest_run(self, event=None):
+    def run_fastest_mode(self, event=None):
         """高速実行"""
         if (type(event) == tk.Event) and (self.running_program is True):
             return
@@ -628,12 +656,12 @@ line: {index+1}, {widget.__class__.__name__}\n\
 エラーが発生しました。\n\n{traceback.format_exc()}')
                 return 1
 
-    def all_delete(self, event=None):
+    def delete_all_widgets(self, event=None):
         """全て削除"""
         widgets = [w for w in self.widgets]
         for d in widgets:
             d.delete(back_up=False)
-        self.all_redraw(change=False)
+        self.redraw_widgets(change=False)
 
     def save_program(self, file=None):
         """上書き保存"""
@@ -695,14 +723,14 @@ line: {index+1}, {widget.__class__.__name__}\n\
         # 保存する
         self.save_file(file)
 
-    def save_file(self, file, reboot=None):
+    def save_file(self, file, boot=None):
         """ファイルを保存する"""
         # データを取得
-        body = [d.get_data(more=(reboot or CONFIG["save_more_info"]))
+        body = [d.get_data(more=(boot or CONFIG["save_more_info"]))
                 for d in self.widgets]
 
         # データを決定
-        if reboot is True:
+        if boot is True:
             data = {
                 "version": __version__[:2],
                 "copy": self.copied_widgets,
@@ -736,13 +764,13 @@ line: {index+1}, {widget.__class__.__name__}\n\
         with open(file, "w")as f:
             json.dump(data, f, indent=2)
 
-        # 基本データを設定
-        self.default_data = [d.get_data(more=False) for d in self.widgets]
-
-        # プログラムの名称設定
-        if reboot is not True:
+        if boot is not True:
+            # プログラムの名称設定
             self.program_name = file
             self.basename = os.path.basename(self.program_name)
+
+            # 基本データを設定
+            self.default_data = [d.get_data(more=False) for d in self.widgets]
 
         self.set_title()
 
@@ -786,7 +814,7 @@ line: {index+1}, {widget.__class__.__name__}\n\
             data = json.load(f)
 
         # すべてのウィジェットを削除
-        self.all_delete()
+        self.delete_all_widgets()
         try:
             # データを複製
             if len(self.backed_up) > 0:
@@ -825,7 +853,7 @@ line: {index+1}, {widget.__class__.__name__}\n\
             self.ent1.delete(0, tk.END)
             self.ent1.insert(0, position)
 
-            self.all_redraw()
+            self.redraw_widgets()
 
             # データを上書き
             if (CONFIG["ask_save_new"] is True) and (version < (4, 11)):
@@ -905,13 +933,7 @@ line: {index+1}, {widget.__class__.__name__}\n\
             self.ent1.insert(0, str(next_index + 1))
             self.var2.set(3)
 
-        self.all_redraw()
-
-    def show_document(self, event=None):
-        """詳しい情報の表示"""
-        if (type(event) == tk.Event) and (self.running_program is True):
-            return
-        webbrowser.open_new(README_FILE)
+        self.redraw_widgets()
 
     def get_selected(self):
         """選ばれたデータ一覧を取得"""
@@ -943,7 +965,7 @@ line: {index+1}, {widget.__class__.__name__}\n\
             return
         for d in self.get_selected():
             d.delete(back_up=False)
-        self.all_redraw()
+        self.redraw_widgets()
 
     def copy_selected(self, event=None):
         """選択されたデータをコピー"""
@@ -1011,12 +1033,24 @@ line: {index+1}, {widget.__class__.__name__}\n\
             return "OtherError"
         return data
 
-    def show_release(self, event=None):
+    def show_online_document(self, event=None):
+        """詳しい情報の表示"""
+        if (type(event) == tk.Event) and (self.running_program is True):
+            return
+        webbrowser.open_new("https://ryofuji2005.github.io/EasyTurtle/")
+
+    def show_offline_document(self, event=None):
+        """詳しい情報の表示"""
+        if (type(event) == tk.Event) and (self.running_program is True):
+            return
+        webbrowser.open_new(README_FILE)
+
+    def show_release_page(self, event=None):
         """リリースページの表示"""
         url = "http://github.com/RyoFuji2005/EasyTurtle/releases/latest"
         webbrowser.open_new(url)
 
-    def show_github(self, event=None):
+    def show_github_page(self, event=None):
         """GitHubページの表示"""
         url = "http://github.com/RyoFuji2005/EasyTurtle/"
         webbrowser.open_new(url)
@@ -1138,7 +1172,7 @@ download/v{joined_version}/EasyTurtle-{joined_version}-amd64.msi"
         font = (FONT_TYPE1, EXPAND(12), "bold", "underline")
         lab5 = tk.Label(self.win2, font=font, fg="blue", cursor="hand2",
                         text="今すぐ確認する")
-        lab5.bind("<Button-1>", self.show_release)
+        lab5.bind("<Button-1>", self.show_release_page)
         lab5.pack(anchor=tk.N, pady=(0, EXPAND(10)))
         self.win2.resizable(0, 0)
 
@@ -1203,7 +1237,7 @@ download/v{joined_version}/EasyTurtle-{joined_version}-amd64.msi"
             pass
         else:
             self.index = line - 1
-        self.all_redraw(change=False)
+        self.redraw_widgets(change=False)
 
     def new_program(self, event=None):
         """新規プログラム"""
@@ -1218,7 +1252,7 @@ download/v{joined_version}/EasyTurtle-{joined_version}-amd64.msi"
                     return 1
 
         # データを初期化
-        self.all_delete()
+        self.delete_all_widgets()
         self.index = 0
         self.last_shown = []
         self.widgets = []
@@ -1234,7 +1268,7 @@ download/v{joined_version}/EasyTurtle-{joined_version}-amd64.msi"
         self.var3.set(True)
         self.ent1.delete(0, tk.END)
 
-        self.all_redraw()
+        self.redraw_widgets()
 
         # 基本データを設定
         self.default_data = [d.get_data(more=False)
@@ -1251,14 +1285,14 @@ download/v{joined_version}/EasyTurtle-{joined_version}-amd64.msi"
     def reboot_program(self, event=None):
         """再起動"""
         # ファイルを決定
-        if PROGRA is False:
-            file = os.path.abspath("./cache/cache.json")
-        else:
+        if PROGRA is True:
             file = "C:/ProgramData/EasyTurtle/config/cache.json"
             os.makedirs("C:/ProgramData/EasyTurtle/cache/", exist_ok=True)
+        else:
+            file = os.path.abspath("./cache/cache.json")
 
         # データを保存
-        self.save_file(file, reboot=True)
+        self.save_file(file, boot=True)
 
         # 新規ウィンドウを起動
         if sys.argv[0][-14:] == "EasyTurtle.exe":
@@ -1305,9 +1339,9 @@ download/v{joined_version}/EasyTurtle-{joined_version}-amd64.msi"
         self.root.bind("<Control-Key-q>", self.close_window)
         self.root.bind("<Control-Key-r>", self.reboot_program)
         self.root.bind("<Control-Key-comma>", self.edit_config)
-        self.root.bind("<Key-F1>", self.show_document)
-        self.root.bind("<Key-F5>", self.standard_run)
-        self.root.bind("<Shift-Key-F5>", self.fastest_run)
+        self.root.bind("<Key-F1>", self.show_offline_document)
+        self.root.bind("<Key-F5>", self.run_standard_mode)
+        self.root.bind("<Shift-Key-F5>", self.run_fastest_mode)
 
         # Menubarの作成
         self.menubar = tk.Menu(self.root)
@@ -1367,9 +1401,9 @@ download/v{joined_version}/EasyTurtle-{joined_version}-amd64.msi"
         # RUNメニューの作成
         runmenu = tk.Menu(self.menubar, tearoff=0, font=menu_font)
         runmenu.add_command(label="実行", accelerator="F5",
-                            command=self.standard_run)
+                            command=self.run_standard_mode)
         runmenu.add_command(label="最速実行", accelerator="Shift+F5",
-                            command=self.fastest_run)
+                            command=self.run_fastest_mode)
         self.menubar.add_cascade(label="実行", menu=runmenu)
 
         # OPTIONSメニューの追加
@@ -1377,25 +1411,27 @@ download/v{joined_version}/EasyTurtle-{joined_version}-amd64.msi"
         othermenu.add_command(label="設定", accelerator="Ctrl+,",
                               command=self.edit_config)
         othermenu.add_separator()
-        othermenu.add_command(label="ヘルプの表示", accelerator="F1",
-                              command=self.show_document)
+        othermenu.add_command(label="オンラインヘルプ",
+                              command=self.show_online_document)
+        othermenu.add_command(label="オフラインヘルプ", accelerator="F1",
+                              command=self.show_offline_document)
         othermenu.add_command(label="バージョン情報", command=self.version_info)
-        othermenu.add_command(label="GitHubの表示", command=self.show_github)
+        othermenu.add_command(label="GitHubの表示", command=self.show_github_page)
         self.menubar.add_cascade(label="オプション", menu=othermenu)
 
         # 画面の左側を作成
         frame2 = tk.Frame(frame1)
         frame2.pack(side=tk.LEFT, padx=(10, 0))
-        frame2.bind("<MouseWheel>", self.windows_scroll)
+        frame2.bind("<MouseWheel>", self.scroll_on_windows)
         self.cv1 = tk.Canvas(frame2, width=EXPAND(
             WIDTH), height=EXPAND(HEIGHT*SIZE), bg="#E6E6E6")
         self.cv1.pack(side=tk.LEFT)
-        self.cv1.bind("<MouseWheel>", self.windows_scroll)
+        self.cv1.bind("<MouseWheel>", self.scroll_on_windows)
         self.cv1.create_rectangle(EXPAND(4), EXPAND(4),
                                   EXPAND(WIDTH), EXPAND(HEIGHT*SIZE),
                                   width=EXPAND(2))
         self.scr2 = ttk.Scrollbar(frame2, orient=tk.VERTICAL,
-                                  command=self.scroll_button)
+                                  command=self.scroll_button_clicked)
         self.scr2.pack(fill='y', side=tk.RIGHT)
         frame3 = tk.Frame(frame1)
         frame3.pack(side=tk.RIGHT, padx=EXPAND(10))
@@ -1452,14 +1488,14 @@ download/v{joined_version}/EasyTurtle-{joined_version}-amd64.msi"
                                bg="#FFEFD7", font=(FONT_TYPE1, EXPAND(18)),
                                selectbackground="#2F4FAF",
                                selectforeground="#FFFFFF")
-        self.lsb1.bind('<<ListboxSelect>>', self.listbox_selected)
+        self.lsb1.bind('<<ListboxSelect>>', self.append_new_widget)
         self.lsb1.pack(fill='y', side=tk.LEFT)
         scr1 = ttk.Scrollbar(frame7, orient=tk.VERTICAL,
                              command=self.lsb1.yview)
         self.lsb1['yscrollcommand'] = scr1.set
         scr1.pack(fill='y', side=tk.RIGHT)
 
-        self.all_redraw()
+        self.redraw_widgets()
 
 
 class Widget:
@@ -1500,29 +1536,29 @@ class Widget:
         return f"{data['_name']}(self, data={data})"
 
     def set_data(self, data):
-        """サブクラスで宣言される関数"""
+        """データの設定（サブクラスで宣言される関数）"""
 
-    def get_data(self, more=True) -> dict:
-        """サブクラスで宣言される関数"""
+    def get_data(self, more=True):
+        """データの取得（サブクラスで宣言される関数）"""
 
     def draw(self):
-        """サブクラスで宣言される関数"""
+        """ウィジェットの絵画（サブクラスで宣言される関数）"""
 
     def save_data(self):
-        """サブクラスで宣言される関数"""
+        """データの保存（サブクラスで宣言される関数）"""
 
-    def run(self, tur):
-        """サブクラスで宣言される関数"""
+    def run(self, tur: turtle.RawTurtle):
+        """データの実行（サブクラスで宣言される関数）"""
 
     def binder(self, widget):
         """ボタンのバインド"""
         widget.bind('<Button-3>', self.show_popup2)
         widget.bind("<B1-Motion>", self.dragged)
         if SYSTEM == "Windows":
-            widget.bind("<MouseWheel>", self.p.windows_scroll)
+            widget.bind("<MouseWheel>", self.p.scroll_on_windows)
         elif SYSTEM == "Linux":
-            widget.bind("<Button-4>", self.p.linux_scroll)
-            widget.bind("<Button-5>", self.p.linux_scroll)
+            widget.bind("<Button-4>", self.p.scroll_on_linux)
+            widget.bind("<Button-5>", self.p.scroll_on_linux)
 
     def draw_cv(self):
         """キャンバスを描く"""
@@ -1644,7 +1680,7 @@ class Widget:
         else:
             self.p.index = before_index
 
-        self.p.all_redraw()
+        self.p.redraw_widgets()
 
     def paste_down(self):
         """下へのペースト"""
@@ -1659,7 +1695,7 @@ class Widget:
         else:
             self.p.index = before_index
 
-        self.p.all_redraw()
+        self.p.redraw_widgets()
 
     def duplicate(self):
         """複製"""
@@ -1673,7 +1709,7 @@ class Widget:
         else:
             self.p.index = before_index
 
-        self.p.all_redraw()
+        self.p.redraw_widgets()
 
     def show_popup2(self, event):
         "ポップアップメニュー"
@@ -1750,7 +1786,7 @@ class Widget:
             self.p.last_shown.remove(self)
         self.cv.place_forget()
         self.p.widgets.remove(self)
-        self.p.all_redraw(back_up)
+        self.p.redraw_widgets(back_up)
 
     def place_cv(self):
         """キャンバスを描き直す"""
@@ -1777,7 +1813,7 @@ class Widget:
         self.p.widgets.remove(self)
         self.p.widgets.insert(0, self)
         self.p.index = 0
-        self.p.all_redraw()
+        self.p.redraw_widgets()
 
     def bottom(self):
         """ウィジェットを一番下に移動"""
@@ -1785,7 +1821,7 @@ class Widget:
         self.p.widgets.append(self)
         bottom = len(self.p.widgets)
         self.p.index = bottom if bottom > SIZE else 0
-        self.p.all_redraw()
+        self.p.redraw_widgets()
 
     def up(self):
         """ウィジェットを一個上に移動"""
@@ -1797,7 +1833,7 @@ class Widget:
         self.p.widgets[index] = upper
         if index == self.p.index:
             self.p.index -= 1
-        self.p.all_redraw()
+        self.p.redraw_widgets()
 
     def down(self):
         """ウィジェットを一個下に移動"""
@@ -1809,7 +1845,7 @@ class Widget:
         self.p.widgets[index] = under
         if index == self.p.index + SIZE - 1:
             self.p.index += 1
-        self.p.all_redraw()
+        self.p.redraw_widgets()
 
     def set_common(self, data):
         """共通変数に値をセットする"""
@@ -4034,7 +4070,7 @@ class Write(Widget):
         self.lsb1 = tk.Listbox(fra9, listvariable=var1, height=6,
                                width=24, selectmode='single',
                                font=(FONT_TYPE2, EXPAND(18)))
-        self.lsb1.bind('<<ListboxSelect>>', self.listbox_selected)
+        self.lsb1.bind('<<ListboxSelect>>', self.append_new_widget)
         self.lsb1.pack(fill='y', side=tk.LEFT)
         scr1 = ttk.Scrollbar(fra9, orient=tk.VERTICAL,
                              command=self.lsb1.yview)
@@ -4063,7 +4099,7 @@ class Write(Widget):
         self.cv1.create_text(320, 80, text="abc ABC 123\nあいう 甲乙",
                              font=font, tag="preview")
 
-    def listbox_selected(self, event):
+    def append_new_widget(self, event):
         selected = self.lsb1.curselection()
         if len(selected) > 0:
             font = self.font_list[selected[0]]
