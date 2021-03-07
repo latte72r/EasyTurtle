@@ -177,7 +177,7 @@ def EXPAND(num):
 
 FONT = (FONT_TYPE1, EXPAND(12), "bold")
 
-__version__ = (5, 9, "0a1")
+__version__ = (5, 9, "0a2")
 
 
 class EasyTurtle:
@@ -216,6 +216,7 @@ class EasyTurtle:
                 file = os.path.abspath("./cache/boot.json")
             if os.path.exists(file):
                 self.open_program(file)
+                os.remove(file)
 
         self.root.mainloop()
 
@@ -619,16 +620,33 @@ class EasyTurtle:
 
         # Windowsでは透過を有効にする
         if SYSTEM == "Windows":
-            self.win.wm_attributes("-transparentcolor", "snow")
+            self.win.attributes("-transparentcolor", "snow")
 
-        # キャンバスを作成
-        canvas = tk.Canvas(self.win, width=0, height=0, bg="snow")
-        canvas.pack()
+        # フレームにキャンバスとスクロールバーを配置
+        frame = tk.Frame(self.win)
+        frame.pack()
+        bary = tk.Scrollbar(frame, orient=tk.VERTICAL)
+        bary.pack(side=tk.RIGHT, fill=tk.Y)
+        barx = tk.Scrollbar(frame, orient=tk.HORIZONTAL)
+        barx.pack(side=tk.BOTTOM, fill=tk.X)
+        canvas = tk.Canvas(frame, bg="snow")
+        canvas.pack(side=tk.LEFT, fill=tk.BOTH)
+
+        # キャンバスとスクロールバーの関連付け
+        bary.config(command=canvas.yview)
+        canvas.config(yscrollcommand=bary.set)
+        barx.config(command=canvas.xview)
+        canvas.config(xscrollcommand=barx.set)
+
+        # 中心に移動
         tur = turtle.RawTurtle(canvas)
         tur.shape("turtle")
         tur.getscreen().colormode(255)
-        self.win.geometry(f"{self.runner_size[0]}x{self.runner_size[1]}")
-        canvas.config(width=self.runner_size[0], height=self.runner_size[1])
+        canvas.config(width=self.runner_size[0],
+                      height=self.runner_size[1],
+                      scrollregion=(0, 0,
+                                    self.runner_size[0],
+                                    self.runner_size[1]))
         tur.penup()
         tur.speed(0)
         tur.goto(self.runner_size[0] // 2, self.runner_size[1] // -2)
@@ -1286,19 +1304,19 @@ download/v{joined_version}/EasyTurtle-{joined_version}-amd64.msi"
         """再起動"""
         # ファイルを決定
         if PROGRA is True:
-            file = "C:/ProgramData/EasyTurtle/config/cache.json"
+            file = "C:/ProgramData/EasyTurtle/config/boot.json"
             os.makedirs("C:/ProgramData/EasyTurtle/cache/", exist_ok=True)
         else:
-            file = os.path.abspath("./cache/cache.json")
+            file = os.path.abspath("./cache/boot.json")
 
         # データを保存
         self.save_file(file, boot=True)
 
         # 新規ウィンドウを起動
         if sys.argv[0][-14:] == "EasyTurtle.exe":
-            command = [sys.argv[0], file]
+            command = [sys.argv[0]]
         else:
-            command = [sys.executable, sys.argv[0], file]
+            command = [sys.executable, sys.argv[0]]
         subprocess.Popen(command)
 
         # 画面を閉じる
@@ -2106,7 +2124,7 @@ class VarNumber(Widget):
         self.name = self.ent1.get()
         self.value = self.ent2.get()
 
-    def run(self, tur):
+    def run(self, tur: turtle.RawTurtle):
         self.save_data()
         self.p.variable_datas[self.name] = (self.str2float(self.value), "N")
 
@@ -2156,7 +2174,7 @@ class VarString(Widget):
         self.name = self.ent1.get()
         self.value = self.ent2.get()
 
-    def run(self, tur):
+    def run(self, tur: turtle.RawTurtle):
         self.save_data()
         self.p.variable_datas[self.name] = (self.str2str(self.value), "S")
 
@@ -2208,7 +2226,7 @@ class VarBoolean(Widget):
         self.name = self.ent1.get()
         self.value = self.var1.get()
 
-    def run(self, tur):
+    def run(self, tur: turtle.RawTurtle):
         self.save_data()
         self.p.variable_datas[self.name] = (self.str2bool(self.value), "B")
 
@@ -2243,7 +2261,7 @@ class Title(Widget):
     def save_data(self):
         self.title = self.ent1.get()
 
-    def run(self, tur):
+    def run(self, tur: turtle.RawTurtle):
         self.save_data()
         self.p.win.title(self.str2str(self.title))
 
@@ -2293,38 +2311,31 @@ class ScreenSize(Widget):
         self.width = self.ent1.get()
         self.height = self.ent2.get()
 
-    def run(self, tur):
+    def run(self, tur: turtle.RawTurtle):
         # データを保存する
         self.save_data()
 
         # 画面サイズを取得
-        width = self.str2uint(self.width)
-        height = self.str2uint(self.height)
+        width = maxwidth = self.str2uint(self.width)
+        height = maxheight = self.str2uint(self.height)
 
         # 警告を表示
         if width > SYSTEM_WIDTH:
-            if CONFIG["show_warning"] is True:
-                messagebox.showwarning("警告", f'\
-line: {self.p.widgets.index(self)+1}, {self.__class__.__name__}\n\
-画面の横幅（{SYSTEM_WIDTH}）以上の数値が指定されました。')
             width = SYSTEM_WIDTH
         if height > SYSTEM_HEIGHT:
-            if CONFIG["show_warning"] is True:
-                messagebox.showwarning("警告", f'\
-line: {self.p.widgets.index(self)+1}, {self.__class__.__name__}\n\
-画面の高さ（{SYSTEM_HEIGHT}）以上の数値が指定されました。')
             height = SYSTEM_HEIGHT
 
-        # 画面サイズを変更
-        self.p.win.geometry(f"{width}x{height}")
+        # 画面サイズの変更
+        canvas = tur.getscreen().getcanvas()
+        canvas.config(width=width, height=height,
+                      scrollregion=(0, 0, maxwidth, maxheight))
+        canvas.xview_moveto((1 - width / maxwidth) / 2)
+        canvas.yview_moveto((1 - height / maxheight) / 2)
 
         # 亀を移動
-        canvas = tur.getscreen().getcanvas()
-        canvas.config(
-            width=width, height=height)
         tur.penup()
         tur.speed(0)
-        tur.goto(width // 2, height // -2)
+        tur.goto(maxwidth // 2, maxheight // -2)
         tur.speed(self.p.runner_speed)
         if self.p.runner_pendown is True:
             tur.pendown()
@@ -2332,11 +2343,13 @@ line: {self.p.widgets.index(self)+1}, {self.__class__.__name__}\n\
         # すべての要素を移動
         for element_id in canvas.find_all():
             canvas.move(element_id,
-                        (width - self.p.runner_size[0]) // 2,
-                        (height - self.p.runner_size[1]) // 2)
+                        (maxwidth - self.p.runner_size[0]) // 2,
+                        (maxheight - self.p.runner_size[1]) // 2)
 
         # データを変更
-        self.p.runner_size = (width, height)
+        self.p.runner_size = (maxwidth, maxheight)
+
+        tur.getscreen().update()
 
 
 class Forward(Widget):
@@ -2369,7 +2382,7 @@ class Forward(Widget):
     def save_data(self):
         self.distance = self.ent1.get()
 
-    def run(self, tur):
+    def run(self, tur: turtle.RawTurtle):
         self.save_data()
         tur.forward(self.str2int(self.distance))
 
@@ -2392,7 +2405,7 @@ class Backward(Widget):
 
     def draw(self):
         self.draw_cv()
-        lab2 = tk.Label(self.cv, text="d <= ", font=FONT, bg=self.background)
+        lab2 = tk.Label(self.cv, text="①", font=FONT, bg=self.background)
         self.binder(lab2)
         lab2.place(x=EXPAND(50), y=EXPAND(HEIGHT//2+8))
         self.ent1 = tk.Entry(self.cv, font=FONT, width=12, justify=tk.RIGHT)
@@ -2404,7 +2417,7 @@ class Backward(Widget):
     def save_data(self):
         self.distance = self.ent1.get()
 
-    def run(self, tur):
+    def run(self, tur: turtle.RawTurtle):
         self.save_data()
         tur.backward(self.str2int(self.distance))
 
@@ -2439,7 +2452,7 @@ class Right(Widget):
     def save_data(self):
         self.angle = self.ent1.get()
 
-    def run(self, tur):
+    def run(self, tur: turtle.RawTurtle):
         self.save_data()
         tur.right(self.str2int(self.angle))
 
@@ -2474,7 +2487,7 @@ class Left(Widget):
     def save_data(self):
         self.angle = self.ent1.get()
 
-    def run(self, tur):
+    def run(self, tur: turtle.RawTurtle):
         self.save_data()
         tur.left(self.str2int(self.angle))
 
@@ -2522,7 +2535,7 @@ class GoTo(Widget):
         self.x = self.ent1.get()
         self.y = self.ent2.get()
 
-    def run(self, tur):
+    def run(self, tur: turtle.RawTurtle):
         self.save_data()
         tur.goto(
             self.str2int(self.x) + self.p.runner_size[0] // 2,
@@ -2559,7 +2572,7 @@ class SetX(Widget):
     def save_data(self):
         self.x = self.ent1.get()
 
-    def run(self, tur):
+    def run(self, tur: turtle.RawTurtle):
         self.save_data()
         tur.setx(self.str2int(self.x) + self.p.runner_size[0] // 2)
 
@@ -2594,7 +2607,7 @@ class SetY(Widget):
     def save_data(self):
         self.y = self.ent1.get()
 
-    def run(self, tur):
+    def run(self, tur: turtle.RawTurtle):
         self.save_data()
         tur.sety(self.str2int(self.y) - self.p.runner_size[1] // 2)
 
@@ -2629,7 +2642,7 @@ class SetHeading(Widget):
     def save_data(self):
         self.angle = self.ent1.get()
 
-    def run(self, tur):
+    def run(self, tur: turtle.RawTurtle):
         self.save_data()
         tur.setheading(self.str2int(self.angle))
 
@@ -2654,7 +2667,7 @@ class Home(Widget):
     def save_data(self):
         pass
 
-    def run(self, tur):
+    def run(self, tur: turtle.RawTurtle):
         self.save_data()
         tur.goto(self.p.runner_size[0] // 2, self.p.runner_size[1] // -2)
 
@@ -2702,7 +2715,7 @@ class Position(Widget):
         self.x = self.ent1.get()
         self.y = self.ent2.get()
 
-    def run(self, tur):
+    def run(self, tur: turtle.RawTurtle):
         self.save_data()
         xval, yval = tur.position()
         self.p.variable_datas[self.x] = (
@@ -2771,7 +2784,7 @@ class ToWards(Widget):
         self.y = self.ent2.get()
         self.angle = self.ent3.get()
 
-    def run(self, tur):
+    def run(self, tur: turtle.RawTurtle):
         self.save_data()
         angle = tur.towards(
             self.str2int(self.x) + self.p.runner_size[0] // 2,
@@ -2839,7 +2852,7 @@ class Distance(Widget):
         self.y = self.ent2.get()
         self.distance = self.ent3.get()
 
-    def run(self, tur):
+    def run(self, tur: turtle.RawTurtle):
         self.save_data()
         distance = tur.distance(
             self.str2int(self.x) + self.p.runner_size[0] // 2,
@@ -2877,7 +2890,7 @@ class XCor(Widget):
     def save_data(self):
         self.x = self.ent1.get()
 
-    def run(self, tur):
+    def run(self, tur: turtle.RawTurtle):
         self.save_data()
         xval = tur.xcor()
         self.p.variable_datas[self.x] = (
@@ -2914,7 +2927,7 @@ class YCor(Widget):
     def save_data(self):
         self.y = self.ent1.get()
 
-    def run(self, tur):
+    def run(self, tur: turtle.RawTurtle):
         self.save_data()
         yval = tur.ycor()
         self.p.variable_datas[self.y] = (
@@ -2951,7 +2964,7 @@ class Heading(Widget):
     def save_data(self):
         self.angle = self.ent1.get()
 
-    def run(self, tur):
+    def run(self, tur: turtle.RawTurtle):
         self.save_data()
         aval = tur.heading()
         self.p.variable_datas[self.angle] = (aval, "N")
@@ -3002,7 +3015,7 @@ class Circle(Widget):
         self.radius = self.ent1.get()
         self.extent = self.ent2.get()
 
-    def run(self, tur):
+    def run(self, tur: turtle.RawTurtle):
         self.save_data()
         tur.circle(
             self.str2int(self.radius),
@@ -3039,7 +3052,7 @@ class Dot(Widget):
     def save_data(self):
         self.size = self.ent1.get()
 
-    def run(self, tur):
+    def run(self, tur: turtle.RawTurtle):
         self.save_data()
         tur.dot(self.str2uint(self.size))
 
@@ -3064,7 +3077,7 @@ class Stamp(Widget):
     def save_data(self):
         pass
 
-    def run(self, tur):
+    def run(self, tur: turtle.RawTurtle):
         self.save_data()
         tur.stamp()
 
@@ -3099,7 +3112,7 @@ class Speed(Widget):
     def save_data(self):
         self.speed = self.ent1.get()
 
-    def run(self, tur):
+    def run(self, tur: turtle.RawTurtle):
         self.save_data()
         if self.p.running_fastest is False:
             self.p.runner_speed = self.str2int(self.speed)
@@ -3126,7 +3139,7 @@ class PenDown(Widget):
     def save_data(self):
         pass
 
-    def run(self, tur):
+    def run(self, tur: turtle.RawTurtle):
         self.save_data()
         self.p.runner_pendown = True
         tur.pendown()
@@ -3152,7 +3165,7 @@ class PenUp(Widget):
     def save_data(self):
         pass
 
-    def run(self, tur):
+    def run(self, tur: turtle.RawTurtle):
         self.save_data()
         self.p.runner_pendown = False
         tur.penup()
@@ -3188,7 +3201,7 @@ class IsDown(Widget):
     def save_data(self):
         self.down = self.ent1.get()
 
-    def run(self, tur):
+    def run(self, tur: turtle.RawTurtle):
         self.save_data()
         down = tur.isdown()
         self.p.variable_datas[self.down] = (down, "B")
@@ -3224,7 +3237,7 @@ class PenSize(Widget):
     def save_data(self):
         self.width = self.ent1.get()
 
-    def run(self, tur):
+    def run(self, tur: turtle.RawTurtle):
         self.save_data()
         tur.pensize(self.str2uint(self.width))
 
@@ -3298,7 +3311,7 @@ class Color(Widget):
     def save_data(self):
         self.color = self.ent1.get()
 
-    def run(self, tur):
+    def run(self, tur: turtle.RawTurtle):
         self.save_data()
         try:
             tur.color(self.str2str(self.color))
@@ -3378,7 +3391,7 @@ class PenColor(Widget):
     def save_data(self):
         self.color = self.ent1.get()
 
-    def run(self, tur):
+    def run(self, tur: turtle.RawTurtle):
         self.save_data()
         try:
             tur.pencolor(self.str2str(self.color))
@@ -3458,7 +3471,7 @@ class FillColor(Widget):
     def save_data(self):
         self.color = self.ent1.get()
 
-    def run(self, tur):
+    def run(self, tur: turtle.RawTurtle):
         self.save_data()
         try:
             tur.fillcolor(self.str2str(self.color))
@@ -3538,7 +3551,7 @@ class BGColor(Widget):
     def save_data(self):
         self.color = self.ent1.get()
 
-    def run(self, tur):
+    def run(self, tur: turtle.RawTurtle):
         self.save_data()
         try:
             tur.getscreen().bgcolor(self.str2str(self.color))
@@ -3579,7 +3592,7 @@ class GetPenColor(Widget):
     def save_data(self):
         self.color = self.ent1.get()
 
-    def run(self, tur):
+    def run(self, tur: turtle.RawTurtle):
         self.save_data()
         cval = tur.pencolor()
         self.p.variable_datas[self.color] = (self.p.convert_rgb(cval), "S")
@@ -3615,7 +3628,7 @@ class GetFillColor(Widget):
     def save_data(self):
         self.color = self.ent1.get()
 
-    def run(self, tur):
+    def run(self, tur: turtle.RawTurtle):
         self.save_data()
         cval = tur.fillcolor()
         self.p.variable_datas[self.color] = (self.p.convert_rgb(cval), "S")
@@ -3651,7 +3664,7 @@ class GetBGColor(Widget):
     def save_data(self):
         self.color = self.ent1.get()
 
-    def run(self, tur):
+    def run(self, tur: turtle.RawTurtle):
         self.save_data()
         cval = tur.getscreen().bgcolor()
         self.p.variable_datas[self.color] = (self.p.convert_rgb(cval), "S")
@@ -3677,7 +3690,7 @@ class BeginFill(Widget):
     def save_data(self):
         pass
 
-    def run(self, tur):
+    def run(self, tur: turtle.RawTurtle):
         self.save_data()
         tur.begin_fill()
 
@@ -3702,7 +3715,7 @@ class EndFill(Widget):
     def save_data(self):
         pass
 
-    def run(self, tur):
+    def run(self, tur: turtle.RawTurtle):
         self.save_data()
         tur.end_fill()
 
@@ -3737,7 +3750,7 @@ class Filling(Widget):
     def save_data(self):
         self.fill = self.ent1.get()
 
-    def run(self, tur):
+    def run(self, tur: turtle.RawTurtle):
         self.save_data()
         fill = tur.filling()
         self.p.variable_datas[self.fill] = (fill, "B")
@@ -3763,7 +3776,7 @@ class ShowTurtle(Widget):
     def save_data(self):
         pass
 
-    def run(self, tur):
+    def run(self, tur: turtle.RawTurtle):
         self.save_data()
         tur.showturtle()
 
@@ -3788,7 +3801,7 @@ class HideTurtle(Widget):
     def save_data(self):
         pass
 
-    def run(self, tur):
+    def run(self, tur: turtle.RawTurtle):
         self.save_data()
         tur.hideturtle()
 
@@ -3823,7 +3836,7 @@ class IsVisible(Widget):
     def save_data(self):
         self.shown = self.ent1.get()
 
-    def run(self, tur):
+    def run(self, tur: turtle.RawTurtle):
         self.save_data()
         shown = tur.isvisible()
         self.p.variable_datas[self.shown] = (shown, "B")
@@ -3859,7 +3872,7 @@ class TurtleSize(Widget):
     def save_data(self):
         self.size = self.ent1.get()
 
-    def run(self, tur):
+    def run(self, tur: turtle.RawTurtle):
         self.save_data()
         tur.turtlesize(self.str2int(self.size))
 
@@ -4129,7 +4142,7 @@ class Write(Widget):
         self.text = self.ent1.get()
         self.size = self.ent2.get()
 
-    def run(self, tur):
+    def run(self, tur: turtle.RawTurtle):
         self.save_data()
         mark = "@" if self.str2bool(self.sideway) else ""
         tur.write(
@@ -4163,7 +4176,7 @@ class Bye(Widget):
     def save_data(self):
         pass
 
-    def run(self, tur):
+    def run(self, tur: turtle.RawTurtle):
         self.save_data()
         self.p.kill_runner()
 
@@ -4191,7 +4204,7 @@ class ExitOnClick(Widget):
     def kill(self, x, y):
         self.p.kill_runner()
 
-    def run(self, tur):
+    def run(self, tur: turtle.RawTurtle):
         self.save_data()
         tur.getscreen().onclick(self.kill)
 
@@ -4216,7 +4229,7 @@ class Bell(Widget):
     def save_data(self):
         pass
 
-    def run(self, tur):
+    def run(self, tur: turtle.RawTurtle):
         self.save_data()
         self.p.win.bell()
 
@@ -4251,7 +4264,7 @@ class Sleep(Widget):
     def save_data(self):
         self.second = self.ent1.get()
 
-    def run(self, tur):
+    def run(self, tur: turtle.RawTurtle):
         self.save_data()
         time.sleep(self.str2ufloat(self.second))
 
@@ -4312,7 +4325,7 @@ class Comment(Widget):
         self.comment = "\n".join([self.ent1.get()] +
                                  self.comment.split("\n")[1:])
 
-    def run(self, tur):
+    def run(self, tur: turtle.RawTurtle):
         pass
 
 
@@ -4356,7 +4369,7 @@ class Undefined(Widget):
     def save_data(self):
         pass
 
-    def run(self, tur):
+    def run(self, tur: turtle.RawTurtle):
         pass
 
 
