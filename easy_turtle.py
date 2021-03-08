@@ -30,7 +30,7 @@ WIDTH = 520
 def UPDATE_CONFIG():
     """設定を取得"""
     global CONFIG
-    if os.path.exists(CONFIG_FILE) is True:
+    if os.path.exists(CONFIG_FILE):
         with open(CONFIG_FILE, "r", encoding="UTF-8")as f:
             data = json.load(f)
         config = {}
@@ -59,39 +59,47 @@ if SYSTEM == "Windows":
     ICON_FILE = os.path.abspath("./Files/win_icon.gif")
     README_FILE = os.path.abspath("./Files/index.html")
 
-    if sys.argv[0].split(".")[-1] == "exe":
-        PROGRA = True
+    if sys.argv[0] == sys.executable:
+        EXECUTABLE = True
     else:
-        PROGRA = False
+        EXECUTABLE = False
 
-    if PROGRA is False:
+    if not EXECUTABLE:
         CONFIG_FILE = os.path.abspath("./config.json")
+        BOOT_FILE = os.path.abspath("./boot.json")
     else:
-        CONFIG_FILE = "C:/ProgramData/EasyTurtle/config.json"
-        os.makedirs(os.path.dirname(CONFIG_FILE), exist_ok=True)
+        CONFIG_FILE = os.path.join(
+            os.environ["ALLUSERSPROFILE"],
+            "EasyTurtle/config.json")
+        BOOT_FILE = os.path.join(
+            os.environ["ALLUSERSPROFILE"],
+            "EasyTurtle/boot.json")
+        os.makedirs(os.path.join(
+            os.environ["ALLUSERSPROFILE"],
+            "EasyTurtle/"), exist_ok=True)
 
     DEFAULT_CONFIG = {
         "save_more_info": False,
+        "ask_save_new": True,
         "show_warning": True,
         "expand_window": True,
-        "ask_save_new": True,
-        "user_document": True,
+        "user_document": EXECUTABLE,
         "auto_update": True,
         "open_last_file": False}
 
     CONFIG = DEFAULT_CONFIG
     UPDATE_CONFIG()
 
-    if CONFIG["user_document"] is True:
+    if CONFIG["user_document"]:
         user = os.environ['USERPROFILE']
-        if os.path.exists(os.path.join(user, "onedrive/ドキュメント/")) is True:
+        if os.path.exists(os.path.join(user, "onedrive/ドキュメント/")):
             DOCUMENTS = os.path.join(user, "onedrive/ドキュメント/EasyTurtle/")
         else:
             DOCUMENTS = os.path.join(user, "Documents/EasyTurtle/")
         samples = os.path.join(DOCUMENTS, "Samples")
         os.makedirs(DOCUMENTS, exist_ok=True)
         try:
-            if os.path.exists(samples) is False:
+            if not os.path.exists(samples):
                 shutil.copytree('./Samples', samples)
         except FileExistsError:
             pass
@@ -102,7 +110,7 @@ if SYSTEM == "Windows":
     SYSTEM_WIDTH = windll.user32.GetSystemMetrics(0)
     SYSTEM_HEIGHT = windll.user32.GetSystemMetrics(1)
 
-    if CONFIG["expand_window"] is True:
+    if CONFIG["expand_window"]:
         width_mag = SYSTEM_WIDTH / 1280
         height_mag = SYSTEM_HEIGHT / 720
         WIN_MAG = width_mag if width_mag < height_mag else height_mag
@@ -120,32 +128,35 @@ elif SYSTEM == "Linux":
     ICON_FILE = os.path.abspath("./Files/win_icon.gif")
     README_FILE = os.path.abspath("./Files/index.html")
 
-    PROGRA = False
+    if sys.argv[0] == sys.executable:
+        EXECUTABLE = True
+    else:
+        EXECUTABLE = False
 
     CONFIG_FILE = os.path.abspath("./config.json")
 
     DEFAULT_CONFIG = {
         "save_more_info": False,
+        "ask_save_new": True,
         "show_warning": True,
         "expand_window": True,
-        "ask_save_new": True,
-        "user_document": False,
+        "user_document": EXECUTABLE,
         "auto_update": True,
         "open_last_file": False}
 
     CONFIG = DEFAULT_CONFIG
     UPDATE_CONFIG()
 
-    if CONFIG["user_document"] is True:
+    if CONFIG["user_document"]:
         user = os.environ['USER']
-        if os.path.exists(os.path.join("/home/", user, "/ドキュメント/")) is True:
+        if os.path.exists(os.path.join("/home/", user, "/ドキュメント/")):
             DOCUMENTS = os.path.join("/home/", user, "/ドキュメント/EasyTurtle/")
         else:
             DOCUMENTS = os.path.join("/home/", user, "/Documents/EasyTurtle/")
         os.makedirs(DOCUMENTS, exist_ok=True)
         samples = os.path.join(DOCUMENTS, "Samples")
         try:
-            if os.path.exists(samples) is False:
+            if not os.path.exists(samples):
                 shutil.copytree('./Samples', samples)
         except FileExistsError:
             pass
@@ -158,7 +169,7 @@ elif SYSTEM == "Linux":
     SYSTEM_WIDTH = int(metrics[0])
     SYSTEM_HEIGHT = int(metrics[1])
 
-    if CONFIG["expand_window"] is True:
+    if CONFIG["expand_window"]:
         width_mag = SYSTEM_WIDTH / 1280
         height_mag = SYSTEM_HEIGHT / 720
         WIN_MAG = width_mag if width_mag < height_mag else height_mag
@@ -177,7 +188,7 @@ def EXPAND(num):
 
 FONT = (FONT_TYPE1, EXPAND(12), "bold")
 
-__version__ = (5, 9, "0a2")
+__version__ = (5, 9, 0)
 
 
 class EasyTurtle:
@@ -200,7 +211,7 @@ class EasyTurtle:
         self.setup()
 
         # アップデート確認をする
-        if CONFIG["auto_update"] is True:
+        if CONFIG["auto_update"]:
             thread = threading.Thread(target=self.update_starting)
             thread.start()
 
@@ -208,10 +219,12 @@ class EasyTurtle:
         if file is not None:
             self.open_program(file)
 
-        elif CONFIG["open_last_file"] is True:
-            if PROGRA is True:
-                file = "C:/ProgramData/EasyTurtle/config/boot.json"
-                os.makedirs("C:/ProgramData/EasyTurtle/cache/", exist_ok=True)
+        elif CONFIG["open_last_file"]:
+            if EXECUTABLE:
+                file = os.environ["ALLUSERSPROFILE"] + \
+                    "EasyTurtle/cache/boot.json"
+                os.makedirs(os.environ["ALLUSERSPROFILE"] +
+                            "EasyTurtle/cache/", exist_ok=True)
             else:
                 file = os.path.abspath("./cache/boot.json")
             if os.path.exists(file):
@@ -259,12 +272,20 @@ class EasyTurtle:
                   padx=EXPAND(20), pady=(0, EXPAND(10)))
         self.win.resizable(0, 0)
 
+    def finish_editing_config(self, event=None):
+        """設定を終了"""
+        self.editing_config = False
+        self.win.destroy()
+
     def edit_config(self, event=None):
         """設定を編集"""
+        if hasattr(self, "editing_config") and self.editing_config:
+            return
         UPDATE_CONFIG()
         self.win = tk.Toplevel(self.root)
         self.win.tk.call('wm', 'iconphoto', self.win._w, self.icon)
         self.win.title("設定 - EasyTurtle")
+        self.win.protocol("WM_DELETE_WINDOW", self.finish_editing_config)
         self.win.wait_visibility()
         self.win.grab_set()
         lab1 = tk.Label(self.win, text="Configure",
@@ -321,6 +342,7 @@ class EasyTurtle:
                         font=(FONT_TYPE1, EXPAND(10), "bold"), fg="red")
         lab1.pack(padx=EXPAND(20), pady=(0, EXPAND(10)))
         self.win.resizable(0, 0)
+        self.editing_config = True
 
     def decide_config(self):
         """設定を決定"""
@@ -335,11 +357,11 @@ class EasyTurtle:
             "open_last_file":   self.var7.get()}
         with open(CONFIG_FILE, "w", encoding="UTF-8")as f:
             json.dump(CONFIG, f, indent=4)
-        self.win.destroy()
+        self.finish_editing_config()
 
     def close_window(self, event=None):
         """終了時の定義"""
-        if (type(event) == tk.Event) and (self.running_program is True):
+        if self.running_program:
             return
 
         # 保存するか確認する
@@ -348,21 +370,14 @@ class EasyTurtle:
             res = messagebox.askyesnocancel("確認", "保存しますか？")
             if res is None:
                 return
-            elif res is True:
+            elif res:
                 if self.save_program() == 1:
                     return
 
         # ファイルを保存
-        if CONFIG["open_last_file"] is True:
-            # ファイルを決定
-            if PROGRA is True:
-                file = "C:/ProgramData/EasyTurtle/config/boot.json"
-                os.makedirs("C:/ProgramData/EasyTurtle/cache/", exist_ok=True)
-            else:
-                file = os.path.abspath("./cache/boot.json")
-
+        if CONFIG["open_last_file"]:
             # データを保存
-            self.save_file(file, boot=True)
+            self.save_file(BOOT_FILE, boot=True)
 
         # 画面を閉じる
         self.root.destroy()
@@ -385,7 +400,7 @@ class EasyTurtle:
             d.place_cv()
         self.last_shown = shown
         self.set_scrollbar_posision()
-        if change is True:
+        if change:
             self.check_length()
             self.set_title()
             self.back_up()
@@ -412,7 +427,7 @@ class EasyTurtle:
 
     def undo_change(self, event=None):
         """一回戻る"""
-        if (type(event) == tk.Event) and (self.running_program is True):
+        if self.running_program:
             return
 
         # データを取得
@@ -442,7 +457,7 @@ class EasyTurtle:
 
     def redo_change(self, event=None):
         """やり直し"""
-        if (type(event) == tk.Event) and (self.running_program is True):
+        if self.running_program:
             return
 
         # データを取得
@@ -480,8 +495,7 @@ class EasyTurtle:
     def check_length(self):
         """データの大きさをチェック"""
         if (len(self.widgets) > 999) and \
-           (CONFIG["show_warning"] is True) and \
-           (self.warning_ignore is False):
+           CONFIG["show_warning"] and not self.warning_ignore:
             messagebox.showwarning(
                 "警告", "大量のデータを保持すると正常に動作しなくなる可能性があります。")
             self.warning_ignore = True
@@ -525,7 +539,7 @@ class EasyTurtle:
         else:
             self.index = before_index
 
-        if ((mode == 1) or (mode == 3)) and (self.var3.get() is True):
+        if ((mode == 1) or (mode == 3)) and (self.var3.get()):
             self.ent1.delete(0, tk.END)
             self.ent1.insert(0, str(index + 2))
             self.var2.set(3)
@@ -574,18 +588,18 @@ class EasyTurtle:
         """実行停止の動作"""
         self.killed_runner = True
         self.running_program = False
-        if hasattr(self, "win") is True:
+        if hasattr(self, "win"):
             self.win.destroy()
 
     def run_standard_mode(self, event=None):
         """標準実行"""
-        if (type(event) == tk.Event) and (self.running_program is True):
+        if self.running_program:
             return
         self.run_program(fastest=False)
 
     def run_fastest_mode(self, event=None):
         """高速実行"""
-        if (type(event) == tk.Event) and (self.running_program is True):
+        if self.running_program:
             return
         self.run_program(fastest=True)
 
@@ -599,7 +613,7 @@ class EasyTurtle:
         self.killed_runner = False
         self.runner_pendown = True
         self.running_program = True
-        if fastest is True:
+        if fastest:
             self.runner_speed = 0
             self.running_fastest = True
         else:
@@ -652,19 +666,19 @@ class EasyTurtle:
         tur.goto(self.runner_size[0] // 2, self.runner_size[1] // -2)
         tur.pendown()
         tur.speed(self.runner_speed)
-        if fastest is True:
+        if fastest:
             tur.getscreen().delay(0)
 
         # それぞれのウィジェットを実行
         try:
             for index, widget in enumerate(self.widgets):
-                if self.killed_runner is False:
-                    if widget.enabled is True:
+                if not self.killed_runner:
+                    if widget.enabled:
                         widget.run(tur)
                 else:
                     return 0
         except Exception:
-            if self.killed_runner is True:
+            if self.killed_runner:
                 return 0
             else:
                 self.kill_runner()
@@ -686,7 +700,7 @@ line: {index+1}, {widget.__class__.__name__}\n\
         # キーバインドから実行された場合
         if type(file) == tk.Event:
             file = None
-        elif (type(file) == tk.Event) and (self.running_program is True):
+        elif self.running_program:
             return
 
         # ファイル名を質問する
@@ -714,7 +728,7 @@ line: {index+1}, {widget.__class__.__name__}\n\
         # キーバインドから実行された場合
         if type(file) == tk.Event:
             file = None
-        elif (type(file) == tk.Event) and (self.running_program is True):
+        elif self.running_program:
             return
 
         # ファイル名を質問する
@@ -741,14 +755,14 @@ line: {index+1}, {widget.__class__.__name__}\n\
         # 保存する
         self.save_file(file)
 
-    def save_file(self, file, boot=None):
+    def save_file(self, file, boot=False):
         """ファイルを保存する"""
         # データを取得
         body = [d.get_data(more=(boot or CONFIG["save_more_info"]))
                 for d in self.widgets]
 
         # データを決定
-        if boot is True:
+        if boot:
             data = {
                 "version": __version__[:2],
                 "copy": self.copied_widgets,
@@ -761,7 +775,7 @@ line: {index+1}, {widget.__class__.__name__}\n\
                 "name": self.program_name,
                 "default": self.default_data,
                 "body": body}
-        elif CONFIG["save_more_info"] is True:
+        elif CONFIG["save_more_info"]:
             data = {
                 "version": __version__[:2],
                 "copy": self.copied_widgets,
@@ -782,7 +796,7 @@ line: {index+1}, {widget.__class__.__name__}\n\
         with open(file, "w")as f:
             json.dump(data, f, indent=2)
 
-        if boot is not True:
+        if not boot:
             # プログラムの名称設定
             self.program_name = file
             self.basename = os.path.basename(self.program_name)
@@ -797,7 +811,7 @@ line: {index+1}, {widget.__class__.__name__}\n\
         # キーバインドから実行された場合
         if type(file) == tk.Event:
             file = None
-        elif (type(file) == tk.Event) and (self.running_program is True):
+        elif self.running_program:
             return
 
         # データが変更されていれば保存するか確認する
@@ -806,7 +820,7 @@ line: {index+1}, {widget.__class__.__name__}\n\
             res = messagebox.askyesnocancel("確認", "保存しますか？")
             if res is None:
                 return
-            elif res is True:
+            elif res:
                 if self.save_program() == 1:
                     return
 
@@ -874,11 +888,11 @@ line: {index+1}, {widget.__class__.__name__}\n\
             self.redraw_widgets()
 
             # データを上書き
-            if (CONFIG["ask_save_new"] is True) and (version < (4, 11)):
+            if CONFIG["ask_save_new"] and version < (4, 11):
                 res = messagebox.askyesno("確認", "\
 選択されたファイルは古いバージョンです。\n\
 このバージョン用に保存し直しますか？")
-                if res is True:
+                if res:
                     self.save_file(file)
 
             # 基本データを設定
@@ -921,7 +935,7 @@ line: {index+1}, {widget.__class__.__name__}\n\
 
     def paste_widgets(self, event=None):
         """ペースト時の動作"""
-        if (type(event) == tk.Event) and (self.running_program is True):
+        if self.running_program:
             return
 
         before_index = self.index
@@ -946,7 +960,7 @@ line: {index+1}, {widget.__class__.__name__}\n\
         else:
             self.index = before_index
 
-        if ((mode == 1) or (mode == 3)) and (self.var3.get() is True):
+        if ((mode == 1) or (mode == 3)) and self.var3.get():
             self.ent1.delete(0, tk.END)
             self.ent1.insert(0, str(next_index + 1))
             self.var2.set(3)
@@ -957,13 +971,13 @@ line: {index+1}, {widget.__class__.__name__}\n\
         """選ばれたデータ一覧を取得"""
         selected = []
         for d in self.widgets:
-            if d.bln1.get() is True:
+            if d.bln1.get():
                 selected.append(d)
         return selected
 
     def select_all(self, event=None):
         """すべて選択"""
-        if (type(event) == tk.Event) and (self.running_program is True):
+        if self.running_program:
             return
         for d in self.widgets:
             d.bln1.set(True)
@@ -971,7 +985,7 @@ line: {index+1}, {widget.__class__.__name__}\n\
 
     def clear_selected(self, event=None):
         """選択を解除"""
-        if (type(event) == tk.Event) and (self.running_program is True):
+        if self.running_program:
             return
         for d in self.get_selected():
             d.bln1.set(False)
@@ -979,7 +993,7 @@ line: {index+1}, {widget.__class__.__name__}\n\
 
     def delete_selected(self, event=None):
         """選択されたデータを削除"""
-        if (type(event) == tk.Event) and (self.running_program is True):
+        if self.running_program:
             return
         for d in self.get_selected():
             d.delete(back_up=False)
@@ -987,7 +1001,7 @@ line: {index+1}, {widget.__class__.__name__}\n\
 
     def copy_selected(self, event=None):
         """選択されたデータをコピー"""
-        if (type(event) == tk.Event) and (self.running_program is True):
+        if self.running_program:
             return
         copy = []
         if len(self.get_selected()) == 0:
@@ -1000,14 +1014,14 @@ line: {index+1}, {widget.__class__.__name__}\n\
 
     def cut_selected(self, event=None):
         """選択されたデータをカット"""
-        if (type(event) == tk.Event) and (self.running_program is True):
+        if self.running_program:
             return
         self.copy_selected()
         self.delete_selected()
 
     def enable_selected(self, event=None):
         """選択されたデータを有効化"""
-        if (type(event) == tk.Event) and (self.running_program is True):
+        if self.running_program:
             return
         if len(self.get_selected()) == 0:
             return
@@ -1017,7 +1031,7 @@ line: {index+1}, {widget.__class__.__name__}\n\
 
     def disable_selected(self, event=None):
         """選択されたデータを無効化"""
-        if (type(event) == tk.Event) and (self.running_program is True):
+        if self.running_program:
             return
         if len(self.get_selected()) == 0:
             return
@@ -1031,7 +1045,7 @@ line: {index+1}, {widget.__class__.__name__}\n\
 
     def delete_menu(self, event=None):
         "メニューを消す"
-        if hasattr(self, "menu") is True:
+        if hasattr(self, "menu"):
             self.menu.destroy()
 
     def get_new_release(self):
@@ -1053,13 +1067,13 @@ line: {index+1}, {widget.__class__.__name__}\n\
 
     def show_online_document(self, event=None):
         """詳しい情報の表示"""
-        if (type(event) == tk.Event) and (self.running_program is True):
+        if self.running_program:
             return
         webbrowser.open_new("https://ryofuji2005.github.io/EasyTurtle/")
 
     def show_offline_document(self, event=None):
         """詳しい情報の表示"""
-        if (type(event) == tk.Event) and (self.running_program is True):
+        if self.running_program:
             return
         webbrowser.open_new(README_FILE)
 
@@ -1120,7 +1134,7 @@ line: {index+1}, {widget.__class__.__name__}\n\
         new_joined_version = '.'.join([str(n) for n in new_version])
         old_joined_version = '.'.join([str(n) for n in __version__])
 
-        if start is True:
+        if start:
             self.win2 = tk.Toplevel(self.root)
         else:
             self.win2 = tk.Toplevel(self.win)
@@ -1170,7 +1184,7 @@ download/v{joined_version}/EasyTurtle-{joined_version}-amd64.msi"
         new_joined_version = '.'.join([str(n) for n in new_version])
         old_joined_version = '.'.join([str(n) for n in __version__])
 
-        if start is True:
+        if start:
             self.win2 = tk.Toplevel(self.root)
         else:
             self.win2 = tk.Toplevel(self.win)
@@ -1265,7 +1279,7 @@ download/v{joined_version}/EasyTurtle-{joined_version}-amd64.msi"
             res = messagebox.askyesnocancel("確認", "保存しますか？")
             if res is None:
                 return 1
-            elif res is True:
+            elif res:
                 if self.save_program() == 1:
                     return 1
 
@@ -1302,18 +1316,11 @@ download/v{joined_version}/EasyTurtle-{joined_version}-amd64.msi"
 
     def reboot_program(self, event=None):
         """再起動"""
-        # ファイルを決定
-        if PROGRA is True:
-            file = "C:/ProgramData/EasyTurtle/config/boot.json"
-            os.makedirs("C:/ProgramData/EasyTurtle/cache/", exist_ok=True)
-        else:
-            file = os.path.abspath("./cache/boot.json")
-
         # データを保存
-        self.save_file(file, boot=True)
+        self.save_file(BOOT_FILE, boot=True)
 
         # 新規ウィンドウを起動
-        if sys.argv[0][-14:] == "EasyTurtle.exe":
+        if EXECUTABLE:
             command = [sys.argv[0]]
         else:
             command = [sys.executable, sys.argv[0]]
@@ -1665,7 +1672,7 @@ class Widget:
     def check_enabled(self):
         """有効・無効の表示"""
         self.cv.delete("enabled")
-        color = "blue" if self.enabled is True else "red"
+        color = "blue" if self.enabled else "red"
         self.cv.create_oval(EXPAND(14), EXPAND(10),
                             EXPAND(30), EXPAND(HEIGHT//2-10),
                             width=2, outline="lightgray",
@@ -1731,7 +1738,7 @@ class Widget:
 
     def show_popup2(self, event):
         "ポップアップメニュー"
-        if hasattr(self.p, "menu") is True:
+        if hasattr(self.p, "menu"):
             self.p.menu.destroy()
 
         index = self.p.widgets.index(self)
@@ -1764,14 +1771,14 @@ class Widget:
         self.p.menu.add_separator()
         self.p.menu.add_command(label='複製', command=self.duplicate)
 
-        if hasattr(self, "show_option") is True:
+        if hasattr(self, "show_option"):
             self.p.menu.add_separator()
             self.p.menu.add_command(label='オプション', command=self.show_option)
 
         self.p.menu.add_separator()
         if (self.TYPE == "undefined") or (self.TYPE == "comment"):
             self.p.menu.add_command(label='有効化', state="disabled")
-        elif self.enabled is True:
+        elif self.enabled:
             self.p.menu.add_command(label='無効化', command=self.disable)
         else:
             self.p.menu.add_command(label='有効化', command=self.enable)
@@ -1788,14 +1795,14 @@ class Widget:
         "ウィジェットの有効化"
         self.enabled = True
         self.check_enabled()
-        if back_up is True:
+        if back_up:
             self.p.back_up()
 
     def disable(self, back_up=True):
         "ウィジェットの無効化"
         self.enabled = False
         self.check_enabled()
-        if back_up is True:
+        if back_up:
             self.p.back_up()
 
     def delete(self, back_up=True):
@@ -1885,7 +1892,7 @@ class Widget:
 
     def get_class_data(self, data, more):
         """クラスのデータを追加する"""
-        if more is True:
+        if more:
             data["_check"] = self.bln1.get()
         elif "_check" in data:
             del data["_check"]
@@ -1898,7 +1905,7 @@ class Widget:
 
     def copy_entry(self, entry):
         """テキストをコピーする"""
-        if entry.selection_present() is True:
+        if entry.selection_present():
             text = entry.selection_get()
         else:
             text = entry.get()
@@ -1912,7 +1919,7 @@ class Widget:
 
     def show_popup1(self, event, entry):
         """ポップアップを表示する"""
-        if hasattr(self.p, "menu") is True:
+        if hasattr(self.p, "menu"):
             self.p.menu.destroy()
         try:
             if self.p.root.clipboard_get() != "":
@@ -1940,8 +1947,8 @@ class Widget:
 line: {self.p.widgets.index(self)+1}, {self.__class__.__name__}\n\
 変数"{name}"は定義されていません。')
                 self.p.kill_runner()
-            elif (self.p.variable_datas[name][1] == "S") or \
-                 (CONFIG["show_warning"] is False):
+            elif self.p.variable_datas[name][1] == "S" or\
+                    not CONFIG["show_warning"]:
                 string = string.replace(
                     var, str(self.p.variable_datas[name][0]))
             else:
@@ -1963,8 +1970,8 @@ line: {self.p.widgets.index(self)+1}, {self.__class__.__name__}\n\
 line: {self.p.widgets.index(self)+1}, {self.__class__.__name__}\n\
 変数"{name}"は定義されていません。')
                 self.p.kill_runner()
-            elif (self.p.variable_datas[name][1] == "B") or \
-                 (CONFIG["show_warning"] is False):
+            elif self.p.variable_datas[name][1] == "B" or \
+                    not CONFIG["show_warning"]:
                 string = string.replace(
                     var, str(self.p.variable_datas[name][0]))
             else:
@@ -1993,8 +2000,8 @@ line: {self.p.widgets.index(self)+1}, {self.__class__.__name__}\n\
 line: {self.p.widgets.index(self)+1}, {self.__class__.__name__}\n\
 変数"{name}"は定義されていません。')
                 self.p.kill_runner()
-            elif (self.p.variable_datas[name][1] == "N") or \
-                 (CONFIG["show_warning"] is False):
+            elif self.p.variable_datas[name][1] == "N" or \
+                    not CONFIG["show_warning"]:
                 string = string.replace(
                     var, str(self.p.variable_datas[name][0]))
             else:
@@ -2049,8 +2056,7 @@ line: {self.p.widgets.index(self)+1}, {self.__class__.__name__}\n\
     def str2int(self, string):
         """文字列を整数に変換"""
         num = self.str2float(string)
-        if (float(num).is_integer() is False) and \
-           (CONFIG["show_warning"] is True):
+        if not float(num).is_integer() and CONFIG["show_warning"]:
             messagebox.showwarning("警告", f'\
 line: {self.p.widgets.index(self)+1}, {self.__class__.__name__}\n\
 値は整数でなければなりません。')
@@ -2337,7 +2343,7 @@ class ScreenSize(Widget):
         tur.speed(0)
         tur.goto(maxwidth // 2, maxheight // -2)
         tur.speed(self.p.runner_speed)
-        if self.p.runner_pendown is True:
+        if self.p.runner_pendown:
             tur.pendown()
 
         # すべての要素を移動
@@ -3114,7 +3120,7 @@ class Speed(Widget):
 
     def run(self, tur: turtle.RawTurtle):
         self.save_data()
-        if self.p.running_fastest is False:
+        if not self.p.running_fastest:
             self.p.runner_speed = self.str2int(self.speed)
             tur.speed(self.p.runner_speed)
 
@@ -3927,17 +3933,17 @@ class Write(Widget):
 
     def get_data(self, more=True):
         data = {"text": self.text, "size": self.size}
-        if (str(self.move) != self.VALUES["move"]) or (more is True):
+        if str(self.move) != self.VALUES["move"] or more:
             data["move"] = self.move
-        if (str(self.align) != self.VALUES["align"]) or (more is True):
+        if str(self.align) != self.VALUES["align"] or more:
             data["align"] = self.align
-        if (str(self.family) != self.VALUES["family"]) or (more is True):
+        if str(self.family) != self.VALUES["family"] or more:
             data["family"] = self.family
-        if (str(self.weight) != self.VALUES["weight"]) or (more is True):
+        if str(self.weight) != self.VALUES["weight"] or more:
             data["weight"] = self.weight
-        if (str(self.slant) != self.VALUES["slant"]) or (more is True):
+        if str(self.slant) != self.VALUES["slant"] or more:
             data["slant"] = self.slant
-        if (str(self.sideway) != self.VALUES["sideway"]) or (more is True):
+        if str(self.sideway) != self.VALUES["sideway"] or more:
             data["sideway"] = self.sideway
         self.save_data()
         return self.get_class_data(data, more)
