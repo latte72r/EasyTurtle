@@ -188,24 +188,16 @@ def EXPAND(num):
 
 FONT = (FONT_TYPE1, EXPAND(12), "bold")
 
-__version__ = (5, 9, 0)
+__version__ = (5, 10, "0a1")
 
 
 class EasyTurtle:
     def __init__(self, file=None):
         """初期化"""
-        # 変数を初期化する
-        self.index = 0
-        self.last_shown: typeList[typeWidget] = []
-        self.widgets: typeList[typeWidget] = []
-        self.copied_widgets: typeList[typeWidget] = []
-        self.default_data: typeList[typeWidget] = []
-        self.backed_up = []
-        self.canceled_changes = []
-        self.warning_ignore = False
+        # 変数を設定する
+        self.tabs: typeList[IndividualTab] = []
         self.running_program = False
-        self.program_name = None
-        self.basename = "無題"
+        self.editing_config = False
 
         # 画面を設定する
         self.setup()
@@ -279,7 +271,7 @@ class EasyTurtle:
 
     def edit_config(self, event=None):
         """設定を編集"""
-        if hasattr(self, "editing_config") and self.editing_config:
+        if self.editing_config:
             return
         UPDATE_CONFIG()
         self.win = tk.Toplevel(self.root)
@@ -363,448 +355,31 @@ class EasyTurtle:
         """終了時の定義"""
         if self.running_program:
             return
-
-        # 保存するか確認する
-        data = [d.get_data(more=False) for d in self.widgets]
-        if self.default_data != data:
-            res = messagebox.askyesnocancel("確認", "保存しますか？")
-            if res is None:
-                return
-            elif res:
-                if self.save_program() == 1:
-                    return
-
+        """
         # ファイルを保存
         if CONFIG["open_last_file"]:
             # データを保存
             self.save_file(BOOT_FILE, boot=True)
+        """
 
         # 画面を閉じる
         self.root.destroy()
         sys.exit()
 
-    def redraw_widgets(self, change=True):
-        """全部描き直し"""
-        UPDATE_CONFIG()
-        data = self.widgets
-
-        if (self.index < 0) or (len(data) < SIZE):
-            self.index = 0
-        elif self.index > len(data) - SIZE:
-            self.index = len(data) - SIZE
-
-        shown = data[self.index: self.index + SIZE]
-        for d in self.last_shown:
-            d.place_cv()
-        for d in shown:
-            d.place_cv()
-        self.last_shown = shown
-        self.set_scrollbar_posision()
-        if change:
-            self.check_length()
-            self.set_title()
-            self.back_up()
-
-    def set_title(self):
-        """タイトルを設定する"""
-        if [d.get_data(more=False) for d in self.widgets] == self.default_data:
-            self.root.title(f"{self.basename} - EasyTurtle")
-        else:
-            self.root.title(f"*{self.basename}* - EasyTurtle")
-
-    def back_up(self):
-        """バックアップ"""
-        # データを取得
-        data = self.get_data()
-
-        # バックアップがなければ追加
-        if len(self.backed_up) == 0:
-            self.backed_up.append(data)
-
-        # 前回と違ければ追加
-        elif self.backed_up[-1]["body"] != data["body"]:
-            self.backed_up.append(data)
-
-    def undo_change(self, event=None):
-        """一回戻る"""
-        if self.running_program:
-            return
-
-        # データを取得
-        self.back_up()
-        data = self.get_data()
-
-        # バックアップがあり、変更されているとき
-        if (len(self.backed_up) > 0) and \
-           (self.backed_up[-1]["body"] != data["body"]):
-            self.canceled_changes.append(data)
-            self.set_data(self.backed_up[-1])
-            self.backed_up = self.backed_up[:-1]
-
-        # バックアップが２つ以上あり、変更されているとき
-        elif (len(self.backed_up) > 1) and \
-             (self.backed_up[-2]["body"] != data["body"]):
-            self.canceled_changes.append(data)
-            self.set_data(self.backed_up[-2])
-            self.backed_up = self.backed_up[:-2]
-
-        # それ以外ならエラー音
-        else:
-            self.root.bell()
-            return 1
-
-        self.redraw_widgets()
-
-    def redo_change(self, event=None):
-        """やり直し"""
-        if self.running_program:
-            return
-
-        # データを取得
-        self.back_up()
-        data = self.get_data()
-
-        # キャンセルがあり、変更されているとき
-        if (len(self.canceled_changes) > 0) and \
-           (self.canceled_changes[-1]["body"] != data["body"]):
-            self.set_data(self.canceled_changes[-1])
-            self.canceled_changes = self.canceled_changes[:-1]
-        # それ以外ならエラー音
-        else:
-            self.root.bell()
-            return 1
-
-        self.redraw_widgets()
-
-    def get_data(self):
-        """データを取得"""
-        return {"index": self.index,
-                "copy": self.copied_widgets,
-                "body": [d.get_data() for d in self.widgets]}
-
-    def set_data(self, data):
-        """データをセット"""
-        self.delete_all_widgets()
-        self.index = data["index"]
-        self.copied_widgets = data["copy"]
-        self.widgets = []
-        for d in data["body"]:
-            self.make_match_class(d)
-        self.index = data["index"]
-
-    def check_length(self):
-        """データの大きさをチェック"""
-        if (len(self.widgets) > 999) and \
-           CONFIG["show_warning"] and not self.warning_ignore:
-            messagebox.showwarning(
-                "警告", "大量のデータを保持すると正常に動作しなくなる可能性があります。")
-            self.warning_ignore = True
-
-    def set_scrollbar_posision(self):
-        """スクロールバーの位置をセット"""
-        data = self.widgets
-        if len(data) <= SIZE:
-            first = 0.0
-            last = 1.0
-        else:
-            per = SIZE / len(data)
-            first = (1.0 - per) * self.index / (len(data) - 8)
-            last = first + per
-        self.scr2.set(first, last)
-
-    def append_new_widget(self, event):
-        """リストボックス選択時の動作"""
-        before_index = self.index
-
-        mode = self.var2.get()
-        if mode == 1:
-            index = 0
-        elif mode == 2:
-            index = len(self.widgets)
-        elif mode == 3:
-            index = self.get_add_index()
-            if index is None:
-                return 1
-
-        class_index = -1
-        for i in self.lsb1.curselection():
-            class_index = Texts.index(self.lsb1.get(i))
-            break
-        if class_index == -1:
-            return 1
-        Widgets[class_index](parent=self, index=index)
-
-        if (index < before_index) or (index > before_index + SIZE - 1):
-            self.index = index
-        else:
-            self.index = before_index
-
-        if ((mode == 1) or (mode == 3)) and (self.var3.get()):
-            self.ent1.delete(0, tk.END)
-            self.ent1.insert(0, str(index + 2))
-            self.var2.set(3)
-
-        self.redraw_widgets()
-
-    def scroll_on_windows(self, event):
-        """Windowsでのスクロール時の動作"""
-        data = self.widgets
-        index = self.index - (event.delta // 120)
-        max_size = (len(data) - SIZE)
-        self.index = (0 if index <= 0 else max_size
-                      if (index > max_size) and (len(data) > SIZE)
-                      else self.index
-                      if len(data) <= SIZE else index)
-        self.redraw_widgets(change=False)
-
-    def scroll_on_linux(self, event):
-        """Linuxでのスクロール時の動作"""
-        data = self.widgets
-        index = self.index - (1 if event.num == 4 else -1)
-        max_size = (len(data) - SIZE)
-        self.index = (0 if index <= 0 else max_size
-                      if (index > max_size) and (len(data) > SIZE)
-                      else self.index
-                      if len(data) <= SIZE else index)
-        self.redraw_widgets(change=False)
-
-    def scroll_button_clicked(self, *event):
-        """スクロールバーボタンが押された時の動作"""
-        data = self.widgets
-        if event[0] == "scroll":
-            index = self.index + int(event[1])
-        elif event[0] == "moveto":
-            index = int(float(event[1]) * len(data))
-        else:
-            return
-        max_size = (len(data) - SIZE)
-        self.index = (0 if index <= 0 else max_size
-                      if (index > max_size) and (len(data) > SIZE)
-                      else self.index
-                      if len(data) <= SIZE else index)
-        self.redraw_widgets(change=False)
-
-    def kill_runner(self, event=None):
-        """実行停止の動作"""
-        self.killed_runner = True
-        self.running_program = False
-        if hasattr(self, "win"):
-            self.win.destroy()
-
-    def run_standard_mode(self, event=None):
-        """標準実行"""
-        if self.running_program:
-            return
-        self.run_program(fastest=False)
-
-    def run_fastest_mode(self, event=None):
-        """高速実行"""
-        if self.running_program:
-            return
-        self.run_program(fastest=True)
-
-    def run_program(self, fastest=False):
-        """実行"""
-        # 変数の格納場所
-        self.variable_datas = {}
-
-        # プログラムの情報
-        self.runner_size = (600, 600)
-        self.killed_runner = False
-        self.runner_pendown = True
-        self.running_program = True
-        if fastest:
-            self.runner_speed = 0
-            self.running_fastest = True
-        else:
-            self.runner_speed = 3
-            self.running_fastest = False
-
-        # ウインドウを作成
-        self.win = tk.Toplevel(self.root)
-        self.win.tk.call('wm', 'iconphoto', self.win._w, self.icon)
-        self.win.protocol("WM_DELETE_WINDOW", self.kill_runner)
-        self.win.wait_visibility(self.win)
-        self.win.grab_set()
-        self.win.focus_set()
-        self.win.title("EasyTurtle")
-
-        # キーをバインド
-        self.win.bind("<Control-Key-q>", self.kill_runner)
-
-        # Windowsでは透過を有効にする
-        if SYSTEM == "Windows":
-            self.win.attributes("-transparentcolor", "snow")
-
-        # フレームにキャンバスとスクロールバーを配置
-        frame = tk.Frame(self.win)
-        frame.pack()
-        bary = tk.Scrollbar(frame, orient=tk.VERTICAL)
-        bary.pack(side=tk.RIGHT, fill=tk.Y)
-        barx = tk.Scrollbar(frame, orient=tk.HORIZONTAL)
-        barx.pack(side=tk.BOTTOM, fill=tk.X)
-        canvas = tk.Canvas(frame, bg="snow")
-        canvas.pack(side=tk.LEFT, fill=tk.BOTH)
-
-        # キャンバスとスクロールバーの関連付け
-        bary.config(command=canvas.yview)
-        canvas.config(yscrollcommand=bary.set)
-        barx.config(command=canvas.xview)
-        canvas.config(xscrollcommand=barx.set)
-
-        # 中心に移動
-        tur = turtle.RawTurtle(canvas)
-        tur.shape("turtle")
-        tur.getscreen().colormode(255)
-        canvas.config(width=self.runner_size[0],
-                      height=self.runner_size[1],
-                      scrollregion=(0, 0,
-                                    self.runner_size[0],
-                                    self.runner_size[1]))
-        tur.penup()
-        tur.speed(0)
-        tur.goto(self.runner_size[0] // 2, self.runner_size[1] // -2)
-        tur.pendown()
-        tur.speed(self.runner_speed)
-        if fastest:
-            tur.getscreen().delay(0)
-
-        # それぞれのウィジェットを実行
+    def get_currently_selected(self):
         try:
-            for index, widget in enumerate(self.widgets):
-                if not self.killed_runner:
-                    if widget.enabled:
-                        widget.run(tur)
-                else:
-                    return 0
-        except Exception:
-            if self.killed_runner:
-                return 0
-            else:
-                self.kill_runner()
-                traceback.print_exc()
-                messagebox.showerror("エラー", f'\
-line: {index+1}, {widget.__class__.__name__}\n\
-エラーが発生しました。\n\n{traceback.format_exc()}')
-                return 1
+            return self.tabs[self.notebook.index(self.notebook.select())]
+        except tk.TclError:
+            return None
 
-    def delete_all_widgets(self, event=None):
-        """全て削除"""
-        widgets = [w for w in self.widgets]
-        for d in widgets:
-            d.delete(back_up=False)
-        self.redraw_widgets(change=False)
+    def destroy(self):
+        """ウィンドウを削除"""
+        self.root.destroy()
 
-    def save_program(self, file=None):
-        """上書き保存"""
-        # キーバインドから実行された場合
-        if type(file) == tk.Event:
-            file = None
-        elif self.running_program:
-            return
-
-        # ファイル名を質問する
-        if file is None:
-            if self.program_name is not None:
-                file = self.program_name
-            else:
-                file = filedialog.asksaveasfilename(
-                    parent=self.root, initialdir=DOCUMENTS,
-                    filetypes=[("Jsonファイル", "*.json")])
-
-        # ファイルが選択されていなければ終了
-        if file == "":
-            return 1
-
-        # 拡張子をつける
-        elif file[-5:] != ".json":
-            file += ".json"
-
-        # 保存する
-        self.save_file(file)
-
-    def save_program_as(self, file=None):
-        """名前を付けて保存"""
-        # キーバインドから実行された場合
-        if type(file) == tk.Event:
-            file = None
-        elif self.running_program:
-            return
-
-        # ファイル名を質問する
-        if file is None:
-            if self.program_name is not None:
-                directory = os.path.dirname(self.program_name)
-                name = self.basename
-                file = filedialog.asksaveasfilename(
-                    parent=self.root, initialdir=directory, initialfile=name,
-                    filetypes=[("Jsonファイル", "*.json")])
-            else:
-                file = filedialog.asksaveasfilename(
-                    parent=self.root, initialdir=DOCUMENTS,
-                    filetypes=[("Jsonファイル", "*.json")])
-
-        # ファイルが選択されていなければ終了
-        if file == "":
-            return 1
-
-        # 拡張子をつける
-        elif file[-5:] != ".json":
-            file += ".json"
-
-        # 保存する
-        self.save_file(file)
-
-    def save_file(self, file, boot=False):
-        """ファイルを保存する"""
-        # データを取得
-        body = [d.get_data(more=(boot or CONFIG["save_more_info"]))
-                for d in self.widgets]
-
-        # データを決定
-        if boot:
-            data = {
-                "version": __version__[:2],
-                "copy": self.copied_widgets,
-                "index": self.index,
-                "backedup": self.backed_up,
-                "canceled": self.canceled_changes,
-                "addmode": self.var2.get(),
-                "adjust": self.var3.get(),
-                "position": self.ent1.get(),
-                "name": self.program_name,
-                "default": self.default_data,
-                "body": body}
-        elif CONFIG["save_more_info"]:
-            data = {
-                "version": __version__[:2],
-                "copy": self.copied_widgets,
-                "index": self.index,
-                "backedup": self.backed_up,
-                "canceled": self.canceled_changes,
-                "addmode": self.var2.get(),
-                "adjust": self.var3.get(),
-                "position": self.ent1.get(),
-                "body": body}
-        else:
-            data = {"version": __version__[:2], "body": body}
-
-        # フォルダを作成
-        os.makedirs(os.path.dirname(file), exist_ok=True)
-
-        # データを書き込み
-        with open(file, "w")as f:
-            json.dump(data, f, indent=2)
-
-        if not boot:
-            # プログラムの名称設定
-            self.program_name = file
-            self.basename = os.path.basename(self.program_name)
-
-            # 基本データを設定
-            self.default_data = [d.get_data(more=False) for d in self.widgets]
-
-        self.set_title()
+    def delete_menu(self, event=None):
+        "メニューを消す"
+        if hasattr(self, "menu"):
+            self.menu.destroy()
 
     def open_program(self, file=None):
         """開く動作"""
@@ -814,21 +389,13 @@ line: {index+1}, {widget.__class__.__name__}\n\
         elif self.running_program:
             return
 
-        # データが変更されていれば保存するか確認する
-        data = [d.get_data(more=False) for d in self.widgets]
-        if self.default_data != data:
-            res = messagebox.askyesnocancel("確認", "保存しますか？")
-            if res is None:
-                return
-            elif res:
-                if self.save_program() == 1:
-                    return
-
         # ファイル名を質問する
         if file is None:
-            if self.program_name is not None:
-                directory = os.path.dirname(self.program_name)
-                name = self.basename
+            tab = self.get_currently_selected()
+            if (tab is not None) and (tab.program_name is not None):
+                directory = os.path.dirname(
+                    tab.program_name)
+                name = tab.basename
                 file = filedialog.askopenfilename(
                     parent=self.root, initialdir=directory, initialfile=name,
                     filetypes=[("Jsonファイル", "*.json")])
@@ -845,47 +412,50 @@ line: {index+1}, {widget.__class__.__name__}\n\
         with open(file, "r")as f:
             data = json.load(f)
 
+        # 新しいタブを作成する
+        newtab = IndividualTab(self)
+
         # すべてのウィジェットを削除
-        self.delete_all_widgets()
+        newtab.delete_all_widgets()
         try:
             # データを複製
-            if len(self.backed_up) > 0:
-                backed_cp = self.backed_up[-1]
+            if len(newtab.backed_up) > 0:
+                backed_cp = newtab.backed_up[-1]
             else:
-                backed_cp = self.get_data()
+                backed_cp = newtab.get_data()
 
             # データを空にする
-            self.data = []
+            newtab.data = []
 
             # サイズ警告を初期化
-            self.warning_ignore = False
+            newtab.warning_ignore = False
 
             # ウィジェットを作成
             version = tuple(data["version"])
             for d in data["body"]:
-                self.make_match_class(d, version=version)
+                newtab.make_match_class(d, version=version)
 
             # インデックスを変更
-            self.index = data["index"] if "index" in data else 0
+            newtab.index = data["index"] if "index" in data else 0
 
             # コピーされたウィジェットを設定
-            self.copied_widgets = data["copy"] if "copy" in data else []
+            newtab.copied_widgets = data["copy"] if "copy" in data else []
 
             # バックアップデータを設定
-            self.backed_up = data["backedup"] if "backedup" in data else []
-            self.canceled_changes = data["canceled"]\
+            newtab.backed_up = data["backedup"] if "backedup" in data else []
+            newtab.canceled_changes = data["canceled"]\
                 if "canceled" in data else []
 
             # 追加位置を設定
             addmode = data["addmode"] if "addmode" in data else 2
             adjust = data["adjust"] if "adjust" in data else True
             position = data["position"] if "position" in data else ""
-            self.var2.set(addmode)
-            self.var3.set(adjust)
-            self.ent1.delete(0, tk.END)
-            self.ent1.insert(0, position)
+            newtab.var2.set(addmode)
+            newtab.var3.set(adjust)
+            newtab.ent1.delete(0, tk.END)
+            newtab.ent1.insert(0, position)
 
-            self.redraw_widgets()
+            newtab.redraw_widgets()
 
             # データを上書き
             if CONFIG["ask_save_new"] and version < (4, 11):
@@ -893,160 +463,35 @@ line: {index+1}, {widget.__class__.__name__}\n\
 選択されたファイルは古いバージョンです。\n\
 このバージョン用に保存し直しますか？")
                 if res:
-                    self.save_file(file)
+                    newtab.save_file(file)
 
             # 基本データを設定
             if "default" in data:
-                self.default_data = data["default"]
+                newtab.default_data = data["default"]
             else:
-                self.default_data = [d.get_data(
-                    more=False) for d in self.widgets]
+                newtab.default_data = [d.get_data(
+                    more=False) for d in newtab.widgets]
 
             # プログラムの名称設定
             if "name" in data:
-                self.program_name = data["name"]
+                newtab.program_name = data["name"]
             else:
-                self.program_name = file
-            if self.program_name is None:
-                self.basename = "無題"
+                newtab.program_name = file
+            if newtab.program_name is None:
+                newtab.basename = "無題"
             else:
-                self.basename = os.path.basename(self.program_name)
+                newtab.basename = os.path.basename(newtab.program_name)
 
-            self.set_title()
+            newtab.set_title()
 
         except Exception:
             # コピーを復元
-            self.set_data(backed_cp)
+            newtab.set_data(backed_cp)
 
             # エラー表示
             messagebox.showerror("エラー", "変換エラーが発生しました。")
             traceback.print_exc()
             return 1
-
-    def make_match_class(self, data, index=-1, version=tuple(__version__[:2])):
-        """ウィジェットを作成"""
-        name = data["_name"]
-        if name in Names:
-            Widgets[Names.index(name)](self, data, index)
-        elif (name == "Geometry") and (version < (5, 0)):
-            ScreenSize(self, data, index)
-        else:
-            Undefined(self, {"_name": name, **data}, index)
-
-    def paste_widgets(self, event=None):
-        """ペースト時の動作"""
-        if self.running_program:
-            return
-
-        before_index = self.index
-
-        mode = self.var2.get()
-        if mode == 1:
-            index = 0
-        elif mode == 2:
-            index = len(self.widgets)
-        elif mode == 3:
-            index = self.get_add_index()
-            if index is None:
-                return 1
-        next_index = index
-
-        for d in reversed(self.copied_widgets):
-            self.make_match_class(d, index=index)
-            next_index += 1
-
-        if (index < before_index) or (index > before_index + SIZE - 1):
-            self.index = index
-        else:
-            self.index = before_index
-
-        if ((mode == 1) or (mode == 3)) and self.var3.get():
-            self.ent1.delete(0, tk.END)
-            self.ent1.insert(0, str(next_index + 1))
-            self.var2.set(3)
-
-        self.redraw_widgets()
-
-    def get_selected(self):
-        """選ばれたデータ一覧を取得"""
-        selected = []
-        for d in self.widgets:
-            if d.bln1.get():
-                selected.append(d)
-        return selected
-
-    def select_all(self, event=None):
-        """すべて選択"""
-        if self.running_program:
-            return
-        for d in self.widgets:
-            d.bln1.set(True)
-        self.back_up()
-
-    def clear_selected(self, event=None):
-        """選択を解除"""
-        if self.running_program:
-            return
-        for d in self.get_selected():
-            d.bln1.set(False)
-        self.back_up()
-
-    def delete_selected(self, event=None):
-        """選択されたデータを削除"""
-        if self.running_program:
-            return
-        for d in self.get_selected():
-            d.delete(back_up=False)
-        self.redraw_widgets()
-
-    def copy_selected(self, event=None):
-        """選択されたデータをコピー"""
-        if self.running_program:
-            return
-        copy = []
-        if len(self.get_selected()) == 0:
-            return
-        for d in self.get_selected():
-            data = d.get_data()
-            data["_check"] = False
-            copy.append(data)
-        self.copied_widgets = copy
-
-    def cut_selected(self, event=None):
-        """選択されたデータをカット"""
-        if self.running_program:
-            return
-        self.copy_selected()
-        self.delete_selected()
-
-    def enable_selected(self, event=None):
-        """選択されたデータを有効化"""
-        if self.running_program:
-            return
-        if len(self.get_selected()) == 0:
-            return
-        for d in self.get_selected():
-            d.enable(back_up=False)
-        self.back_up()
-
-    def disable_selected(self, event=None):
-        """選択されたデータを無効化"""
-        if self.running_program:
-            return
-        if len(self.get_selected()) == 0:
-            return
-        for d in self.get_selected():
-            d.disable(back_up=False)
-        self.back_up()
-
-    def destroy(self):
-        """ウィンドウを削除"""
-        self.root.destroy()
-
-    def delete_menu(self, event=None):
-        "メニューを消す"
-        if hasattr(self, "menu"):
-            self.menu.destroy()
 
     def get_new_release(self):
         "更新を取得"
@@ -1208,103 +653,9 @@ download/v{joined_version}/EasyTurtle-{joined_version}-amd64.msi"
         lab5.pack(anchor=tk.N, pady=(0, EXPAND(10)))
         self.win2.resizable(0, 0)
 
-    def convert_rgb(self, color):
-        """RGB値に変換する"""
-        if type(color) == str:
-            return color
-        else:
-            rgb = "#"
-            red = hex(int(color[0]))[2:]
-            rgb += red if len(red) == 2 else "0" + red
-            green = hex(int(color[1]))[2:]
-            rgb += green if len(green) == 2 else "0" + green
-            blue = hex(int(color[2]))[2:]
-            rgb += blue if len(blue) == 2 else "0" + blue
-            return rgb.upper()
-
-    def get_add_index(self):
-        """追加先の取得"""
-        text = self.ent1.get()
-        if text == "":
-            messagebox.showerror("エラー", '位置が指定されていません。')
-            return None
-        try:
-            index = int(text)
-        except ValueError:
-            messagebox.showerror("エラー", '位置は半角数字のみで指定してください。')
-            return None
-        if index > len(self.widgets) + 1:
-            messagebox.showwarning("警告", '\
-位置が最大値を超えています。\n自動で最後に追加します。')
-            return len(self.widgets)
-        elif index < 1:
-            messagebox.showerror("エラー", '位置は正の数で入力してください。')
-            return None
-        else:
-            return index - 1
-
-    def goto_line(self, event=None):
-        """行に移動"""
-        text = simpledialog.askstring("行へ移動", '\
-数値を入力してください。\n\
-"-1"でプログラムの最後に移動します。')
-        if text == "":
-            return 0
-        try:
-            line = int(text)
-        except ValueError:
-            messagebox.showerror("エラー", '数値で入力してください。')
-            return 1
-        if line == -1:
-            self.index = len(self.widgets) - SIZE
-        elif line > len(self.widgets):
-            messagebox.showwarning("警告", '\
-位置が最大値を超えています。\n\
-自動で最後に移動します。')
-            self.index = len(self.widgets) - SIZE
-        elif line < 1:
-            messagebox.showerror("エラー", '正の数値で入力してください。')
-            return 1
-        elif self.index <= line - 1 < self.index + SIZE:
-            pass
-        else:
-            self.index = line - 1
-        self.redraw_widgets(change=False)
-
     def new_program(self, event=None):
         """新規プログラム"""
-        # データが変更されていれば保存するか確認する
-        data = [d.get_data(more=False) for d in self.widgets]
-        if self.default_data != data:
-            res = messagebox.askyesnocancel("確認", "保存しますか？")
-            if res is None:
-                return 1
-            elif res:
-                if self.save_program() == 1:
-                    return 1
-
-        # データを初期化
-        self.delete_all_widgets()
-        self.index = 0
-        self.last_shown = []
-        self.widgets = []
-        self.copied_widgets = []
-        self.default_data = []
-        self.backed_up = []
-        self.canceled_changes = []
-        self.warning_ignore = False
-        self.running_program = False
-        self.program_name = None
-        self.basename = "無題"
-        self.var2.set(2)
-        self.var3.set(True)
-        self.ent1.delete(0, tk.END)
-
-        self.redraw_widgets()
-
-        # 基本データを設定
-        self.default_data = [d.get_data(more=False)
-                             for d in self.widgets]
+        IndividualTab(self)
 
     def new_window(self, event=None):
         """新規ウィンドウを起動"""
@@ -1317,7 +668,7 @@ download/v{joined_version}/EasyTurtle-{joined_version}-amd64.msi"
     def reboot_program(self, event=None):
         """再起動"""
         # データを保存
-        self.save_file(BOOT_FILE, boot=True)
+        self.get_currently_selected().save_file(BOOT_FILE, boot=True)
 
         # 新規ウィンドウを起動
         if EXECUTABLE:
@@ -1329,11 +680,86 @@ download/v{joined_version}/EasyTurtle-{joined_version}-amd64.msi"
         # 画面を閉じる
         self.close_window()
 
+    def save_program(self, event=None):
+        tab = self.get_currently_selected()
+        if tab is not None:
+            tab.save_program()
+
+    def save_program_as(self, event=None):
+        tab = self.get_currently_selected()
+        if tab is not None:
+            tab.save_program_as()
+
+    def copy_selected(self, event=None):
+        tab = self.get_currently_selected()
+        if tab is not None:
+            tab.copy_selected()
+
+    def paste_widgets(self, event=None):
+        tab = self.get_currently_selected()
+        if tab is not None:
+            tab.paste_widgets()
+
+    def cut_selected(self, event=None):
+        tab = self.get_currently_selected()
+        if tab is not None:
+            tab.cut_selected()
+
+    def delete_selected(self, event=None):
+        tab = self.get_currently_selected()
+        if tab is not None:
+            tab.delete_selected()
+
+    def select_all(self, event=None):
+        tab = self.get_currently_selected()
+        if tab is not None:
+            tab.select_all()
+
+    def undo_change(self, event=None):
+        tab = self.get_currently_selected()
+        if tab is not None:
+            tab.undo_change()
+
+    def redo_change(self, event=None):
+        tab = self.get_currently_selected()
+        if tab is not None:
+            tab.redo_change()
+
+    def enable_selected(self, event=None):
+        tab = self.get_currently_selected()
+        if tab is not None:
+            tab.enable_selected()
+
+    def disable_selected(self, event=None):
+        tab = self.get_currently_selected()
+        if tab is not None:
+            tab.disable_selected()
+
+    def clear_selected(self, event=None):
+        tab = self.get_currently_selected()
+        if tab is not None:
+            tab.clear_selected()
+
+    def goto_line(self, event=None):
+        tab = self.get_currently_selected()
+        if tab is not None:
+            tab.goto_line()
+
+    def run_standard_mode(self, event=None):
+        tab = self.get_currently_selected()
+        if tab is not None:
+            tab.run_standard_mode()
+
+    def run_fastest_mode(self, event=None):
+        tab = self.get_currently_selected()
+        if tab is not None:
+            tab.run_fastest_mode()
+
     def setup(self):
         """セットアップ"""
         # 基本ウィンドウを作成
         self.root = tk.Tk()
-        self.root.title("無題 - EasyTurtle")
+        self.root.title("EasyTurtle")
         self.root.geometry(f"{EXPAND(1240)}x{EXPAND(620)}")
         self.root.minsize(EXPAND(1240), EXPAND(600))
         self.root.protocol("WM_DELETE_WINDOW", self.close_window)
@@ -1372,6 +798,10 @@ download/v{joined_version}/EasyTurtle-{joined_version}-amd64.msi"
         self.menubar = tk.Menu(self.root)
         self.root.config(menu=self.menubar)
         menu_font = (FONT_TYPE1, 10)
+
+        # Notebookの作成
+        self.notebook = CustomNotebook(self, self.root)
+        self.notebook.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
 
         # FILEメニューの作成
         filemenu = tk.Menu(self.menubar, tearoff=0, font=menu_font)
@@ -1444,12 +874,676 @@ download/v{joined_version}/EasyTurtle-{joined_version}-amd64.msi"
         othermenu.add_command(label="GitHubの表示", command=self.show_github_page)
         self.menubar.add_cascade(label="オプション", menu=othermenu)
 
+        IndividualTab(self)
+
+
+class IndividualTab:
+    def __init__(self, parent: EasyTurtle, file=None):
+        """初期化"""
+        self.et = parent
+
+        # 変数を初期化する
+        self.index = 0
+        self.last_shown: typeList[typeWidget] = []
+        self.widgets: typeList[typeWidget] = []
+        self.copied_widgets: typeList[typeWidget] = []
+        self.default_data: typeList[typeWidget] = []
+        self.backed_up = []
+        self.canceled_changes = []
+        self.warning_ignore = False
+        self.program_name = None
+        self.basename = "無題"
+
+        # タブ一覧に追加
+        self.et.tabs.append(self)
+
+        # 画面を設定する
+        self.setup()
+
+        # ファイルが指定されていれば開く
+        if file is not None:
+            self.open_program(file)
+
+    def __repr__(self):
+        """コンストラクタの文字列定義"""
+        data = self.get_data()
+        return f"IndividualTab(data={data})"
+
+    def close_tab(self):
+        """終了時の定義"""
+        if self.et.running_program:
+            return
+
+        # 保存するか確認する
+        data = [d.get_data(more=False) for d in self.widgets]
+        if self.default_data != data:
+            res = messagebox.askyesnocancel("確認", "保存しますか？")
+            if res is None:
+                return 1
+            elif res:
+                if self.save_program() == 1:
+                    return 1
+
+        # すべて削除
+        self.delete_all_widgets()
+
+        # リストから削除
+        self.et.tabs.remove(self)
+
+        return 0
+
+    def redraw_widgets(self, change=True):
+        """全部描き直し"""
+        UPDATE_CONFIG()
+        data = self.widgets
+
+        if (self.index < 0) or (len(data) < SIZE):
+            self.index = 0
+        elif self.index > len(data) - SIZE:
+            self.index = len(data) - SIZE
+
+        shown = data[self.index: self.index + SIZE]
+        for d in self.last_shown:
+            d.place_cv()
+        for d in shown:
+            d.place_cv()
+        self.last_shown = shown
+        self.set_scrollbar_posision()
+        if change:
+            self.check_length()
+            self.set_title()
+            self.back_up()
+
+    def set_title(self):
+        """タイトルを設定する"""
+        index = self.et.tabs.index(self)
+        if [d.get_data(more=False) for d in self.widgets] == self.default_data:
+            self.et.notebook.tab(index, text=self.basename)
+        else:
+            self.et.notebook.tab(index, text=f"*{self.basename}*")
+
+    def back_up(self):
+        """バックアップ"""
+        # データを取得
+        data = self.get_data()
+
+        # バックアップがなければ追加
+        if len(self.backed_up) == 0:
+            self.backed_up.append(data)
+
+        # 前回と違ければ追加
+        elif self.backed_up[-1]["body"] != data["body"]:
+            self.backed_up.append(data)
+
+    def undo_change(self):
+        """一回戻る"""
+        if self.et.running_program:
+            return
+
+        # データを取得
+        self.back_up()
+        data = self.get_data()
+
+        # バックアップがあり、変更されているとき
+        if (len(self.backed_up) > 0) and \
+           (self.backed_up[-1]["body"] != data["body"]):
+            self.canceled_changes.append(data)
+            self.set_data(self.backed_up[-1])
+            self.backed_up = self.backed_up[:-1]
+
+        # バックアップが２つ以上あり、変更されているとき
+        elif (len(self.backed_up) > 1) and \
+             (self.backed_up[-2]["body"] != data["body"]):
+            self.canceled_changes.append(data)
+            self.set_data(self.backed_up[-2])
+            self.backed_up = self.backed_up[:-2]
+
+        # それ以外ならエラー音
+        else:
+            self.et.root.bell()
+            return 1
+
+        self.redraw_widgets()
+
+    def redo_change(self):
+        """やり直し"""
+        if self.et.running_program:
+            return
+
+        # データを取得
+        self.back_up()
+        data = self.get_data()
+
+        # キャンセルがあり、変更されているとき
+        if (len(self.canceled_changes) > 0) and \
+           (self.canceled_changes[-1]["body"] != data["body"]):
+            self.set_data(self.canceled_changes[-1])
+            self.canceled_changes = self.canceled_changes[:-1]
+        # それ以外ならエラー音
+        else:
+            self.et.root.bell()
+            return 1
+
+        self.redraw_widgets()
+
+    def get_data(self):
+        """データを取得"""
+        return {"index": self.index,
+                "copy": self.copied_widgets,
+                "body": [d.get_data() for d in self.widgets]}
+
+    def set_data(self, data):
+        """データをセット"""
+        self.delete_all_widgets()
+        self.index = data["index"]
+        self.copied_widgets = data["copy"]
+        self.widgets = []
+        for d in data["body"]:
+            self.make_match_class(d)
+        self.index = data["index"]
+
+    def check_length(self):
+        """データの大きさをチェック"""
+        if (len(self.widgets) > 999) and \
+           CONFIG["show_warning"] and not self.warning_ignore:
+            messagebox.showwarning(
+                "警告", "大量のデータを保持すると正常に動作しなくなる可能性があります。")
+            self.warning_ignore = True
+
+    def set_scrollbar_posision(self):
+        """スクロールバーの位置をセット"""
+        data = self.widgets
+        if len(data) <= SIZE:
+            first = 0.0
+            last = 1.0
+        else:
+            per = SIZE / len(data)
+            first = (1.0 - per) * self.index / (len(data) - 8)
+            last = first + per
+        self.scr2.set(first, last)
+
+    def append_new_widget(self, event):
+        """リストボックス選択時の動作"""
+        before_index = self.index
+
+        mode = self.var2.get()
+        if mode == 1:
+            index = 0
+        elif mode == 2:
+            index = len(self.widgets)
+        elif mode == 3:
+            index = self.get_add_index()
+            if index is None:
+                return 1
+
+        class_index = -1
+        for i in self.lsb1.curselection():
+            class_index = Texts.index(self.lsb1.get(i))
+            break
+        if class_index == -1:
+            return 1
+        Widgets[class_index](parent=self, index=index)
+
+        if (index < before_index) or (index > before_index + SIZE - 1):
+            self.index = index
+        else:
+            self.index = before_index
+
+        if ((mode == 1) or (mode == 3)) and (self.var3.get()):
+            self.ent1.delete(0, tk.END)
+            self.ent1.insert(0, str(index + 2))
+            self.var2.set(3)
+
+        self.redraw_widgets()
+
+    def scroll_on_windows(self, event):
+        """Windowsでのスクロール時の動作"""
+        data = self.widgets
+        index = self.index - (event.delta // 120)
+        max_size = (len(data) - SIZE)
+        self.index = (0 if index <= 0 else max_size
+                      if (index > max_size) and (len(data) > SIZE)
+                      else self.index
+                      if len(data) <= SIZE else index)
+        self.redraw_widgets(change=False)
+
+    def scroll_on_linux(self, event):
+        """Linuxでのスクロール時の動作"""
+        data = self.widgets
+        index = self.index - (1 if event.num == 4 else -1)
+        max_size = (len(data) - SIZE)
+        self.index = (0 if index <= 0 else max_size
+                      if (index > max_size) and (len(data) > SIZE)
+                      else self.index
+                      if len(data) <= SIZE else index)
+        self.redraw_widgets(change=False)
+
+    def scroll_button_clicked(self, *event):
+        """スクロールバーボタンが押された時の動作"""
+        data = self.widgets
+        if event[0] == "scroll":
+            index = self.index + int(event[1])
+        elif event[0] == "moveto":
+            index = int(float(event[1]) * len(data))
+        else:
+            return
+        max_size = (len(data) - SIZE)
+        self.index = (0 if index <= 0 else max_size
+                      if (index > max_size) and (len(data) > SIZE)
+                      else self.index
+                      if len(data) <= SIZE else index)
+        self.redraw_widgets(change=False)
+
+    def kill_runner(self, event=None):
+        """実行停止の動作"""
+        self.killed_runner = True
+        self.et.running_program = False
+        if hasattr(self, "win"):
+            self.win.destroy()
+
+    def run_standard_mode(self):
+        """標準実行"""
+        if self.et.running_program:
+            return
+        self.run_program(fastest=False)
+
+    def run_fastest_mode(self):
+        """高速実行"""
+        if self.et.running_program:
+            return
+        self.run_program(fastest=True)
+
+    def run_program(self, fastest=False):
+        """実行"""
+        # 変数の格納場所
+        self.variable_datas = {}
+
+        # プログラムの情報
+        self.runner_size = (600, 600)
+        self.killed_runner = False
+        self.runner_pendown = True
+        self.et.running_program = True
+        if fastest:
+            self.runner_speed = 0
+            self.running_fastest = True
+        else:
+            self.runner_speed = 3
+            self.running_fastest = False
+
+        # ウインドウを作成
+        self.win = tk.Toplevel(self.et.root)
+        self.win.tk.call('wm', 'iconphoto', self.win._w, self.et.icon)
+        self.win.protocol("WM_DELETE_WINDOW", self.kill_runner)
+        self.win.wait_visibility(self.win)
+        self.win.grab_set()
+        self.win.focus_set()
+        self.win.title("EasyTurtle")
+
+        # キーをバインド
+        self.win.bind("<Control-Key-q>", self.kill_runner)
+
+        # Windowsでは透過を有効にする
+        if SYSTEM == "Windows":
+            self.win.attributes("-transparentcolor", "snow")
+
+        # フレームにキャンバスとスクロールバーを配置
+        frame = tk.Frame(self.win)
+        frame.pack()
+        bary = tk.Scrollbar(frame, orient=tk.VERTICAL)
+        bary.pack(side=tk.RIGHT, fill=tk.Y)
+        barx = tk.Scrollbar(frame, orient=tk.HORIZONTAL)
+        barx.pack(side=tk.BOTTOM, fill=tk.X)
+        canvas = tk.Canvas(frame, bg="snow")
+        canvas.pack(side=tk.LEFT, fill=tk.BOTH)
+
+        # キャンバスとスクロールバーの関連付け
+        bary.config(command=canvas.yview)
+        canvas.config(yscrollcommand=bary.set)
+        barx.config(command=canvas.xview)
+        canvas.config(xscrollcommand=barx.set)
+
+        # 中心に移動
+        tur = turtle.RawTurtle(canvas)
+        tur.shape("turtle")
+        tur.getscreen().colormode(255)
+        canvas.config(width=self.runner_size[0],
+                      height=self.runner_size[1],
+                      scrollregion=(0, 0,
+                                    self.runner_size[0],
+                                    self.runner_size[1]))
+        tur.penup()
+        tur.speed(0)
+        tur.goto(self.runner_size[0] // 2, self.runner_size[1] // -2)
+        tur.pendown()
+        tur.speed(self.runner_speed)
+        if fastest:
+            tur.getscreen().delay(0)
+
+        # それぞれのウィジェットを実行
+        try:
+            for index, widget in enumerate(self.widgets):
+                if not self.killed_runner:
+                    if widget.enabled:
+                        widget.run(tur)
+                else:
+                    return 0
+        except Exception:
+            if self.killed_runner:
+                return 0
+            else:
+                self.kill_runner()
+                traceback.print_exc()
+                messagebox.showerror("エラー", f'\
+line: {index+1}, {widget.__class__.__name__}\n\
+エラーが発生しました。\n\n{traceback.format_exc()}')
+                return 1
+
+    def delete_all_widgets(self):
+        """全て削除"""
+        widgets = [w for w in self.widgets]
+        for d in widgets:
+            d.delete(back_up=False)
+        self.redraw_widgets(change=False)
+
+    def save_program(self, file=None):
+        """上書き保存"""
+        if self.et.running_program:
+            return
+
+        # ファイル名を質問する
+        if file is None:
+            if self.program_name is not None:
+                file = self.program_name
+            else:
+                file = filedialog.asksaveasfilename(
+                    parent=self.et.root, initialdir=DOCUMENTS,
+                    filetypes=[("Jsonファイル", "*.json")])
+
+        # ファイルが選択されていなければ終了
+        if file == "":
+            return 1
+
+        # 拡張子をつける
+        elif file[-5:] != ".json":
+            file += ".json"
+
+        # 保存する
+        self.save_file(file)
+
+    def save_program_as(self, file=None):
+        """名前を付けて保存"""
+        if self.et.running_program:
+            return
+
+        # ファイル名を質問する
+        if file is None:
+            if self.program_name is not None:
+                directory = os.path.dirname(self.program_name)
+                name = self.basename
+                file = filedialog.asksaveasfilename(
+                    parent=self.et.root, initialdir=directory,
+                    initialfile=name, filetypes=[("Jsonファイル", "*.json")])
+            else:
+                file = filedialog.asksaveasfilename(
+                    parent=self.et.root, initialdir=DOCUMENTS,
+                    filetypes=[("Jsonファイル", "*.json")])
+
+        # ファイルが選択されていなければ終了
+        if file == "":
+            return 1
+
+        # 拡張子をつける
+        elif file[-5:] != ".json":
+            file += ".json"
+
+        # 保存する
+        self.save_file(file)
+
+    def save_file(self, file, boot=False):
+        """ファイルを保存する"""
+        # データを取得
+        body = [d.get_data(more=(boot or CONFIG["save_more_info"]))
+                for d in self.widgets]
+
+        # データを決定
+        if boot:
+            data = {
+                "version": __version__[:2],
+                "copy": self.copied_widgets,
+                "index": self.index,
+                "backedup": self.backed_up,
+                "canceled": self.canceled_changes,
+                "addmode": self.var2.get(),
+                "adjust": self.var3.get(),
+                "position": self.ent1.get(),
+                "name": self.program_name,
+                "default": self.default_data,
+                "body": body}
+        elif CONFIG["save_more_info"]:
+            data = {
+                "version": __version__[:2],
+                "copy": self.copied_widgets,
+                "index": self.index,
+                "backedup": self.backed_up,
+                "canceled": self.canceled_changes,
+                "addmode": self.var2.get(),
+                "adjust": self.var3.get(),
+                "position": self.ent1.get(),
+                "body": body}
+        else:
+            data = {"version": __version__[:2], "body": body}
+
+        # フォルダを作成
+        os.makedirs(os.path.dirname(file), exist_ok=True)
+
+        # データを書き込み
+        with open(file, "w")as f:
+            json.dump(data, f, indent=2)
+
+        if not boot:
+            # プログラムの名称設定
+            self.program_name = file
+            self.basename = os.path.basename(self.program_name)
+
+            # 基本データを設定
+            self.default_data = [d.get_data(more=False) for d in self.widgets]
+
+        self.set_title()
+
+    def make_match_class(self, data, index=-1, version=tuple(__version__[:2])):
+        """ウィジェットを作成"""
+        name = data["_name"]
+        if name in Names:
+            Widgets[Names.index(name)](self, data, index)
+        elif (name == "Geometry") and (version < (5, 0)):
+            ScreenSize(self, data, index)
+        else:
+            Undefined(self, {"_name": name, **data}, index)
+
+    def paste_widgets(self):
+        """ペースト時の動作"""
+        if self.et.running_program:
+            return
+
+        before_index = self.index
+
+        mode = self.var2.get()
+        if mode == 1:
+            index = 0
+        elif mode == 2:
+            index = len(self.widgets)
+        elif mode == 3:
+            index = self.get_add_index()
+            if index is None:
+                return 1
+        next_index = index
+
+        for d in reversed(self.copied_widgets):
+            self.make_match_class(d, index=index)
+            next_index += 1
+
+        if (index < before_index) or (index > before_index + SIZE - 1):
+            self.index = index
+        else:
+            self.index = before_index
+
+        if ((mode == 1) or (mode == 3)) and self.var3.get():
+            self.ent1.delete(0, tk.END)
+            self.ent1.insert(0, str(next_index + 1))
+            self.var2.set(3)
+
+        self.redraw_widgets()
+
+    def get_selected(self):
+        """選ばれたデータ一覧を取得"""
+        selected = []
+        for d in self.widgets:
+            if d.bln1.get():
+                selected.append(d)
+        return selected
+
+    def select_all(self):
+        """すべて選択"""
+        if self.et.running_program:
+            return
+        for d in self.widgets:
+            d.bln1.set(True)
+        self.back_up()
+
+    def clear_selected(self):
+        """選択を解除"""
+        if self.et.running_program:
+            return
+        for d in self.get_selected():
+            d.bln1.set(False)
+        self.back_up()
+
+    def delete_selected(self):
+        """選択されたデータを削除"""
+        if self.et.running_program:
+            return
+        for d in self.get_selected():
+            d.delete(back_up=False)
+        self.redraw_widgets()
+
+    def copy_selected(self):
+        """選択されたデータをコピー"""
+        if self.et.running_program:
+            return
+        copy = []
+        if len(self.get_selected()) == 0:
+            return
+        for d in self.get_selected():
+            data = d.get_data()
+            data["_check"] = False
+            copy.append(data)
+        self.copied_widgets = copy
+
+    def cut_selected(self):
+        """選択されたデータをカット"""
+        if self.et.running_program:
+            return
+        self.copy_selected()
+        self.delete_selected()
+
+    def enable_selected(self):
+        """選択されたデータを有効化"""
+        if self.et.running_program:
+            return
+        if len(self.get_selected()) == 0:
+            return
+        for d in self.get_selected():
+            d.enable(back_up=False)
+        self.back_up()
+
+    def disable_selected(self):
+        """選択されたデータを無効化"""
+        if self.et.running_program:
+            return
+        if len(self.get_selected()) == 0:
+            return
+        for d in self.get_selected():
+            d.disable(back_up=False)
+        self.back_up()
+
+    def convert_rgb(self, color):
+        """RGB値に変換する"""
+        if type(color) == str:
+            return color
+        else:
+            rgb = "#"
+            red = hex(int(color[0]))[2:]
+            rgb += red if len(red) == 2 else "0" + red
+            green = hex(int(color[1]))[2:]
+            rgb += green if len(green) == 2 else "0" + green
+            blue = hex(int(color[2]))[2:]
+            rgb += blue if len(blue) == 2 else "0" + blue
+            return rgb.upper()
+
+    def get_add_index(self):
+        """追加先の取得"""
+        text = self.ent1.get()
+        if text == "":
+            messagebox.showerror("エラー", '位置が指定されていません。')
+            return None
+        try:
+            index = int(text)
+        except ValueError:
+            messagebox.showerror("エラー", '位置は半角数字のみで指定してください。')
+            return None
+        if index > len(self.widgets) + 1:
+            messagebox.showwarning("警告", '\
+位置が最大値を超えています。\n自動で最後に追加します。')
+            return len(self.widgets)
+        elif index < 1:
+            messagebox.showerror("エラー", '位置は正の数で入力してください。')
+            return None
+        else:
+            return index - 1
+
+    def goto_line(self):
+        """行に移動"""
+        text = simpledialog.askstring("行へ移動", '\
+数値を入力してください。\n\
+"-1"でプログラムの最後に移動します。')
+        if text == "":
+            return 0
+        try:
+            line = int(text)
+        except ValueError:
+            messagebox.showerror("エラー", '数値で入力してください。')
+            return 1
+        if line == -1:
+            self.index = len(self.widgets) - SIZE
+        elif line > len(self.widgets):
+            messagebox.showwarning("警告", '\
+位置が最大値を超えています。\n\
+自動で最後に移動します。')
+            self.index = len(self.widgets) - SIZE
+        elif line < 1:
+            messagebox.showerror("エラー", '正の数値で入力してください。')
+            return 1
+        elif self.index <= line - 1 < self.index + SIZE:
+            pass
+        else:
+            self.index = line - 1
+        self.redraw_widgets(change=False)
+
+    def setup(self):
+        """セットアップ"""
+        # 基本ウィンドウを作成
+        self.mainframe = tk.Frame(self.et.notebook)
+        self.et.notebook.add(self.mainframe, text="無題")
+        self.et.notebook.select(self.mainframe)
+        frame1 = tk.Frame(self.mainframe)
+        frame1.pack()
+
         # 画面の左側を作成
         frame2 = tk.Frame(frame1)
         frame2.pack(side=tk.LEFT, padx=(10, 0))
         frame2.bind("<MouseWheel>", self.scroll_on_windows)
-        self.cv1 = tk.Canvas(frame2, width=EXPAND(
-            WIDTH), height=EXPAND(HEIGHT*SIZE), bg="#E6E6E6")
+        self.cv1 = tk.Canvas(frame2, width=EXPAND(WIDTH),
+                             height=EXPAND(HEIGHT*SIZE), bg="#E6E6E6")
         self.cv1.pack(side=tk.LEFT)
         self.cv1.bind("<MouseWheel>", self.scroll_on_windows)
         self.cv1.create_rectangle(EXPAND(4), EXPAND(4),
@@ -1457,7 +1551,7 @@ download/v{joined_version}/EasyTurtle-{joined_version}-amd64.msi"
                                   width=EXPAND(2))
         self.scr2 = ttk.Scrollbar(frame2, orient=tk.VERTICAL,
                                   command=self.scroll_button_clicked)
-        self.scr2.pack(fill='y', side=tk.RIGHT)
+        self.scr2.pack(fill=tk.Y, side=tk.RIGHT)
         frame3 = tk.Frame(frame1)
         frame3.pack(side=tk.RIGHT, padx=EXPAND(10))
         lab0 = tk.Label(self.cv1, text="EasyTurtle",
@@ -1467,7 +1561,7 @@ download/v{joined_version}/EasyTurtle-{joined_version}-amd64.msi"
 
         # 画面右側下段を作成
         frame4 = tk.Frame(frame3)
-        frame4.pack(fill="x", side=tk.BOTTOM)
+        frame4.pack(fill=tk.X, side=tk.BOTTOM)
         lab1 = tk.Label(frame4, text='©2020-2021 Ryo Fujinami.',
                         font=(FONT_TYPE2, EXPAND(12), "italic"))
         lab1.pack(side=tk.RIGHT, padx=EXPAND(20))
@@ -1506,27 +1600,129 @@ download/v{joined_version}/EasyTurtle-{joined_version}-amd64.msi"
         # 画面右側上段を作成
         frame7 = tk.Frame(frame3)
         frame7.pack(side=tk.TOP, pady=(0, EXPAND(10)))
-        var1 = tk.StringVar(self.root, value=Texts)
+        var1 = tk.StringVar(self.mainframe, value=Texts)
         height = 12 if SYSTEM == "Windows" else 14
         self.lsb1 = tk.Listbox(frame7, listvariable=var1, height=height,
-                               width=44, selectmode='single',
+                               width=44, selectmode=tk.SINGLE,
                                bg="#FFEFD7", font=(FONT_TYPE1, EXPAND(18)),
                                selectbackground="#2F4FAF",
                                selectforeground="#FFFFFF")
         self.lsb1.bind('<<ListboxSelect>>', self.append_new_widget)
-        self.lsb1.pack(fill='y', side=tk.LEFT)
+        self.lsb1.pack(fill=tk.Y, side=tk.LEFT)
         scr1 = ttk.Scrollbar(frame7, orient=tk.VERTICAL,
                              command=self.lsb1.yview)
         self.lsb1['yscrollcommand'] = scr1.set
-        scr1.pack(fill='y', side=tk.RIGHT)
+        scr1.pack(fill=tk.Y, side=tk.RIGHT)
 
         self.redraw_widgets()
 
 
-class Widget:
-    def __init__(self, parent: EasyTurtle, data={}, index=-1):
+class CustomNotebook(ttk.Notebook):
+    """各タブに閉じるボタンがあるttkノートブック"""
+
+    __initialized = False
+
+    def __init__(self, parent: EasyTurtle, *args, **kwargs):
         """初期化"""
-        self.p = parent
+        self.et = parent
+
+        if not self.__initialized:
+            self.__initialize_custom_style()
+            self.__inititialized = True
+
+        kwargs["style"] = "CustomNotebook"
+        ttk.Notebook.__init__(self, *args, **kwargs)
+
+        self._active = None
+
+        self.bind("<ButtonPress-1>", self.on_close_press, True)
+        self.bind("<ButtonRelease-1>", self.on_close_release)
+
+    def on_close_press(self, event):
+        """ボタンが閉じるボタンの上に押されたとき"""
+
+        element = self.identify(event.x, event.y)
+
+        if "close" in element:
+            index = self.index("@%d,%d" % (event.x, event.y))
+            self.state(['pressed'])
+            self._active = index
+            return "break"
+
+    def on_close_release(self, event):
+        """ボタンを離したとき"""
+        if not self.instate(['pressed']):
+            return
+
+        element = self.identify(event.x, event.y)
+        # ユーザーがマウスを閉じるボタンから離した時
+        if "close" not in element:
+            self.state(["!pressed"])
+            return
+
+        index = self.index("@%d,%d" % (event.x, event.y))
+
+        if self.et.tabs[index].close_tab() == 1:
+            return
+
+        if self._active == index:
+            self.forget(index)
+            self.event_generate("<<NotebookTabClosed>>")
+
+        self.state(["!pressed"])
+        self._active = None
+
+    def __initialize_custom_style(self):
+        """カスタムスタイルを初期化"""
+        style = ttk.Style()
+        self.images = (
+            tk.PhotoImage("img_close", data='''
+                R0lGODlhCAAIAMIBAAAAADs7O4+Pj9nZ2Ts7Ozs7Ozs7Ozs7OyH+EUNyZWF0ZWQg
+                d2l0aCBHSU1QACH5BAEKAAQALAAAAAAIAAgAAAMVGDBEA0qNJyGw7AmxmuaZhWEU
+                5kEJADs=
+                '''),
+            tk.PhotoImage("img_closeactive", data='''
+                R0lGODlhCAAIAMIEAAAAAP/SAP/bNNnZ2cbGxsbGxsbGxsbGxiH5BAEKAAQALAAA
+                AAAIAAgAAAMVGDBEA0qNJyGw7AmxmuaZhWEU5kEJADs=
+                '''),
+            tk.PhotoImage("img_closepressed", data='''
+                R0lGODlhCAAIAMIEAAAAAOUqKv9mZtnZ2Ts7Ozs7Ozs7Ozs7OyH+EUNyZWF0ZWQg
+                d2l0aCBHSU1QACH5BAEKAAQALAAAAAAIAAgAAAMVGDBEA0qNJyGw7AmxmuaZhWEU
+                5kEJADs=
+            ''')
+        )
+
+        style.element_create("close", "image", "img_close",
+                             ("active", "!pressed", "!disabled",
+                              "img_closeactive"),
+                             ("active", "pressed", "!disabled",
+                              "img_closepressed"), border=8, sticky='')
+        style.layout("CustomNotebook", [
+                     ("CustomNotebook.client", {"sticky": "nswe"})])
+        style.layout("CustomNotebook.Tab", [
+            ("CustomNotebook.tab", {
+                "sticky": "nswe",
+                "children": [
+                    ("CustomNotebook.padding", {
+                        "side": "top",
+                        "sticky": "nswe",
+                        "children": [
+                            ("CustomNotebook.focus", {
+                                "side": "top",
+                                "sticky": "nswe",
+                                "children": [
+                                    ("CustomNotebook.label", {
+                                     "side": "left", "sticky": ''}),
+                                    ("CustomNotebook.close", {
+                                     "side": "left", "sticky": ''})
+                                ]})]})]})])
+
+
+class Widget:
+    def __init__(self, parent: IndividualTab, data={}, index=-1):
+        """初期化"""
+        self.tab = parent
+        self.et = self.tab.et
         self.info = GET_WIDGET_INFO(self)
         self.pressed_x = self.pressed_y = 0
         self.item_id = -1
@@ -1544,12 +1740,12 @@ class Widget:
         elif self.TYPE == "undefined":
             self.background = "#E7C7F7"
 
-        tops = len(self.p.widgets)
-        self.p.index = 0 if tops < SIZE else tops
+        tops = len(self.tab.widgets)
+        self.tab.index = 0 if tops < SIZE else tops
         if index == -1:
-            self.p.widgets.append(self)
+            self.tab.widgets.append(self)
         else:
-            self.p.widgets.insert(index, self)
+            self.tab.widgets.insert(index, self)
 
         self.set_data(data)
 
@@ -1580,15 +1776,15 @@ class Widget:
         widget.bind('<Button-3>', self.show_popup2)
         widget.bind("<B1-Motion>", self.dragged)
         if SYSTEM == "Windows":
-            widget.bind("<MouseWheel>", self.p.scroll_on_windows)
+            widget.bind("<MouseWheel>", self.tab.scroll_on_windows)
         elif SYSTEM == "Linux":
-            widget.bind("<Button-4>", self.p.scroll_on_linux)
-            widget.bind("<Button-5>", self.p.scroll_on_linux)
+            widget.bind("<Button-4>", self.tab.scroll_on_linux)
+            widget.bind("<Button-5>", self.tab.scroll_on_linux)
 
     def draw_cv(self):
         """キャンバスを描く"""
         # キャンバスを表示
-        self.cv = tk.Canvas(self.p.cv1, width=EXPAND(WIDTH),
+        self.cv = tk.Canvas(self.tab.cv1, width=EXPAND(WIDTH),
                             height=EXPAND(HEIGHT), bg=self.background)
         self.binder(self.cv)
 
@@ -1610,7 +1806,7 @@ class Widget:
 
         # インデックスを表示
         self.lab4 = tk.Label(self.cv, font=FONT, bg=self.background,
-                             text=f"{self.p.widgets.index(self)+1:03}")
+                             text=f"{self.tab.widgets.index(self)+1:03}")
         self.binder(self.lab4)
         self.lab4.place(x=EXPAND(5), y=EXPAND(HEIGHT//2-8))
 
@@ -1628,16 +1824,16 @@ class Widget:
         if (hasattr(event, "state")) and (event.state == 1):
             self.shift_check()
         else:
-            self.p.back_up()
+            self.tab.back_up()
 
     def shift_check(self):
         """Shift+右クリック"""
-        selected = self.p.get_selected()
-        sindex = self.p.widgets.index(self)
+        selected = self.tab.get_selected()
+        sindex = self.tab.widgets.index(self)
         if len(selected) == 0:
             return
         elif len(selected) == 1:
-            dindex = self.p.widgets.index(selected[0])
+            dindex = self.tab.widgets.index(selected[0])
             if sindex < dindex:
                 self.range_check(sindex, dindex, exc=sindex)
             else:
@@ -1645,7 +1841,7 @@ class Widget:
         else:
             lindex = None
             for new in selected:
-                nindex = self.p.widgets.index(new)
+                nindex = self.tab.widgets.index(new)
                 if lindex is None:
                     if sindex < nindex:
                         self.range_check(sindex, nindex, exc=sindex)
@@ -1662,12 +1858,12 @@ class Widget:
 
     def range_check(self, first, last, exc=None):
         """指定範囲をチェック"""
-        for widget in self.p.widgets:
+        for widget in self.tab.widgets:
             widget.bln1.set(False)
-        for widget in self.p.widgets[first: last + 1]:
+        for widget in self.tab.widgets[first: last + 1]:
             widget.bln1.set(True)
         if exc is not None:
-            self.p.widgets[exc].bln1.set(False)
+            self.tab.widgets[exc].bln1.set(False)
 
     def check_enabled(self):
         """有効・無効の表示"""
@@ -1680,7 +1876,7 @@ class Widget:
 
     def dragged(self, event):
         """ドラッグ時の動作"""
-        index = self.p.widgets.index(self) - self.p.index
+        index = self.tab.widgets.index(self) - self.tab.index
         if (index < 0) or (index > SIZE):
             return
         elif (index == 0) and (-0.125 * EXPAND(HEIGHT) > event.y):
@@ -1694,131 +1890,131 @@ class Widget:
 
     def paste_up(self):
         """上へのペースト"""
-        before_index = self.p.index
+        before_index = self.tab.index
 
-        index = self.p.widgets.index(self)
-        for d in reversed(self.p.copied_widgets):
-            self.p.make_match_class(d, index=index)
+        index = self.tab.widgets.index(self)
+        for d in reversed(self.tab.copied_widgets):
+            self.tab.make_match_class(d, index=index)
 
         if (index < before_index) or (index > before_index + SIZE - 1):
-            self.p.index = index
+            self.tab.index = index
         else:
-            self.p.index = before_index
+            self.tab.index = before_index
 
-        self.p.redraw_widgets()
+        self.tab.redraw_widgets()
 
     def paste_down(self):
         """下へのペースト"""
-        before_index = self.p.index
+        before_index = self.tab.index
 
-        index = self.p.widgets.index(self) + 1
-        for d in reversed(self.p.copied_widgets):
-            self.p.make_match_class(d, index=index)
+        index = self.tab.widgets.index(self) + 1
+        for d in reversed(self.tab.copied_widgets):
+            self.tab.make_match_class(d, index=index)
 
         if (index < before_index) or (index > before_index + SIZE - 1):
-            self.p.index = index
+            self.tab.index = index
         else:
-            self.p.index = before_index
+            self.tab.index = before_index
 
-        self.p.redraw_widgets()
+        self.tab.redraw_widgets()
 
     def duplicate(self):
         """複製"""
-        before_index = self.p.index
+        before_index = self.tab.index
 
-        index = self.p.widgets.index(self) + 1
-        self.p.make_match_class(self.get_data(), index=index)
+        index = self.tab.widgets.index(self) + 1
+        self.tab.make_match_class(self.get_data(), index=index)
 
         if (index < before_index) or (index > before_index + SIZE - 1):
-            self.p.index = index
+            self.tab.index = index
         else:
-            self.p.index = before_index
+            self.tab.index = before_index
 
-        self.p.redraw_widgets()
+        self.tab.redraw_widgets()
 
     def show_popup2(self, event):
         "ポップアップメニュー"
-        if hasattr(self.p, "menu"):
-            self.p.menu.destroy()
+        if hasattr(self.tab, "menu"):
+            self.tab.menu.destroy()
 
-        index = self.p.widgets.index(self)
+        index = self.tab.widgets.index(self)
 
         menu_font = (FONT_TYPE1, 10)
-        self.p.menu = tk.Menu(self.p.root, tearoff=0, font=menu_font)
+        self.tab.menu = tk.Menu(self.et.root, tearoff=0, font=menu_font)
 
         states = ["active" for i in range(5)]
         if index <= 0:
             states[0] = states[2] = "disabled"
-        if index >= len(self.p.widgets) - 1:
+        if index >= len(self.tab.widgets) - 1:
             states[1] = states[3] = "disabled"
-        if len(self.p.copied_widgets) == 0:
+        if len(self.tab.copied_widgets) == 0:
             states[4] = "disabled"
 
-        self.p.menu.add_command(label='１番上に移動', command=self.top,
-                                state=states[0])
-        self.p.menu.add_command(label='１番下に移動', command=self.bottom,
-                                state=states[1])
-        self.p.menu.add_command(label='１個上に移動', command=self.up,
-                                state=states[2])
-        self.p.menu.add_command(label='１個下に移動', command=self.down,
-                                state=states[3])
+        self.tab.menu.add_command(label='１番上に移動', command=self.top,
+                                  state=states[0])
+        self.tab.menu.add_command(label='１番下に移動', command=self.bottom,
+                                  state=states[1])
+        self.tab.menu.add_command(label='１個上に移動', command=self.up,
+                                  state=states[2])
+        self.tab.menu.add_command(label='１個下に移動', command=self.down,
+                                  state=states[3])
 
-        self.p.menu.add_separator()
-        self.p.menu.add_command(label='コピー', command=self.copy)
-        self.p.menu.add_command(label='切り取り', command=self.cut)
-        self.p.menu.add_command(label='削除', command=self.delete)
+        self.tab.menu.add_separator()
+        self.tab.menu.add_command(label='コピー', command=self.copy)
+        self.tab.menu.add_command(label='切り取り', command=self.cut)
+        self.tab.menu.add_command(label='削除', command=self.delete)
 
-        self.p.menu.add_separator()
-        self.p.menu.add_command(label='複製', command=self.duplicate)
+        self.tab.menu.add_separator()
+        self.tab.menu.add_command(label='複製', command=self.duplicate)
 
         if hasattr(self, "show_option"):
-            self.p.menu.add_separator()
-            self.p.menu.add_command(label='オプション', command=self.show_option)
+            self.tab.menu.add_separator()
+            self.tab.menu.add_command(label='オプション', command=self.show_option)
 
-        self.p.menu.add_separator()
+        self.tab.menu.add_separator()
         if (self.TYPE == "undefined") or (self.TYPE == "comment"):
-            self.p.menu.add_command(label='有効化', state="disabled")
+            self.tab.menu.add_command(label='有効化', state="disabled")
         elif self.enabled:
-            self.p.menu.add_command(label='無効化', command=self.disable)
+            self.tab.menu.add_command(label='無効化', command=self.disable)
         else:
-            self.p.menu.add_command(label='有効化', command=self.enable)
+            self.tab.menu.add_command(label='有効化', command=self.enable)
 
-        self.p.menu.add_separator()
-        self.p.menu.add_command(label='上にペースト', command=self.paste_up,
-                                state=states[4])
-        self.p.menu.add_command(label='下にペースト', command=self.paste_down,
-                                state=states[4])
+        self.tab.menu.add_separator()
+        self.tab.menu.add_command(label='上にペースト', command=self.paste_up,
+                                  state=states[4])
+        self.tab.menu.add_command(label='下にペースト', command=self.paste_down,
+                                  state=states[4])
 
-        self.p.menu.post(event.x_root, event.y_root)
+        self.tab.menu.post(event.x_root, event.y_root)
 
     def enable(self, back_up=True):
         "ウィジェットの有効化"
         self.enabled = True
         self.check_enabled()
         if back_up:
-            self.p.back_up()
+            self.tab.back_up()
 
     def disable(self, back_up=True):
         "ウィジェットの無効化"
         self.enabled = False
         self.check_enabled()
         if back_up:
-            self.p.back_up()
+            self.tab.back_up()
 
     def delete(self, back_up=True):
         """ウィジェットの削除"""
-        if self in self.p.last_shown:
-            self.p.last_shown.remove(self)
+        if self in self.tab.last_shown:
+            self.tab.last_shown.remove(self)
         self.cv.place_forget()
-        self.p.widgets.remove(self)
-        self.p.redraw_widgets(back_up)
+        self.tab.widgets.remove(self)
+        self.tab.redraw_widgets(back_up)
 
     def place_cv(self):
         """キャンバスを描き直す"""
-        index = self.p.widgets.index(self) - self.p.index
+        index = self.tab.widgets.index(self) - self.tab.index
         if 0 <= index < SIZE:
             self.cv.place(x=0, y=EXPAND(HEIGHT*index))
-            self.lab4.config(text=f"{self.p.widgets.index(self)+1:03}")
+            self.lab4.config(text=f"{self.tab.widgets.index(self)+1:03}")
         else:
             self.cv.place_forget()
 
@@ -1826,7 +2022,7 @@ class Widget:
         """ウィジェットをコピーする"""
         data = self.get_data()
         data["_check"] = False
-        self.p.copied_widgets = [data]
+        self.tab.copied_widgets = [data]
 
     def cut(self):
         """ウィジェットをカットする"""
@@ -1835,42 +2031,42 @@ class Widget:
 
     def top(self):
         """ウィジェットを一番上に移動"""
-        self.p.widgets.remove(self)
-        self.p.widgets.insert(0, self)
-        self.p.index = 0
-        self.p.redraw_widgets()
+        self.tab.widgets.remove(self)
+        self.tab.widgets.insert(0, self)
+        self.tab.index = 0
+        self.tab.redraw_widgets()
 
     def bottom(self):
         """ウィジェットを一番下に移動"""
-        self.p.widgets.remove(self)
-        self.p.widgets.append(self)
-        bottom = len(self.p.widgets)
-        self.p.index = bottom if bottom > SIZE else 0
-        self.p.redraw_widgets()
+        self.tab.widgets.remove(self)
+        self.tab.widgets.append(self)
+        bottom = len(self.tab.widgets)
+        self.tab.index = bottom if bottom > SIZE else 0
+        self.tab.redraw_widgets()
 
     def up(self):
         """ウィジェットを一個上に移動"""
-        index = self.p.widgets.index(self)
+        index = self.tab.widgets.index(self)
         if index == 0:
             return
-        upper = self.p.widgets[index - 1]
-        self.p.widgets[index - 1] = self
-        self.p.widgets[index] = upper
-        if index == self.p.index:
-            self.p.index -= 1
-        self.p.redraw_widgets()
+        upper = self.tab.widgets[index - 1]
+        self.tab.widgets[index - 1] = self
+        self.tab.widgets[index] = upper
+        if index == self.tab.index:
+            self.tab.index -= 1
+        self.tab.redraw_widgets()
 
     def down(self):
         """ウィジェットを一個下に移動"""
-        index = self.p.widgets.index(self)
-        if index + 1 >= len(self.p.widgets):
+        index = self.tab.widgets.index(self)
+        if index + 1 >= len(self.tab.widgets):
             return
-        under = self.p.widgets[index + 1]
-        self.p.widgets[index + 1] = self
-        self.p.widgets[index] = under
-        if index == self.p.index + SIZE - 1:
-            self.p.index += 1
-        self.p.redraw_widgets()
+        under = self.tab.widgets[index + 1]
+        self.tab.widgets[index + 1] = self
+        self.tab.widgets[index] = under
+        if index == self.tab.index + SIZE - 1:
+            self.tab.index += 1
+        self.tab.redraw_widgets()
 
     def set_common(self, data):
         """共通変数に値をセットする"""
@@ -1909,20 +2105,20 @@ class Widget:
             text = entry.selection_get()
         else:
             text = entry.get()
-        self.p.root.clipboard_clear()
-        self.p.root.clipboard_append(text)
+        self.et.root.clipboard_clear()
+        self.et.root.clipboard_append(text)
 
     def paste_entry(self, entry):
         """テキストを表示する"""
-        text = self.p.root.clipboard_get()
+        text = self.et.root.clipboard_get()
         entry.insert("insert", text)
 
     def show_popup1(self, event, entry):
         """ポップアップを表示する"""
-        if hasattr(self.p, "menu"):
-            self.p.menu.destroy()
+        if hasattr(self.tab, "menu"):
+            self.tab.menu.destroy()
         try:
-            if self.p.root.clipboard_get() != "":
+            if self.et.root.clipboard_get() != "":
                 paste = "active"
             else:
                 paste = "disabled"
@@ -1930,33 +2126,33 @@ class Widget:
             paste = "disabled"
 
         menu_font = (FONT_TYPE1, 10)
-        self.p.menu = tk.Menu(self.p.root, tearoff=0, font=menu_font)
+        self.tab.menu = tk.Menu(self.et.root, tearoff=0, font=menu_font)
 
-        self.p.menu.add_command(
+        self.tab.menu.add_command(
             label='コピー', command=lambda: self.copy_entry(entry))
-        self.p.menu.add_command(label='ペースト', state=paste,
-                                command=lambda: self.paste_entry(entry))
-        self.p.menu.post(event.x_root, event.y_root)
+        self.tab.menu.add_command(label='ペースト', state=paste,
+                                  command=lambda: self.paste_entry(entry))
+        self.tab.menu.post(event.x_root, event.y_root)
 
     def str2str(self, string):
         """変数を埋め込み"""
         for var in re.findall(r'\[\w*\]', string):
             name = var[1:-1] if len(var) > 2 else ""
-            if name not in self.p.variable_datas:
+            if name not in self.tab.variable_datas:
                 messagebox.showerror("エラー", f'\
-line: {self.p.widgets.index(self)+1}, {self.__class__.__name__}\n\
+line: {self.tab.widgets.index(self)+1}, {self.__class__.__name__}\n\
 変数"{name}"は定義されていません。')
-                self.p.kill_runner()
-            elif self.p.variable_datas[name][1] == "S" or\
+                self.tab.kill_runner()
+            elif self.tab.variable_datas[name][1] == "S" or\
                     not CONFIG["show_warning"]:
                 string = string.replace(
-                    var, str(self.p.variable_datas[name][0]))
+                    var, str(self.tab.variable_datas[name][0]))
             else:
                 messagebox.showwarning("警告", f'\
-line: {self.p.widgets.index(self)+1}, {self.__class__.__name__}\n\
+line: {self.tab.widgets.index(self)+1}, {self.__class__.__name__}\n\
 変数"{name}"はString型ではありません。')
                 string = string.replace(
-                    var, str(self.p.variable_datas[name][0]))
+                    var, str(self.tab.variable_datas[name][0]))
         return string
 
     def str2bool(self, string):
@@ -1965,51 +2161,51 @@ line: {self.p.widgets.index(self)+1}, {self.__class__.__name__}\n\
         if match is not None:
             var = match.group()
             name = var[1:-1]
-            if name not in self.p.variable_datas:
+            if name not in self.tab.variable_datas:
                 messagebox.showerror("エラー", f'\
-line: {self.p.widgets.index(self)+1}, {self.__class__.__name__}\n\
+line: {self.tab.widgets.index(self)+1}, {self.__class__.__name__}\n\
 変数"{name}"は定義されていません。')
-                self.p.kill_runner()
-            elif self.p.variable_datas[name][1] == "B" or \
+                self.tab.kill_runner()
+            elif self.tab.variable_datas[name][1] == "B" or \
                     not CONFIG["show_warning"]:
                 string = string.replace(
-                    var, str(self.p.variable_datas[name][0]))
+                    var, str(self.tab.variable_datas[name][0]))
             else:
                 messagebox.showwarning("警告", f'\
-line: {self.p.widgets.index(self)+1}, {self.__class__.__name__}\n\
+line: {self.tab.widgets.index(self)+1}, {self.__class__.__name__}\n\
 変数"{name}"はBoolean型ではありません。')
                 string = string.replace(
-                    var, str(self.p.variable_datas[name][0]))
+                    var, str(self.tab.variable_datas[name][0]))
         if string == "True":
             boolean = True
         elif string == "False":
             boolean = False
         else:
             messagebox.showerror("エラー", f'\
-line: {self.p.widgets.index(self)+1}, {self.__class__.__name__}\n\
+line: {self.tab.widgets.index(self)+1}, {self.__class__.__name__}\n\
 {string}はBoolean型ではありません。')
-            self.p.kill_runner()
+            self.tab.kill_runner()
         return boolean
 
     def var_converter(self, string):
         """変数を埋め込み"""
         for var in re.findall(r'\[\w*\]', string):
             name = var[1:-1] if len(var) > 2 else ""
-            if name not in self.p.variable_datas:
+            if name not in self.tab.variable_datas:
                 messagebox.showerror("エラー", f'\
-line: {self.p.widgets.index(self)+1}, {self.__class__.__name__}\n\
+line: {self.tab.widgets.index(self)+1}, {self.__class__.__name__}\n\
 変数"{name}"は定義されていません。')
-                self.p.kill_runner()
-            elif self.p.variable_datas[name][1] == "N" or \
+                self.tab.kill_runner()
+            elif self.tab.variable_datas[name][1] == "N" or \
                     not CONFIG["show_warning"]:
                 string = string.replace(
-                    var, str(self.p.variable_datas[name][0]))
+                    var, str(self.tab.variable_datas[name][0]))
             else:
                 messagebox.showwarning("警告", f'\
-line: {self.p.widgets.index(self)+1}, {self.__class__.__name__}\n\
+line: {self.tab.widgets.index(self)+1}, {self.__class__.__name__}\n\
 変数"{name}"はNumber型ではありません。')
                 string = string.replace(
-                    var, str(self.p.variable_datas[name][0]))
+                    var, str(self.tab.variable_datas[name][0]))
         return string
 
     def calculator(self, string):
@@ -2017,9 +2213,9 @@ line: {self.p.widgets.index(self)+1}, {self.__class__.__name__}\n\
         string = self.var_converter(string)
         if string == "":
             messagebox.showerror("エラー", f'\
-line: {self.p.widgets.index(self)+1}, {self.__class__.__name__}\n\
+line: {self.tab.widgets.index(self)+1}, {self.__class__.__name__}\n\
 値が入力されていません。')
-            self.p.kill_runner()
+            self.tab.kill_runner()
         operators = ["**", "*", "//", "/", "%", "+", "-", "(", ")"]
         formulas = [string]
         for ope in operators:
@@ -2049,16 +2245,16 @@ line: {self.p.widgets.index(self)+1}, {self.__class__.__name__}\n\
             return self.calculator(string)
         except Exception:
             messagebox.showerror("エラー", f'\
-line: {self.p.widgets.index(self)+1}, {self.__class__.__name__}\n\
+line: {self.tab.widgets.index(self)+1}, {self.__class__.__name__}\n\
 "{string}"を数値に変換できませんでした。')
-            self.p.kill_runner()
+            self.tab.kill_runner()
 
     def str2int(self, string):
         """文字列を整数に変換"""
         num = self.str2float(string)
         if not float(num).is_integer() and CONFIG["show_warning"]:
             messagebox.showwarning("警告", f'\
-line: {self.p.widgets.index(self)+1}, {self.__class__.__name__}\n\
+line: {self.tab.widgets.index(self)+1}, {self.__class__.__name__}\n\
 値は整数でなければなりません。')
         return int(round(num))
 
@@ -2067,9 +2263,9 @@ line: {self.p.widgets.index(self)+1}, {self.__class__.__name__}\n\
         num = self.str2int(string)
         if num < 0:
             messagebox.showerror("エラー", f'\
-line: {self.p.widgets.index(self)+1}, {self.__class__.__name__}\n\
+line: {self.tab.widgets.index(self)+1}, {self.__class__.__name__}\n\
 値は正の整数でなければなりません。')
-            self.p.kill_runner()
+            self.tab.kill_runner()
         else:
             return num
 
@@ -2078,9 +2274,9 @@ line: {self.p.widgets.index(self)+1}, {self.__class__.__name__}\n\
         num = self.str2float(string)
         if num < 0:
             messagebox.showerror("エラー", f'\
-line: {self.p.widgets.index(self)+1}, {self.__class__.__name__}\n\
+line: {self.tab.widgets.index(self)+1}, {self.__class__.__name__}\n\
 値は正の小数でなければなりません。')
-            self.p.kill_runner()
+            self.tab.kill_runner()
         else:
             return num
 
@@ -2132,7 +2328,7 @@ class VarNumber(Widget):
 
     def run(self, tur: turtle.RawTurtle):
         self.save_data()
-        self.p.variable_datas[self.name] = (self.str2float(self.value), "N")
+        self.tab.variable_datas[self.name] = (self.str2float(self.value), "N")
 
 
 class VarString(Widget):
@@ -2182,7 +2378,7 @@ class VarString(Widget):
 
     def run(self, tur: turtle.RawTurtle):
         self.save_data()
-        self.p.variable_datas[self.name] = (self.str2str(self.value), "S")
+        self.tab.variable_datas[self.name] = (self.str2str(self.value), "S")
 
 
 class VarBoolean(Widget):
@@ -2234,7 +2430,7 @@ class VarBoolean(Widget):
 
     def run(self, tur: turtle.RawTurtle):
         self.save_data()
-        self.p.variable_datas[self.name] = (self.str2bool(self.value), "B")
+        self.tab.variable_datas[self.name] = (self.str2bool(self.value), "B")
 
 
 class Title(Widget):
@@ -2269,7 +2465,7 @@ class Title(Widget):
 
     def run(self, tur: turtle.RawTurtle):
         self.save_data()
-        self.p.win.title(self.str2str(self.title))
+        self.tab.win.title(self.str2str(self.title))
 
 
 class ScreenSize(Widget):
@@ -2342,18 +2538,18 @@ class ScreenSize(Widget):
         tur.penup()
         tur.speed(0)
         tur.goto(maxwidth // 2, maxheight // -2)
-        tur.speed(self.p.runner_speed)
-        if self.p.runner_pendown:
+        tur.speed(self.tab.runner_speed)
+        if self.tab.runner_pendown:
             tur.pendown()
 
         # すべての要素を移動
         for element_id in canvas.find_all():
             canvas.move(element_id,
-                        (maxwidth - self.p.runner_size[0]) // 2,
-                        (maxheight - self.p.runner_size[1]) // 2)
+                        (maxwidth - self.tab.runner_size[0]) // 2,
+                        (maxheight - self.tab.runner_size[1]) // 2)
 
         # データを変更
-        self.p.runner_size = (maxwidth, maxheight)
+        self.tab.runner_size = (maxwidth, maxheight)
 
         tur.getscreen().update()
 
@@ -2544,8 +2740,8 @@ class GoTo(Widget):
     def run(self, tur: turtle.RawTurtle):
         self.save_data()
         tur.goto(
-            self.str2int(self.x) + self.p.runner_size[0] // 2,
-            self.str2int(self.y) - self.p.runner_size[1] // 2)
+            self.str2int(self.x) + self.tab.runner_size[0] // 2,
+            self.str2int(self.y) - self.tab.runner_size[1] // 2)
 
 
 class SetX(Widget):
@@ -2580,7 +2776,7 @@ class SetX(Widget):
 
     def run(self, tur: turtle.RawTurtle):
         self.save_data()
-        tur.setx(self.str2int(self.x) + self.p.runner_size[0] // 2)
+        tur.setx(self.str2int(self.x) + self.tab.runner_size[0] // 2)
 
 
 class SetY(Widget):
@@ -2615,7 +2811,7 @@ class SetY(Widget):
 
     def run(self, tur: turtle.RawTurtle):
         self.save_data()
-        tur.sety(self.str2int(self.y) - self.p.runner_size[1] // 2)
+        tur.sety(self.str2int(self.y) - self.tab.runner_size[1] // 2)
 
 
 class SetHeading(Widget):
@@ -2675,7 +2871,7 @@ class Home(Widget):
 
     def run(self, tur: turtle.RawTurtle):
         self.save_data()
-        tur.goto(self.p.runner_size[0] // 2, self.p.runner_size[1] // -2)
+        tur.goto(self.tab.runner_size[0] // 2, self.tab.runner_size[1] // -2)
 
 
 class Position(Widget):
@@ -2724,10 +2920,10 @@ class Position(Widget):
     def run(self, tur: turtle.RawTurtle):
         self.save_data()
         xval, yval = tur.position()
-        self.p.variable_datas[self.x] = (
-            xval - self.p.runner_size[0] // 2, "N")
-        self.p.variable_datas[self.y] = (
-            yval + self.p.runner_size[1] // 2, "N")
+        self.tab.variable_datas[self.x] = (
+            xval - self.tab.runner_size[0] // 2, "N")
+        self.tab.variable_datas[self.y] = (
+            yval + self.tab.runner_size[1] // 2, "N")
 
 
 class ToWards(Widget):
@@ -2793,9 +2989,9 @@ class ToWards(Widget):
     def run(self, tur: turtle.RawTurtle):
         self.save_data()
         angle = tur.towards(
-            self.str2int(self.x) + self.p.runner_size[0] // 2,
-            self.str2int(self.y) - self.p.runner_size[1] // 2)
-        self.p.variable_datas[self.angle] = (angle, "N")
+            self.str2int(self.x) + self.tab.runner_size[0] // 2,
+            self.str2int(self.y) - self.tab.runner_size[1] // 2)
+        self.tab.variable_datas[self.angle] = (angle, "N")
 
 
 class Distance(Widget):
@@ -2861,9 +3057,9 @@ class Distance(Widget):
     def run(self, tur: turtle.RawTurtle):
         self.save_data()
         distance = tur.distance(
-            self.str2int(self.x) + self.p.runner_size[0] // 2,
-            self.str2int(self.y) - self.p.runner_size[1] // 2)
-        self.p.variable_datas[self.distance] = (distance, "N")
+            self.str2int(self.x) + self.tab.runner_size[0] // 2,
+            self.str2int(self.y) - self.tab.runner_size[1] // 2)
+        self.tab.variable_datas[self.distance] = (distance, "N")
 
 
 class XCor(Widget):
@@ -2899,8 +3095,8 @@ class XCor(Widget):
     def run(self, tur: turtle.RawTurtle):
         self.save_data()
         xval = tur.xcor()
-        self.p.variable_datas[self.x] = (
-            xval - self.p.runner_size[0] // 2, "N")
+        self.tab.variable_datas[self.x] = (
+            xval - self.tab.runner_size[0] // 2, "N")
 
 
 class YCor(Widget):
@@ -2936,8 +3132,8 @@ class YCor(Widget):
     def run(self, tur: turtle.RawTurtle):
         self.save_data()
         yval = tur.ycor()
-        self.p.variable_datas[self.y] = (
-            yval + self.p.runner_size[1] // 2, "N")
+        self.tab.variable_datas[self.y] = (
+            yval + self.tab.runner_size[1] // 2, "N")
 
 
 class Heading(Widget):
@@ -2973,7 +3169,7 @@ class Heading(Widget):
     def run(self, tur: turtle.RawTurtle):
         self.save_data()
         aval = tur.heading()
-        self.p.variable_datas[self.angle] = (aval, "N")
+        self.tab.variable_datas[self.angle] = (aval, "N")
 
 
 class Circle(Widget):
@@ -3120,9 +3316,9 @@ class Speed(Widget):
 
     def run(self, tur: turtle.RawTurtle):
         self.save_data()
-        if not self.p.running_fastest:
-            self.p.runner_speed = self.str2int(self.speed)
-            tur.speed(self.p.runner_speed)
+        if not self.tab.running_fastest:
+            self.tab.runner_speed = self.str2int(self.speed)
+            tur.speed(self.tab.runner_speed)
 
 
 class PenDown(Widget):
@@ -3147,7 +3343,7 @@ class PenDown(Widget):
 
     def run(self, tur: turtle.RawTurtle):
         self.save_data()
-        self.p.runner_pendown = True
+        self.tab.runner_pendown = True
         tur.pendown()
 
 
@@ -3173,7 +3369,7 @@ class PenUp(Widget):
 
     def run(self, tur: turtle.RawTurtle):
         self.save_data()
-        self.p.runner_pendown = False
+        self.tab.runner_pendown = False
         tur.penup()
 
 
@@ -3210,7 +3406,7 @@ class IsDown(Widget):
     def run(self, tur: turtle.RawTurtle):
         self.save_data()
         down = tur.isdown()
-        self.p.variable_datas[self.down] = (down, "B")
+        self.tab.variable_datas[self.down] = (down, "B")
 
 
 class PenSize(Widget):
@@ -3306,9 +3502,9 @@ class Color(Widget):
         color = self.ent1.get()
         try:
             color = colorchooser.askcolor(
-                color=self.str2str(color), parent=self.p.root)
+                color=self.str2str(color), parent=self.et.root)
         except tk.TclError:
-            color = colorchooser.askcolor(parent=self.p.root)
+            color = colorchooser.askcolor(parent=self.et.root)
         if color != (None, None):
             self.ent1.delete(0, tk.END)
             self.ent1.insert(0, color[1].upper())
@@ -3323,9 +3519,9 @@ class Color(Widget):
             tur.color(self.str2str(self.color))
         except turtle.TurtleGraphicsError:
             messagebox.showerror("エラー", f'\
-line: {self.p.widgets.index(self)+1}, {self.__class__.__name__}\n\
-"{self.color}"を色として認識できませんでした。', parent=self.p.root)
-            self.p.kill_runner()
+line: {self.tab.widgets.index(self)+1}, {self.__class__.__name__}\n\
+"{self.color}"を色として認識できませんでした。', parent=self.et.root)
+            self.tab.kill_runner()
 
 
 class PenColor(Widget):
@@ -3386,9 +3582,9 @@ class PenColor(Widget):
         color = self.ent1.get()
         try:
             color = colorchooser.askcolor(
-                color=self.str2str(color), parent=self.p.root)
+                color=self.str2str(color), parent=self.et.root)
         except tk.TclError:
-            color = colorchooser.askcolor(parent=self.p.root)
+            color = colorchooser.askcolor(parent=self.et.root)
         if color != (None, None):
             self.ent1.delete(0, tk.END)
             self.ent1.insert(0, color[1].upper())
@@ -3403,9 +3599,9 @@ class PenColor(Widget):
             tur.pencolor(self.str2str(self.color))
         except turtle.TurtleGraphicsError:
             messagebox.showerror("エラー", f'\
-line: {self.p.widgets.index(self)+1}, {self.__class__.__name__}\n\
-"{self.color}"を色として認識できませんでした。', parent=self.p.root)
-            self.p.kill_runner()
+line: {self.tab.widgets.index(self)+1}, {self.__class__.__name__}\n\
+"{self.color}"を色として認識できませんでした。', parent=self.et.root)
+            self.tab.kill_runner()
 
 
 class FillColor(Widget):
@@ -3466,9 +3662,9 @@ class FillColor(Widget):
         color = self.ent1.get()
         try:
             color = colorchooser.askcolor(
-                color=self.str2str(color), parent=self.p.root)
+                color=self.str2str(color), parent=self.et.root)
         except tk.TclError:
-            color = colorchooser.askcolor(parent=self.p.root)
+            color = colorchooser.askcolor(parent=self.et.root)
         if color != (None, None):
             self.ent1.delete(0, tk.END)
             self.ent1.insert(0, color[1].upper())
@@ -3483,9 +3679,9 @@ class FillColor(Widget):
             tur.fillcolor(self.str2str(self.color))
         except turtle.TurtleGraphicsError:
             messagebox.showerror("エラー", f'\
-line: {self.p.widgets.index(self)+1}, {self.__class__.__name__}\n\
-"{self.color}"を色として認識できませんでした。', parent=self.p.root)
-            self.p.kill_runner()
+line: {self.tab.widgets.index(self)+1}, {self.__class__.__name__}\n\
+"{self.color}"を色として認識できませんでした。', parent=self.et.root)
+            self.tab.kill_runner()
 
 
 class BGColor(Widget):
@@ -3546,9 +3742,9 @@ class BGColor(Widget):
         color = self.ent1.get()
         try:
             color = colorchooser.askcolor(
-                color=self.str2str(color), parent=self.p.root)
+                color=self.str2str(color), parent=self.et.root)
         except tk.TclError:
-            color = colorchooser.askcolor(parent=self.p.root)
+            color = colorchooser.askcolor(parent=self.et.root)
         if color != (None, None):
             self.ent1.delete(0, tk.END)
             self.ent1.insert(0, color[1].upper())
@@ -3563,9 +3759,9 @@ class BGColor(Widget):
             tur.getscreen().bgcolor(self.str2str(self.color))
         except turtle.TurtleGraphicsError:
             messagebox.showerror("エラー", f'\
-line: {self.p.widgets.index(self)+1}, {self.__class__.__name__}\n\
-"{self.color}"を色として認識できませんでした。', parent=self.p.root)
-            self.p.kill_runner()
+line: {self.tab.widgets.index(self)+1}, {self.__class__.__name__}\n\
+"{self.color}"を色として認識できませんでした。', parent=self.et.root)
+            self.tab.kill_runner()
 
 
 class GetPenColor(Widget):
@@ -3601,7 +3797,7 @@ class GetPenColor(Widget):
     def run(self, tur: turtle.RawTurtle):
         self.save_data()
         cval = tur.pencolor()
-        self.p.variable_datas[self.color] = (self.p.convert_rgb(cval), "S")
+        self.tab.variable_datas[self.color] = (self.tab.convert_rgb(cval), "S")
 
 
 class GetFillColor(Widget):
@@ -3637,7 +3833,7 @@ class GetFillColor(Widget):
     def run(self, tur: turtle.RawTurtle):
         self.save_data()
         cval = tur.fillcolor()
-        self.p.variable_datas[self.color] = (self.p.convert_rgb(cval), "S")
+        self.tab.variable_datas[self.color] = (self.tab.convert_rgb(cval), "S")
 
 
 class GetBGColor(Widget):
@@ -3673,7 +3869,7 @@ class GetBGColor(Widget):
     def run(self, tur: turtle.RawTurtle):
         self.save_data()
         cval = tur.getscreen().bgcolor()
-        self.p.variable_datas[self.color] = (self.p.convert_rgb(cval), "S")
+        self.tab.variable_datas[self.color] = (self.tab.convert_rgb(cval), "S")
 
 
 class BeginFill(Widget):
@@ -3759,7 +3955,7 @@ class Filling(Widget):
     def run(self, tur: turtle.RawTurtle):
         self.save_data()
         fill = tur.filling()
-        self.p.variable_datas[self.fill] = (fill, "B")
+        self.tab.variable_datas[self.fill] = (fill, "B")
 
 
 class ShowTurtle(Widget):
@@ -3845,7 +4041,7 @@ class IsVisible(Widget):
     def run(self, tur: turtle.RawTurtle):
         self.save_data()
         shown = tur.isvisible()
-        self.p.variable_datas[self.shown] = (shown, "B")
+        self.tab.variable_datas[self.shown] = (shown, "B")
 
 
 class TurtleSize(Widget):
@@ -3973,8 +4169,8 @@ class Write(Widget):
         self.size = self.ent2.get()
 
         # ウィンドウを作成する
-        self.win = tk.Toplevel(self.p.root)
-        self.win.tk.call('wm', 'iconphoto', self.win._w, self.p.icon)
+        self.win = tk.Toplevel(self.et.root)
+        self.win.tk.call('wm', 'iconphoto', self.win._w, self.tab.icon)
         self.win.wait_visibility()
         self.win.grab_set()
         frame0 = tk.Frame(self.win)
@@ -4090,11 +4286,11 @@ class Write(Widget):
                                width=24, selectmode='single',
                                font=(FONT_TYPE2, EXPAND(18)))
         self.lsb1.bind('<<ListboxSelect>>', self.append_new_widget)
-        self.lsb1.pack(fill='y', side=tk.LEFT)
+        self.lsb1.pack(fill=tk.Y, side=tk.LEFT)
         scr1 = ttk.Scrollbar(fra9, orient=tk.VERTICAL,
                              command=self.lsb1.yview)
         self.lsb1['yscrollcommand'] = scr1.set
-        scr1.pack(fill='y', side=tk.LEFT)
+        scr1.pack(fill=tk.Y, side=tk.LEFT)
 
         self.preview_font()
         self.win.resizable(0, 0)
@@ -4184,7 +4380,7 @@ class Bye(Widget):
 
     def run(self, tur: turtle.RawTurtle):
         self.save_data()
-        self.p.kill_runner()
+        self.tab.kill_runner()
 
 
 class ExitOnClick(Widget):
@@ -4208,7 +4404,7 @@ class ExitOnClick(Widget):
         pass
 
     def kill(self, x, y):
-        self.p.kill_runner()
+        self.tab.kill_runner()
 
     def run(self, tur: turtle.RawTurtle):
         self.save_data()
@@ -4237,7 +4433,7 @@ class Bell(Widget):
 
     def run(self, tur: turtle.RawTurtle):
         self.save_data()
-        self.p.win.bell()
+        self.tab.win.bell()
 
 
 class Sleep(Widget):
@@ -4303,8 +4499,8 @@ class Comment(Widget):
 
     def show_option(self):
         self.save_data()
-        self.win = tk.Toplevel(self.p.root)
-        self.win.tk.call('wm', 'iconphoto', self.win._w, self.p.icon)
+        self.win = tk.Toplevel(self.et.root)
+        self.win.tk.call('wm', 'iconphoto', self.win._w, self.tab.icon)
         self.win.wait_visibility()
         self.win.grab_set()
         lab1 = tk.Label(self.win, text="Option",
@@ -4355,8 +4551,8 @@ class Undefined(Widget):
         lab2.place(x=EXPAND(50), y=EXPAND(HEIGHT//2+8))
 
     def show_option(self):
-        self.win = tk.Toplevel(self.p.root)
-        self.win.tk.call('wm', 'iconphoto', self.win._w, self.p.icon)
+        self.win = tk.Toplevel(self.et.root)
+        self.win.tk.call('wm', 'iconphoto', self.win._w, self.tab.icon)
         self.win.wait_visibility()
         self.win.grab_set()
         lab1 = tk.Label(self.win, text="Option",
