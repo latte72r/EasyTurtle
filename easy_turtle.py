@@ -190,7 +190,7 @@ def EXPAND(num):
 
 FONT = (FONT_TYPE1, EXPAND(12), "bold")
 
-__version__ = (5, 10, "0a2")
+__version__ = (5, 10, 0)
 
 
 class EasyTurtle:
