@@ -18,7 +18,7 @@ import urllib.request
 import webbrowser
 import glob
 from tkinter import colorchooser, filedialog
-from tkinter import font as tkfont
+from tkinter import font as tkFont
 from tkinter import messagebox, scrolledtext, simpledialog, ttk
 from typing import List as typeList
 from typing import Dict as typeDict
@@ -85,7 +85,8 @@ if SYSTEM == "Windows":
         "expand_window": True,
         "user_document": EXECUTABLE,
         "auto_update": True,
-        "open_last_file": True}
+        "open_last_file": True,
+        "share_copy": False}
 
     CONFIG = DEFAULT_CONFIG
     UPDATE_CONFIG()
@@ -119,9 +120,18 @@ if SYSTEM == "Windows":
 
 # システムがLinuxの場合
 elif SYSTEM == "Linux":
+    tk.root = tk.Tk()
+    tk.root.withdraw()
+    fonts = tkFont.families()
+    tk.root.destroy()
+    tk.root = None
 
-    FONT_TYPE1 = "FreeMono"
-    FONT_TYPE2 = "FreeSerif"
+    if "FreeMono" in fonts and "FreeSerif" in fonts:
+        FONT_TYPE1 = "FreeMono"
+        FONT_TYPE2 = "FreeSerif"
+    else:
+        FONT_TYPE1 = "Courier"
+        FONT_TYPE2 = "Times"
 
     os.chdir(os.getcwd())
 
@@ -144,17 +154,18 @@ elif SYSTEM == "Linux":
         "expand_window": True,
         "user_document": EXECUTABLE,
         "auto_update": True,
-        "open_last_file": True}
+        "open_last_file": True,
+        "share_copy": False}
 
     CONFIG = DEFAULT_CONFIG
     UPDATE_CONFIG()
 
     if CONFIG["user_document"]:
         user = os.environ['USER']
-        if os.path.exists(os.path.join("/home/", user, "/ドキュメント/")):
-            DOCUMENTS = os.path.join("/home/", user, "/ドキュメント/EasyTurtle/")
+        if os.path.exists(os.path.join("/home", user, "ドキュメント/")):
+            DOCUMENTS = os.path.join("/home", user, "ドキュメント/EasyTurtle/")
         else:
-            DOCUMENTS = os.path.join("/home/", user, "/Documents/EasyTurtle/")
+            DOCUMENTS = os.path.join("/home", user, "Documents/EasyTurtle/")
         os.makedirs(DOCUMENTS, exist_ok=True)
         samples = os.path.join(DOCUMENTS, "Samples")
         try:
@@ -190,7 +201,7 @@ def EXPAND(num):
 
 FONT = (FONT_TYPE1, EXPAND(12), "bold")
 
-__version__ = (5, 10, 0)
+__version__ = (5, 11, "0a1")
 
 
 class EasyTurtle:
@@ -199,6 +210,7 @@ class EasyTurtle:
         # 変数を設定する
         self.tabs: typeList[IndividualTab] = []
         self.untitled_tabs: typeDict[IndividualTab, int] = {}
+        self.copied_widgets: typeList[typeWidget] = []
         self.running_program = False
         self.editing_config = False
 
@@ -215,6 +227,8 @@ class EasyTurtle:
             self.open_program(file)
 
         else:
+            self.open_window_data()
+
             file_open = False
 
             for file in glob.glob(os.path.join(BOOT_FOLDER, "reboot*.json")):
@@ -333,6 +347,12 @@ class EasyTurtle:
         chb7 = tk.Checkbutton(self.win, text=text,
                               font=FONT, variable=self.var7)
         chb7.pack(padx=EXPAND(10), pady=(0, EXPAND(10)), anchor=tk.NW)
+        self.var8 = tk.BooleanVar()
+        self.var8.set(CONFIG["share_copy"])
+        text = "コピーを他のタブと共有する"
+        chb8 = tk.Checkbutton(self.win, text=text,
+                              font=FONT, variable=self.var8)
+        chb8.pack(padx=EXPAND(10), pady=(0, EXPAND(10)), anchor=tk.NW)
         but1 = tk.Button(self.win, text="決定", width=20,
                          font=FONT, command=self.decide_config)
         but1.pack(padx=EXPAND(10), pady=(0, EXPAND(20)))
@@ -354,7 +374,8 @@ class EasyTurtle:
             "expand_window":    self.var4.get(),
             "user_document":    self.var5.get(),
             "auto_update":      self.var6.get(),
-            "open_last_file":   self.var7.get()}
+            "open_last_file":   self.var7.get(),
+            "share_copy":       self.var8.get()}
         with open(CONFIG_FILE, "w", encoding="UTF-8")as f:
             json.dump(CONFIG, f, indent=4)
         self.finish_editing_config()
@@ -379,7 +400,14 @@ class EasyTurtle:
         # ファイルを保存
         shutil.rmtree(BOOT_FOLDER)
         os.mkdir(BOOT_FOLDER)
+
         if CONFIG["open_last_file"]:
+            data = {
+                "copy": self.copied_widgets if CONFIG["share_copy"] else []}
+
+            with open(os.path.join(BOOT_FOLDER, "windata.json"), "w")as f:
+                json.dump(data, f, indent=2)
+
             for num, tab in enumerate(self.tabs):
                 tab.save_file(
                     os.path.join(BOOT_FOLDER, f"boot{num}.json"), boot=True)
@@ -402,6 +430,22 @@ class EasyTurtle:
         "メニューを消す"
         if hasattr(self, "menu"):
             self.menu.destroy()
+
+    def open_window_data(self):
+        """画面情報の読み込み"""
+        # ファイルを開く
+        file = os.path.join(BOOT_FOLDER, "windata.json")
+
+        if not os.path.exists(file):
+            return
+
+        with open(file, "r")as f:
+            data = json.load(f)
+
+        os.remove(file)
+
+        if CONFIG["share_copy"] and "copy" in data:
+            self.copied_widgets = data["copy"]
 
     def open_program(self, file=None):
         """開く動作"""
@@ -470,7 +514,8 @@ class EasyTurtle:
             newtab.index = data["index"] if "index" in data else 0
 
             # コピーされたウィジェットを設定
-            newtab.copied_widgets = data["copy"] if "copy" in data else []
+            if not CONFIG["share_copy"]:
+                newtab.copied_widgets = data["copy"] if "copy" in data else []
 
             # バックアップデータを設定
             newtab.backed_up = data["backedup"] if "backedup" in data else []
@@ -701,6 +746,12 @@ download/v{joined_version}/EasyTurtle-{joined_version}-amd64.msi"
         # データを保存
         shutil.rmtree(BOOT_FOLDER)
         os.mkdir(BOOT_FOLDER)
+
+        data = {"copy": self.copied_widgets if CONFIG["share_copy"] else []}
+
+        with open(os.path.join(BOOT_FOLDER, "windata.json"), "w")as f:
+            json.dump(data, f, indent=2)
+
         for num, tab in enumerate(self.tabs):
             tab.save_file(
                 os.path.join(BOOT_FOLDER, f"reboot{num}.json"), boot=True)
@@ -1089,15 +1140,20 @@ class IndividualTab:
 
     def get_data(self):
         """データを取得"""
-        return {"index": self.index,
-                "copy": self.copied_widgets,
-                "body": [d.get_data() for d in self.widgets]}
+        if CONFIG["share_copy"]:
+            return {"index": self.index,
+                    "body": [d.get_data() for d in self.widgets]}
+        else:
+            return {"index": self.index,
+                    "copy": self.copied_widgets,
+                    "body": [d.get_data() for d in self.widgets]}
 
     def set_data(self, data):
         """データをセット"""
         self.delete_all_widgets()
         self.index = data["index"]
-        self.copied_widgets = data["copy"]
+        if not CONFIG["share_copy"]:
+            self.copied_widgets = data["copy"]
         self.widgets = []
         for d in data["body"]:
             self.make_match_class(d)
@@ -1370,7 +1426,7 @@ line: {index+1}, {widget.__class__.__name__}\n\
         if boot:
             data = {
                 "version": __version__[:2],
-                "copy": self.copied_widgets,
+                "copy": [] if CONFIG["share_copy"] else self.copied_widgets,
                 "index": self.index,
                 "backedup": self.backed_up,
                 "canceled": self.canceled_changes,
@@ -1386,7 +1442,7 @@ line: {index+1}, {widget.__class__.__name__}\n\
         elif CONFIG["save_more_info"]:
             data = {
                 "version": __version__[:2],
-                "copy": self.copied_widgets,
+                "copy": [] if CONFIG["share_copy"] else self.copied_widgets,
                 "index": self.index,
                 "backedup": self.backed_up,
                 "canceled": self.canceled_changes,
@@ -1447,9 +1503,14 @@ line: {index+1}, {widget.__class__.__name__}\n\
                 return 1
         next_index = index
 
-        for d in reversed(self.copied_widgets):
-            self.make_match_class(d, index=index)
-            next_index += 1
+        if CONFIG["share_copy"]:
+            for d in reversed(self.et.copied_widgets):
+                self.make_match_class(d, index=index)
+                next_index += 1
+        else:
+            for d in reversed(self.copied_widgets):
+                self.make_match_class(d, index=index)
+                next_index += 1
 
         if (index < before_index) or (index > before_index + SIZE - 1):
             self.index = index
@@ -1499,14 +1560,21 @@ line: {index+1}, {widget.__class__.__name__}\n\
         """選択されたデータをコピー"""
         if self.et.running_program:
             return
+
         copy = []
+
         if len(self.get_selected()) == 0:
             return
+
         for d in self.get_selected():
             data = d.get_data()
             data["_check"] = False
             copy.append(data)
-        self.copied_widgets = copy
+
+        if CONFIG["share_copy"]:
+            self.et.copied_widgets = copy
+        else:
+            self.copied_widgets = copy
 
     def cut_selected(self):
         """選択されたデータをカット"""
@@ -1957,8 +2025,13 @@ class Widget:
         before_index = self.tab.index
 
         index = self.tab.widgets.index(self)
-        for d in reversed(self.tab.copied_widgets):
-            self.tab.make_match_class(d, index=index)
+
+        if CONFIG["share_copy"]:
+            for d in reversed(self.et.copied_widgets):
+                self.tab.make_match_class(d, index=index)
+        else:
+            for d in reversed(self.tab.copied_widgets):
+                self.tab.make_match_class(d, index=index)
 
         if (index < before_index) or (index > before_index + SIZE - 1):
             self.tab.index = index
@@ -1972,8 +2045,13 @@ class Widget:
         before_index = self.tab.index
 
         index = self.tab.widgets.index(self) + 1
-        for d in reversed(self.tab.copied_widgets):
-            self.tab.make_match_class(d, index=index)
+
+        if CONFIG["share_copy"]:
+            for d in reversed(self.et.copied_widgets):
+                self.tab.make_match_class(d, index=index)
+        else:
+            for d in reversed(self.tab.copied_widgets):
+                self.tab.make_match_class(d, index=index)
 
         if (index < before_index) or (index > before_index + SIZE - 1):
             self.tab.index = index
@@ -2011,8 +2089,13 @@ class Widget:
             states[0] = states[2] = "disabled"
         if index >= len(self.tab.widgets) - 1:
             states[1] = states[3] = "disabled"
-        if len(self.tab.copied_widgets) == 0:
-            states[4] = "disabled"
+
+        if CONFIG["share_copy"]:
+            if len(self.tab.copied_widgets) == 0:
+                states[4] = "disabled"
+        else:
+            if len(self.tab.copied_widgets) == 0:
+                states[4] = "disabled"
 
         self.tab.menu.add_command(label='１番上に移動', command=self.top,
                                   state=states[0])
@@ -2086,7 +2169,11 @@ class Widget:
         """ウィジェットをコピーする"""
         data = self.get_data()
         data["_check"] = False
-        self.tab.copied_widgets = [data]
+
+        if CONFIG["share_copy"]:
+            self.et.copied_widgets = [data]
+        else:
+            self.tab.copied_widgets = [data]
 
     def cut(self):
         """ウィジェットをカットする"""
@@ -4361,7 +4448,7 @@ class Write(Widget):
 
     def without_atmark(self):
         new = []
-        for font in tkfont.families():
+        for font in tkFont.families():
             if font[0] != "@":
                 new.append(font)
         return new
