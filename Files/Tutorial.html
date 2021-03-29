@@ -147,11 +147,13 @@
             </tr>
             <tr>
               <td>オプション</td>
-              <td>オプションを表示する　　　　　　※１</td>
+              <td>オプションを表示する<span style="float: right">※１</span></td>
             </tr>
             <tr>
               <td>有効化</td>
-              <td>ウィジェットを有効化する　　　　※２</td>
+              <td>
+                ウィジェットを有効化する<span style="float: right">※２</span>
+              </td>
             </tr>
             <tr>
               <td>無効化</td>
@@ -379,12 +381,18 @@
             </tr>
             <tr>
               <td><code>expand_window</code></td>
-              <td>画面の大きさをを調整する</td>
+              <td>
+                画面の大きさを調整する
+                <span style="float: right">※１</span>
+              </td>
               <td>有効</td>
             </tr>
             <tr>
               <td><code>user_document</code></td>
-              <td>ユーザードキュメントを使用する</td>
+              <td>
+                ユーザードキュメントを使用する
+                <span style="float: right">※１</span>
+              </td>
               <td>実行形式で有効</td>
             </tr>
             <tr>
@@ -397,7 +405,13 @@
               <td>前回開いていたファイルを開く</td>
               <td>有効</td>
             </tr>
+            <tr>
+              <td><code>share_copy</code></td>
+              <td>コピーを他のタブと共有する</td>
+              <td>無効</td>
+            </tr>
           </table>
+          <p><strong>※１：再起動後に有効になる設定です。</strong></p>
         </article>
       </div>
     </section>
@@ -845,29 +859,30 @@
               <td>Sleep</td>
               <td>操作を①秒停止する</td>
               <td>
-                <a
-                  href="https://docs.python.org/ja/3/library/time.html#time.sleep"
-                  >time.sleep</a
-                >
+                <a　href="https://docs.python.org/ja/3/library/time.html#time.sleep">
+                  time.sleep
+                </a>
               </td>
             </tr>
             <tr>
-              <td>Comment　　※１</td>
-              <td>実行されないコメント文</td>
+              <td>Comment</td>
+              <td>
+                実行されないコメント文<span style="float: right">※１</span>
+              </td>
               <td>オリジナル</td>
             </tr>
             <tr>
-              <td>Undefined　　※２</td>
-              <td>情報のない不明なクラス</td>
+              <td>Undefined</td>
+              <td>
+                情報のない不明なクラス<span style="float: right">※２</span>
+              </td>
               <td>オリジナル</td>
             </tr>
           </table>
           <p><b>※１：このウィジェットはコメント用です。</b></p>
-          <p>
-            <b
-              >※２：このウィジェットが表示されたときにはJsonファイルが破損していないか確認してください。</b
-            >
-          </p>
+          <p><b>
+            ※２：このウィジェットが表示されたときにはJsonファイルが破損していないか確認してください。
+          </b></p>
         </article>
       </div>
     </section>
@@ -875,7 +890,7 @@
   </body>
   <footer>
     <p>
-      Copyright ?2020-2021 Ryo Fujinami, Ryota Furukawa. All rights reserved.
+      Copyright ©2020-2021 Ryo Fujinami, Ryota Furukawa. All rights reserved.
     </p>
   </footer>
 </html>

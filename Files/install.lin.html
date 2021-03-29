@@ -1,87 +1,125 @@
 <!DOCTYPE html>
 <html lang="ja">
-
-<head>
+  <head>
     <meta charset="UTF-8" />
-    <link rel="stylesheet" href="main.css">
-    <link rel="icon" href="./win_icon.gif">
+    <link rel="stylesheet" href="main.css" />
+    <link rel="icon" href="./win_icon.gif" />
     <title>EasyTurtle</title>
     <script src="./jquery-3.5.1.min.js"></script>
-</head>
+  </head>
 
-<body>
+  <body>
     <ul class="nav">
-        <img src="./win_icon.gif" width="32" height="32" style="position: absolute; top: 4px; left: 12px;">
-        <li><a href="index.html">　　EasyTurtle Home</a></li>
-        <li><a href="">Download</a>
-            <ul>
-                <li><a href="download.html">ダウンロード</a></li>
-                <li><a href="install.win.html">Windows搭載環境での実行</a></li>
-                <li><a href="install.lin.html">Linux搭載環境での実行</a></li>
-            </ul>
-        </li>
-        <li><a href="">License</a>
-            <ul>
-                <li><a href="license.html">ライセンス</a></li>
-                <li><a href="notice.html">追加情報</a></li>
-            </ul>
-        </li>
-        <li><a href="">Tutorial</a>
-            <ul>
-                <li><a href="tutorial.html">基本説明</a></li>
-                <li><a href="tutorial.html#widget">ウィジェットの説明</a></li>
-            </ul>
-        </li>
-        <li><a href="">Samples</a>
-            <ul>
-                <li><a href="samples.html">付属するサンプル</a></li>
-            </ul>
-        </li>
-        <li><a href="">Release of EasyTurtle</a>
-            <ul>
-                <li><a href="https://github.com/RyoFuji2005/EasyTurtle/releases">リリース - (GitHub)</a></li>
-            </ul>
-        </li>
+      <img
+        src="./win_icon.gif"
+        width="32"
+        height="32"
+        style="position: absolute; top: 4px; left: 12px"
+      />
+      <li><a href="index.html">　　EasyTurtle Home</a></li>
+      <li>
+        <a href="">Download</a>
+        <ul>
+          <li><a href="download.html">ダウンロード</a></li>
+          <li><a href="install.win.html">Windows搭載環境での実行</a></li>
+          <li><a href="install.lin.html">Linux搭載環境での実行</a></li>
+        </ul>
+      </li>
+      <li>
+        <a href="">License</a>
+        <ul>
+          <li><a href="license.html">ライセンス</a></li>
+          <li><a href="notice.html">追加情報</a></li>
+        </ul>
+      </li>
+      <li>
+        <a href="">Tutorial</a>
+        <ul>
+          <li><a href="tutorial.html">基本説明</a></li>
+          <li><a href="tutorial.html#widget">ウィジェットの説明</a></li>
+        </ul>
+      </li>
+      <li>
+        <a href="">Samples</a>
+        <ul>
+          <li><a href="samples.html">付属するサンプル</a></li>
+        </ul>
+      </li>
+      <li>
+        <a href="">Release of EasyTurtle</a>
+        <ul>
+          <li>
+            <a href="https://github.com/RyoFuji2005/EasyTurtle/releases"
+              >リリース - (GitHub)</a
+            >
+          </li>
+        </ul>
+      </li>
     </ul>
 
     <script>
-        $(function () {
-            var nav = $('.nav');
-            $('li', nav)
-                .mouseover(function (e) {
-                    $('ul', this).stop().slideDown('fast');
-                })
-                .mouseout(function (e) {
-                    $('ul', this).stop().slideUp('fast');
-                });
-        });
+      $(function () {
+        var nav = $(".nav");
+        $("li", nav)
+          .mouseover(function (e) {
+            $("ul", this).stop().slideDown("fast");
+          })
+          .mouseout(function (e) {
+            $("ul", this).stop().slideUp("fast");
+          });
+      });
     </script>
     <!--------->
     <section class="home" id="home">
-        <h2 class="title">Linuxでのインストールと実行</h2>
-        <h2>Pythonファイル</h2>
-        <p>Pythonファイルを利用する場合は<a href="download.html">ダウンロード</a>してから任意のディレクトリで解凍してください。</p>
-        <p><code>git clone https://github.com/RyoFuji2005/EasyTurtle.git</code>を利用してクローンすることもできます。</p>
-        <p>Pythonファイルはインストールする必要がないため、 ターミナルを起動して、<code>python3 easy_turtle.py</code>と実行してください。</p>
-        <p><strong>権限に関するエラーが表示された場合には初回のみroot権限で実行してください。</strong></p>
-        <h2>必要なパッケージ</h2>
-        <p>Python形式ファイルをLinuxで利用する場合は以下のパッケージが必要です。</p>
-        <ul>
-            <li><code>python3</code> - Python3.7以上が必要です</li>
-            <li><code>python3-tk</code> - GUI処理に利用します</li>
-            <li><code>x11-xserver-utils</code> - 画面サイズの取得に利用します</li>
-        </ul>
-        <p>以下の条件が満たされていないと正常に表示されないことがあります。</p>
-        <ul>
-            <li><a href="http://ftp.gnu.org/gnu/freefont/">GNU FreeFont</a>が利用可能である</li>
-            <li>日本語が表示できるフォントがインストールされている</li>
-        </ul>
-        <p>GNU FreeFontは<a href="http://ftp.gnu.org/gnu/freefont/freefont-ttf-20120503.zip">ここ</a>からダウンロードできます。</p>
+      <h2 class="title">Linuxでのインストールと実行</h2>
+      <h2>Pythonファイル</h2>
+      <p>
+        Pythonファイルを利用する場合は<a href="download.html">ダウンロード</a
+        >してから任意のディレクトリで解凍してください。
+      </p>
+      <p>
+        <code>git clone https://github.com/RyoFuji2005/EasyTurtle.git</code
+        >を利用してクローンすることもできます。
+      </p>
+      <p>
+        Pythonファイルはインストールする必要がないため、
+        ターミナルを起動して、<code>python3 easy_turtle.py</code
+        >と実行してください。
+      </p>
+      <p>
+        <strong
+          >権限に関するエラーが表示された場合には初回のみroot権限で実行してください。</strong
+        >
+      </p>
+      <h2>必要なパッケージ</h2>
+      <p>
+        Python形式ファイルをLinuxで利用する場合は以下のパッケージが必要です。
+      </p>
+      <ul>
+        <li><code>python3</code> - Python3.7以上が必要です</li>
+        <li><code>python3-tk</code> - GUI処理に利用します</li>
+        <li><code>x11-xserver-utils</code> - 画面サイズの取得に利用します</li>
+      </ul>
+      <p>以下の条件が満たされていないと正常に表示されないことがあります。</p>
+      <ul>
+        <li>
+          <a href="http://ftp.gnu.org/gnu/freefont/">GNU FreeFont</a
+          >が利用可能である
+        </li>
+        <li>日本語が表示できるフォントがインストールされている</li>
+      </ul>
+      <p>
+        GNU FreeFontは<a
+          href="http://ftp.gnu.org/gnu/freefont/freefont-ttf-20120503.zip"
+          >ここ</a
+        >からダウンロードできます。
+      </p>
     </section>
     <!--------->
-</body>
-<footer>
-    <p>Copyright ©2020-2021 Ryo Fujinami, Ryota Furukawa. All rights reserved.</p>
-</footer>
-
+  </body>
+  <footer>
+    <p>
+      Copyright ©2020-2021 Ryo Fujinami, Ryota Furukawa. All rights reserved.
+    </p>
+  </footer>
 </html>

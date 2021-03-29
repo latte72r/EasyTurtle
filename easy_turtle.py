@@ -19,7 +19,7 @@ import webbrowser
 from tkinter import colorchooser, filedialog
 from tkinter import font as tkFont
 from tkinter import messagebox, scrolledtext, simpledialog, ttk
-from typing import Any, Dict, List, Tuple, Union
+from subprocess import CalledProcessError
 from urllib import request
 from urllib.error import URLError
 
@@ -52,9 +52,22 @@ def EXPAND(num):
     return int(round(num * WIN_MAG))
 
 
+SYSTEM = platform.system()
+PYVERSION = sys.version_info[:2]
+
+# ROOTウィンドウの作成
 ROOT = tk.Tk()
 
-SYSTEM = platform.system()
+# Pythonバージョンがサポートされていない場合
+if PYVERSION < (3, 7):
+    ROOT.withdraw()
+    ver = str(PYVERSION[0]) + "." + str(PYVERSION[1])
+    messagebox.showerror("エラー", "Python" + ver + "には対応していません。")
+    ROOT.destroy()
+    sys.exit()
+else:
+    from typing import Any, Dict, List, Tuple, Union
+
 # システムがWindowsの場合
 if SYSTEM == "Windows":
     import ctypes
@@ -200,23 +213,30 @@ elif SYSTEM == "Linux":
         DOCUMENTS = os.path.abspath("./")
         os.makedirs(DOCUMENTS, exist_ok=True)
 
-    response = subprocess.check_output("xrandr | fgrep '*'", shell=True)
-    metrics = response.decode("utf8").split()[0].split("x")
-    SYSTEM_WIDTH = int(metrics[0])
-    SYSTEM_HEIGHT = int(metrics[1])
+    try:
+        response = subprocess.check_output("xrandr | fgrep '*'", shell=True)
+        metrics = response.decode("utf8").split()[0].split("x")
+        SYSTEM_WIDTH = int(metrics[0])
+        SYSTEM_HEIGHT = int(metrics[1])
 
-    if CONFIG["expand_window"]:
-        width_mag = SYSTEM_WIDTH / 1280
-        height_mag = SYSTEM_HEIGHT / 720
-        WIN_MAG = width_mag if width_mag < height_mag else height_mag
-    else:
+        if CONFIG["expand_window"]:
+            width_mag = SYSTEM_WIDTH / 1280
+            height_mag = SYSTEM_HEIGHT / 720
+            WIN_MAG = width_mag if width_mag < height_mag else height_mag
+        else:
+            WIN_MAG = 1
+    except CalledProcessError:
+        messagebox.showwarning("警告", '\
+"x11-xserver-utils"がインストールされていません。\n\
+画面の大きさの調整は無効になります。')
         WIN_MAG = 1
 
     MIN_WIDTH = EXPAND(1240)
     MIN_HEIGHT = EXPAND(640)
 
-# システムが対応OS以外の場合
+# オペレーションシステムがサポートされていない場合
 else:
+    ROOT.withdraw()
     messagebox.showerror("エラー", f"{SYSTEM}には対応していません。")
     ROOT.destroy()
     sys.exit()
@@ -224,7 +244,7 @@ else:
 
 FONT = (FONT_TYPE1, EXPAND(12), "bold")
 
-__version__ = (5, 11, "0a2")
+__version__ = (5, 11, 0)
 
 
 class EasyTurtle:
@@ -512,13 +532,10 @@ class EasyTurtle:
 
         # ファイルを開く
         with open(file, "r")as f:
-            data = json.load(f)
+            data: dict = json.load(f)
 
         # 選択されているタブ
-        if "selected" in data and not data["selected"]:
-            select = False
-        else:
-            select = True
+        select = data.get("selected", True)
 
         # 新しいタブを作成する
         newtab = IndividualTab(self, select=select)
@@ -533,21 +550,20 @@ class EasyTurtle:
                 newtab.make_match_class(d, version=version)
 
             # インデックスを変更
-            newtab.index = data["index"] if "index" in data else 0
+            newtab.index = data.get("index", 0)
 
             # コピーされたウィジェットを設定
             if not CONFIG["share_copy"]:
-                newtab.copied_widgets = data["copy"] if "copy" in data else []
+                newtab.copied_widgets = data.get("copy", [])
 
             # バックアップデータを設定
-            newtab.backed_up = data["backedup"] if "backedup" in data else []
-            newtab.canceled_changes = data["canceled"]\
-                if "canceled" in data else []
+            newtab.backed_up = data.get("backedup", [])
+            newtab.canceled_changes = data.get("canceled", [])
 
             # 追加位置を設定
-            addmode = data["addmode"] if "addmode" in data else 2
-            adjust = data["adjust"] if "adjust" in data else True
-            position = data["position"] if "position" in data else ""
+            addmode = data.get("addmode", 2)
+            adjust = data.get("adjust", True)
+            position = data.get("position", "")
             newtab.var2.set(addmode)
             newtab.var3.set(adjust)
             newtab.ent1.delete(0, tk.END)
@@ -564,21 +580,12 @@ class EasyTurtle:
                     newtab.save_file(file)
 
             # 基本データを設定
-            if "default" in data:
-                newtab.default_data = data["default"]
-            else:
-                newtab.default_data = [d.get_data(more=False)
-                                       for d in newtab.widgets]
+            newtab.default_data = data.get(
+                "default", [d.get_data(more=False) for d in newtab.widgets])
 
             # プログラムの名称設定
-            if "name" in data:
-                newtab.program_name = data["name"]
-            else:
-                newtab.program_name = file
-            if "untitled" in data:
-                newtab.decide_title(data["untitled"])
-            else:
-                newtab.decide_title()
+            newtab.program_name = data.get("name", file)
+            newtab.decide_title(data.get("untitled", None))
 
             newtab.set_title()
 
@@ -595,8 +602,8 @@ class EasyTurtle:
         "更新を取得"
         url = "http://github.com/RyoFuji2005/EasyTurtle/releases/latest"
         try:
-            with request.urlopen(url)as f:
-                text = f.geturl()
+            with request.urlopen(url) as f:
+                text: str = f.geturl()
         except (URLError, AttributeError):
             return "ConnectionError"
         try:
@@ -861,6 +868,14 @@ download/v{joined_version}/EasyTurtle-{joined_version}-amd64.msi"
         if tab is not None:
             tab.run_fastest_mode()
 
+    def get_shape(self, shape, x1: int, y1: int, size: int = -1):
+        """カメの形を決定"""
+        for x2, y2 in shape:
+            x3 = x2 * size
+            y3 = (y2 - 5) * size
+            yield x3 - y3 + x1
+            yield x3 + y3 + y1
+
     def setup(self):
         """セットアップ"""
         # 基本ウィンドウを作成
@@ -979,14 +994,6 @@ download/v{joined_version}/EasyTurtle-{joined_version}-amd64.msi"
         othermenu.add_command(label="GitHubの表示", command=self.show_github_page)
         self.menubar.add_cascade(label="オプション", menu=othermenu)
 
-        def get_shape(shape, x1, y1, size=-1):
-            """カメの形を決定"""
-            for x2, y2 in shape:
-                x3 = x2 * size
-                y3 = (y2 - 5) * size
-                yield x3 - y3 + x1
-                yield x3 + y3 + y1
-
         # カメの形状データ
         shape = (
             (0, 16), (-2, 14), (-1, 10), (-4, 7), (-7, 9), (-9, 8),
@@ -1000,9 +1007,9 @@ download/v{joined_version}/EasyTurtle-{joined_version}-amd64.msi"
         cv.create_text(MIN_WIDTH // 2 - EXPAND(80), MIN_HEIGHT // 2,
                        text="EasyTurtle", fill="green",
                        font=(FONT_TYPE2, EXPAND(80), "bold", "italic"))
-        cv.create_polygon(*get_shape(shape, MIN_WIDTH // 2 + EXPAND(260),
-                                     MIN_HEIGHT // 2 - EXPAND(10), EXPAND(-4)),
-                          fill="green")
+        cv.create_polygon(*self.get_shape(
+            shape, MIN_WIDTH // 2 + EXPAND(260),
+            MIN_HEIGHT // 2 - EXPAND(10), EXPAND(-4)), fill="green")
 
         # 背景の右下
         frame = tk.Frame(ROOT)
@@ -1100,9 +1107,9 @@ class IndividualTab:
         """タイトルを設定する"""
         index = self.et.tabs.index(self)
         if [d.get_data(more=False) for d in self.widgets] == self.default_data:
-            self.et.notebook.tab(index, text=f"{self.basename} ")
+            self.et.notebook.tab(index, text=f" {self.basename} ")
         else:
-            self.et.notebook.tab(index, text=f"*{self.basename}* ")
+            self.et.notebook.tab(index, text=f" *{self.basename}* ")
 
     def decide_title(self, index=None):
         if self.program_name is None:
@@ -1203,7 +1210,7 @@ class IndividualTab:
                     "copy": self.copied_widgets,
                     "body": [d.get_data() for d in self.widgets]}
 
-    def set_data(self, data):
+    def set_data(self, data: dict):
         """データをセット"""
         self.delete_all_widgets()
         self.index = data["index"]
@@ -1234,7 +1241,7 @@ class IndividualTab:
             last = first + per
         self.scr2.set(first, last)
 
-    def append_new_widget(self, event):
+    def append_new_widget(self, event: tk.Event):
         """リストボックス選択時の動作"""
         before_index = self.index
 
@@ -1270,7 +1277,7 @@ class IndividualTab:
 
         self.redraw_widgets()
 
-    def scroll_on_windows(self, event):
+    def scroll_on_windows(self, event: tk.Event):
         """Windowsでのスクロール時の動作"""
         data = self.widgets
         index = self.index - (event.delta // 120)
@@ -1281,7 +1288,7 @@ class IndividualTab:
                       if len(data) <= SIZE else index)
         self.redraw_widgets(change=False)
 
-    def scroll_on_linux(self, event):
+    def scroll_on_linux(self, event: tk.Event):
         """Linuxでのスクロール時の動作"""
         data = self.widgets
         index = self.index - (1 if event.num == 4 else -1)
@@ -1584,7 +1591,7 @@ line: {index+1}, {widget.__class__.__name__}\n\
 
     def get_selected(self):
         """選ばれたデータ一覧を取得"""
-        selected = []
+        selected: List[WidgetType] = []
         for d in self.widgets:
             if d.bln1.get():
                 selected.append(d)
@@ -1821,7 +1828,7 @@ class CustomNotebook(ttk.Notebook):
         self.bind("<ButtonPress-1>", self.on_close_press, True)
         self.bind("<ButtonRelease-1>", self.on_close_release)
 
-    def on_close_press(self, event):
+    def on_close_press(self, event: tk.Event):
         """ボタンが閉じるボタンの上に押されたとき"""
 
         element = self.identify(event.x, event.y)
@@ -1832,7 +1839,7 @@ class CustomNotebook(ttk.Notebook):
             self._active = index
             return "break"
 
-    def on_close_release(self, event):
+    def on_close_release(self, event: tk.Event):
         """ボタンを離したとき"""
         if not self.instate(['pressed']):
             return
@@ -1859,18 +1866,18 @@ class CustomNotebook(ttk.Notebook):
                 R0lGODlhCAAIAMIBAAAAADs7O4+Pj9nZ2Ts7Ozs7Ozs7Ozs7OyH+EUNyZWF0ZWQg
                 d2l0aCBHSU1QACH5BAEKAAQALAAAAAAIAAgAAAMVGDBEA0qNJyGw7AmxmuaZhWEU
                 5kEJADs=
-                ''').zoom(EXPAND(1), EXPAND(1))
+                ''', width=EXPAND(8)).zoom(EXPAND(1), EXPAND(1))
 
         self.img_closeactive = tk.PhotoImage(data='''
                 R0lGODlhCAAIAMIEAAAAAP/SAP/bNNnZ2cbGxsbGxsbGxsbGxiH5BAEKAAQALAAA
                 AAAIAAgAAAMVGDBEA0qNJyGw7AmxmuaZhWEU5kEJADs=
-                ''').zoom(EXPAND(1), EXPAND(1))
+                ''', width=EXPAND(8)).zoom(EXPAND(1), EXPAND(1))
 
         self.img_closepressed = tk.PhotoImage(data='''
                 R0lGODlhCAAIAMIEAAAAAOUqKv9mZtnZ2Ts7Ozs7Ozs7Ozs7OyH+EUNyZWF0ZWQg
                 d2l0aCBHSU1QACH5BAEKAAQALAAAAAAIAAgAAAMVGDBEA0qNJyGw7AmxmuaZhWEU
                 5kEJADs=
-                ''').zoom(EXPAND(1), EXPAND(1))
+                ''', width=EXPAND(8)).zoom(EXPAND(1), EXPAND(1))
 
         style.configure("CustomNotebook.Tab",
                         font=(FONT_TYPE1, EXPAND(12), "bold"))
@@ -1941,7 +1948,7 @@ class Widget:
         data = self.get_data()
         return f"{data['_name']}(self, data={data})"
 
-    def set_data(self, data):
+    def set_data(self, data: dict):
         """データの設定（サブクラスで宣言される関数）"""
 
     def get_data(self, more=True) -> Dict[str, Any]:
@@ -1959,7 +1966,7 @@ class Widget:
     def run(self, tur: turtle.RawTurtle):
         """データの実行（サブクラスで宣言される関数）"""
 
-    def binder(self, widget):
+    def binder(self, widget: tk.Widget):
         """ボタンのバインド"""
         widget.bind('<Button-3>', self.show_popup2)
         widget.bind("<B1-Motion>", self.dragged)
@@ -2008,7 +2015,7 @@ class Widget:
         chk1.bind("<Button-1>", self.check_clicked)
         chk1.place(x=EXPAND(14), y=EXPAND(HEIGHT//2+8))
 
-    def check_clicked(self, event):
+    def check_clicked(self, event: tk.Event):
         if (hasattr(event, "state")) and (event.state == 1):
             self.shift_check()
         else:
@@ -2044,7 +2051,7 @@ class Widget:
             if lindex is not None and sindex > lindex:
                 self.range_check(lindex, sindex, exc=sindex)
 
-    def range_check(self, first, last, exc=None):
+    def range_check(self, first: int, last: int, exc=None):
         """指定範囲をチェック"""
         for widget in self.tab.widgets:
             widget.bln1.set(False)
@@ -2062,7 +2069,7 @@ class Widget:
                             width=2, outline="lightgray",
                             fill=color, tag="enabled")
 
-    def dragged(self, event):
+    def dragged(self, event: tk.Event):
         """ドラッグ時の動作"""
         index = self.tab.widgets.index(self) - self.tab.index
         if (index < 0) or (index > SIZE):
@@ -2130,7 +2137,7 @@ class Widget:
 
         self.tab.redraw_widgets()
 
-    def show_popup2(self, event):
+    def show_popup2(self, event: tk.Event):
         "ポップアップメニュー"
         if hasattr(self.et, "menu"):
             self.et.menu.destroy()
@@ -2275,25 +2282,15 @@ class Widget:
             self.tab.index += 1
         self.tab.redraw_widgets()
 
-    def set_common(self, data):
+    def set_common(self, data: dict):
         """共通変数に値をセットする"""
-        if data is None:
-            self.check = False
-        else:
-            if "_check" in data:
-                self.check = data["_check"]
-            else:
-                self.check = False
-
+        self.check = data.get("_check", False)
         if (self.TYPE == "comment") or (self.TYPE == "undefined"):
             self.enabled = False
         else:
-            if (data is None) or ("_enabled" not in data):
-                self.enabled = True
-            else:
-                self.enabled = data["_enabled"]
+            self.enabled = data.get("_enabled", True)
 
-    def get_class_data(self, data: Dict[str, Any], more):
+    def get_class_data(self, data: dict, more: bool):
         """クラスのデータを追加する"""
         if more:
             data["_check"] = self.bln1.get()
@@ -2306,7 +2303,7 @@ class Widget:
             data["_name"] = self.__class__.__name__
         return data
 
-    def copy_entry(self, entry):
+    def copy_entry(self, entry: tk.Entry):
         """テキストをコピーする"""
         if entry.selection_present():
             text = entry.selection_get()
@@ -2315,12 +2312,12 @@ class Widget:
         ROOT.clipboard_clear()
         ROOT.clipboard_append(text)
 
-    def paste_entry(self, entry):
+    def paste_entry(self, entry: tk.Entry):
         """テキストを表示する"""
         text = ROOT.clipboard_get()
         entry.insert("insert", text)
 
-    def show_popup1(self, event, entry):
+    def show_popup1(self, event: tk.Event, entry: tk.Entry):
         """ポップアップを表示する（tk.Entry用）"""
         if hasattr(self.et, "menu"):
             self.et.menu.destroy()
@@ -2341,7 +2338,7 @@ class Widget:
                                  command=lambda: self.paste_entry(entry))
         self.et.menu.post(event.x_root, event.y_root)
 
-    def str2str(self, string):
+    def str2str(self, string: str):
         """変数を埋め込み"""
         for var in re.findall(r'\[\w*\]', string):
             name = var[1:-1] if len(var) > 2 else ""
@@ -2363,7 +2360,7 @@ line: {self.tab.widgets.index(self)+1}, {self.__class__.__name__}\n\
                     var, str(self.tab.variable_datas[name][0]))
         return string
 
-    def str2bool(self, string):
+    def str2bool(self, string: str):
         """変数を埋め込み"""
         match = re.fullmatch(r'\[\w*\]', string)
         if match is not None:
@@ -2397,7 +2394,7 @@ line: {self.tab.widgets.index(self)+1}, {self.__class__.__name__}\n\
             return False
         return boolean
 
-    def var_converter(self, string):
+    def var_converter(self, string: str):
         """変数を埋め込み"""
         for var in re.findall(r'\[\w*\]', string):
             name = var[1:-1] if len(var) > 2 else ""
@@ -2418,7 +2415,7 @@ line: {self.tab.widgets.index(self)+1}, {self.__class__.__name__}\n\
                     var, str(self.tab.variable_datas[name][0]))
         return string
 
-    def calculator(self, string):
+    def calculator(self, string: str):
         """数列の計算"""
         string = self.var_converter(string)
         if string == "":
@@ -2449,7 +2446,7 @@ line: {self.tab.widgets.index(self)+1}, {self.__class__.__name__}\n\
                 string += str(float(form))
         return float(eval(string))
 
-    def str2float(self, string):
+    def str2float(self, string: str):
         """文字列を小数に変換"""
         try:
             return self.calculator(string)
@@ -2460,7 +2457,7 @@ line: {self.tab.widgets.index(self)+1}, {self.__class__.__name__}\n\
             self.tab.kill_runner()
             return 0.0
 
-    def str2int(self, string):
+    def str2int(self, string: str):
         """文字列を整数に変換"""
         num = self.str2float(string)
         if not float(num).is_integer() and CONFIG["show_warning"]:
@@ -2469,7 +2466,7 @@ line: {self.tab.widgets.index(self)+1}, {self.__class__.__name__}\n\
 値は整数でなければなりません。')
         return int(round(num))
 
-    def str2uint(self, string):
+    def str2uint(self, string: str):
         """文字列を符号なし整数に変換"""
         num = self.str2int(string)
         if num < 0:
@@ -2481,7 +2478,7 @@ line: {self.tab.widgets.index(self)+1}, {self.__class__.__name__}\n\
         else:
             return num
 
-    def str2ufloat(self, string):
+    def str2ufloat(self, string: str):
         """文字列を符号なし小数に変換"""
         num = self.str2float(string)
         if num < 0:
@@ -2500,15 +2497,9 @@ class VarNumber(Widget):
     OPTION = False
     VALUES = {"name": "num", "value": "0"}
 
-    def set_data(self, data):
-        if "name" in data:
-            self.name = data["name"]
-        else:
-            self.name = self.VALUES["name"]
-        if "value" in data:
-            self.value = data["value"]
-        else:
-            self.value = self.VALUES["value"]
+    def set_data(self, data: dict):
+        self.name = data.get("name", self.VALUES["name"])
+        self.value = data.get("value", self.VALUES["value"])
         self.set_common(data)
 
     def get_data(self, more=True):
@@ -2551,15 +2542,9 @@ class VarString(Widget):
     OPTION = False
     VALUES = {"name": "str", "value": "text"}
 
-    def set_data(self, data):
-        if "name" in data:
-            self.name = data["name"]
-        else:
-            self.name = self.VALUES["name"]
-        if "value" in data:
-            self.value = data["value"]
-        else:
-            self.value = self.VALUES["value"]
+    def set_data(self, data: dict):
+        self.name = data.get("name", self.VALUES["name"])
+        self.value = data.get("value", self.VALUES["value"])
         self.set_common(data)
 
     def get_data(self, more=True):
@@ -2602,15 +2587,9 @@ class VarBoolean(Widget):
     OPTION = False
     VALUES = {"name": "bool", "value": "True"}
 
-    def set_data(self, data):
-        if "name" in data:
-            self.name = data["name"]
-        else:
-            self.name = self.VALUES["name"]
-        if "value" in data:
-            self.value = data["value"]
-        else:
-            self.value = self.VALUES["value"]
+    def set_data(self, data: dict):
+        self.name = data.get("name", self.VALUES["name"])
+        self.value = data.get("value", self.VALUES["value"])
         self.set_common(data)
 
     def get_data(self, more=True):
@@ -2655,11 +2634,8 @@ class Title(Widget):
     OPTION = False
     VALUES = {"title": "Turtle"}
 
-    def set_data(self, data):
-        if "title" in data:
-            self.title = data["title"]
-        else:
-            self.title = self.VALUES["title"]
+    def set_data(self, data: dict):
+        self.title = data.get("title", self.VALUES["title"])
         self.set_common(data)
 
     def get_data(self, more=True):
@@ -2691,15 +2667,9 @@ class ScreenSize(Widget):
     OPTION = False
     VALUES = {"width": "600", "height": "600"}
 
-    def set_data(self, data):
-        if "width" in data:
-            self.width = data["width"]
-        else:
-            self.width = self.VALUES["width"]
-        if "height" in data:
-            self.height = data["height"]
-        else:
-            self.height = self.VALUES["height"]
+    def set_data(self, data: dict):
+        self.width = data.get("width", self.VALUES["width"])
+        self.height = data.get("height", self.VALUES["height"])
         self.set_common(data)
 
     def get_data(self, more=True):
@@ -2778,11 +2748,8 @@ class Forward(Widget):
     OPTION = False
     VALUES = {"distance": "0"}
 
-    def set_data(self, data):
-        if "distance" in data:
-            self.distance = data["distance"]
-        else:
-            self.distance = self.VALUES["distance"]
+    def set_data(self, data: dict):
+        self.distance = data.get("distance", self.VALUES["distance"])
         self.set_common(data)
 
     def get_data(self, more=True):
@@ -2814,11 +2781,8 @@ class Backward(Widget):
     OPTION = False
     VALUES = {"distance": "0"}
 
-    def set_data(self, data):
-        if "distance" in data:
-            self.distance = data["distance"]
-        else:
-            self.distance = self.VALUES["distance"]
+    def set_data(self, data: dict):
+        self.distance = data.get("distance", self.VALUES["distance"])
         self.set_common(data)
 
     def get_data(self, more=True):
@@ -2850,11 +2814,8 @@ class Right(Widget):
     OPTION = False
     VALUES = {"angle": "0"}
 
-    def set_data(self, data):
-        if "angle" in data:
-            self.angle = data["angle"]
-        else:
-            self.angle = self.VALUES["angle"]
+    def set_data(self, data: dict):
+        self.angle = data.get("angle", self.VALUES["angle"])
         self.set_common(data)
 
     def get_data(self, more=True):
@@ -2886,11 +2847,8 @@ class Left(Widget):
     OPTION = False
     VALUES = {"angle": "0"}
 
-    def set_data(self, data):
-        if "angle" in data:
-            self.angle = data["angle"]
-        else:
-            self.angle = self.VALUES["angle"]
+    def set_data(self, data: dict):
+        self.angle = data.get("angle", self.VALUES["angle"])
         self.set_common(data)
 
     def get_data(self, more=True):
@@ -2922,15 +2880,9 @@ class GoTo(Widget):
     OPTION = False
     VALUES = {"x": "0", "y": "0"}
 
-    def set_data(self, data):
-        if "x" in data:
-            self.x = data["x"]
-        else:
-            self.x = self.VALUES["x"]
-        if "y" in data:
-            self.y = data["y"]
-        else:
-            self.y = self.VALUES["y"]
+    def set_data(self, data: dict):
+        self.x = data.get("x", self.VALUES["x"])
+        self.y = data.get("y", self.VALUES["y"])
         self.set_common(data)
 
     def get_data(self, more=True):
@@ -2973,11 +2925,8 @@ class SetX(Widget):
     OPTION = False
     VALUES = {"x": "0"}
 
-    def set_data(self, data):
-        if "x" in data:
-            self.x = data["x"]
-        else:
-            self.x = self.VALUES["x"]
+    def set_data(self, data: dict):
+        self.x = data.get("x", self.VALUES["x"])
         self.set_common(data)
 
     def get_data(self, more=True):
@@ -3009,11 +2958,8 @@ class SetY(Widget):
     OPTION = False
     VALUES = {"y": "0"}
 
-    def set_data(self, data):
-        if "y" in data:
-            self.y = data["y"]
-        else:
-            self.y = self.VALUES["y"]
+    def set_data(self, data: dict):
+        self.y = data.get("y", self.VALUES["y"])
         self.set_common(data)
 
     def get_data(self, more=True):
@@ -3045,11 +2991,8 @@ class SetHeading(Widget):
     OPTION = False
     VALUES = {"angle": "0"}
 
-    def set_data(self, data):
-        if "angle" in data:
-            self.angle = data["angle"]
-        else:
-            self.angle = self.VALUES["angle"]
+    def set_data(self, data: dict):
+        self.angle = data.get("angle", self.VALUES["angle"])
         self.set_common(data)
 
     def get_data(self, more=True):
@@ -3080,7 +3023,7 @@ class Home(Widget):
     TYPE = "normalset"
     OPTION = False
 
-    def set_data(self, data):
+    def set_data(self, data: dict):
         self.set_common(data)
 
     def get_data(self, more=True):
@@ -3107,15 +3050,9 @@ class Position(Widget):
     OPTION = False
     VALUES = {"x": "xcor", "y": "ycor"}
 
-    def set_data(self, data):
-        if "x" in data:
-            self.x = data["x"]
-        else:
-            self.x = self.VALUES["x"]
-        if "y" in data:
-            self.y = data["y"]
-        else:
-            self.y = self.VALUES["y"]
+    def set_data(self, data: dict):
+        self.x = data.get("x", self.VALUES["x"])
+        self.y = data.get("y", self.VALUES["y"])
         self.set_common(data)
 
     def get_data(self, more=True):
@@ -3162,19 +3099,10 @@ class ToWards(Widget):
               "y": "0",
               "angle": "angle"}
 
-    def set_data(self, data):
-        if "x" in data:
-            self.x = data["x"]
-        else:
-            self.x = self.VALUES["x"]
-        if "y" in data:
-            self.y = data["y"]
-        else:
-            self.y = self.VALUES["y"]
-        if "angle" in data:
-            self.angle = data["angle"]
-        else:
-            self.angle = self.VALUES["angle"]
+    def set_data(self, data: dict):
+        self.x = data.get("x", self.VALUES["x"])
+        self.y = data.get("y", self.VALUES["y"])
+        self.angle = data.get("angle", self.VALUES["angle"])
         self.set_common(data)
 
     def get_data(self, more=True):
@@ -3231,19 +3159,10 @@ class Distance(Widget):
               "y": "0",
               "distance": "distance"}
 
-    def set_data(self, data):
-        if "x" in data:
-            self.x = data["x"]
-        else:
-            self.x = self.VALUES["x"]
-        if "y" in data:
-            self.y = data["y"]
-        else:
-            self.y = self.VALUES["y"]
-        if "distance" in data:
-            self.distance = data["distance"]
-        else:
-            self.distance = self.VALUES["distance"]
+    def set_data(self, data: dict):
+        self.x = data.get("x", self.VALUES["x"])
+        self.y = data.get("y", self.VALUES["y"])
+        self.distance = data.get("distance", self.VALUES["distance"])
         self.set_common(data)
 
     def get_data(self, more=True):
@@ -3298,11 +3217,8 @@ class XCor(Widget):
     OPTION = False
     VALUES = {"x": "xcor"}
 
-    def set_data(self, data):
-        if "x" in data:
-            self.x = data["x"]
-        else:
-            self.x = self.VALUES["x"]
+    def set_data(self, data: dict):
+        self.x = data.get("x", self.VALUES["x"])
         self.set_common(data)
 
     def get_data(self, more=True):
@@ -3336,11 +3252,8 @@ class YCor(Widget):
     OPTION = False
     VALUES = {"y": "ycor"}
 
-    def set_data(self, data):
-        if "y" in data:
-            self.y = data["y"]
-        else:
-            self.y = self.VALUES["y"]
+    def set_data(self, data: dict):
+        self.y = data.get("y", self.VALUES["y"])
         self.set_common(data)
 
     def get_data(self, more=True):
@@ -3374,11 +3287,8 @@ class Heading(Widget):
     OPTION = False
     VALUES = {"angle": "angle"}
 
-    def set_data(self, data):
-        if "angle" in data:
-            self.angle = data["angle"]
-        else:
-            self.angle = self.VALUES["angle"]
+    def set_data(self, data: dict):
+        self.angle = data.get("angle", self.VALUES["angle"])
         self.set_common(data)
 
     def get_data(self, more=True):
@@ -3411,15 +3321,9 @@ class Circle(Widget):
     OPTION = False
     VALUES = {"radius": "0", "extent": "360"}
 
-    def set_data(self, data):
-        if "radius" in data:
-            self.radius = data["radius"]
-        else:
-            self.radius = self.VALUES["radius"]
-        if "extent" in data:
-            self.extent = data["extent"]
-        else:
-            self.extent = self.VALUES["extent"]
+    def set_data(self, data: dict):
+        self.radius = data.get("radius", self.VALUES["radius"])
+        self.extent = data.get("extent", self.VALUES["extent"])
         self.set_common(data)
 
     def get_data(self, more=True):
@@ -3464,11 +3368,8 @@ class Dot(Widget):
     OPTION = False
     VALUES = {"size": "0"}
 
-    def set_data(self, data):
-        if "size" in data:
-            self.size = data["size"]
-        else:
-            self.size = self.VALUES["size"]
+    def set_data(self, data: dict):
+        self.size = data.get("size", self.VALUES["size"])
         self.set_common(data)
 
     def get_data(self, more=True):
@@ -3499,7 +3400,7 @@ class Stamp(Widget):
     TYPE = "normalset"
     OPTION = False
 
-    def set_data(self, data):
+    def set_data(self, data: dict):
         self.set_common(data)
 
     def get_data(self, more=True):
@@ -3526,11 +3427,8 @@ class Speed(Widget):
     OPTION = False
     VALUES = {"speed": "3"}
 
-    def set_data(self, data):
-        if "speed" in data:
-            self.speed = data["speed"]
-        else:
-            self.speed = self.VALUES["speed"]
+    def set_data(self, data: dict):
+        self.speed = data.get("speed", self.VALUES["speed"])
         self.set_common(data)
 
     def get_data(self, more=True):
@@ -3563,7 +3461,7 @@ class PenDown(Widget):
     TYPE = "normalset"
     OPTION = False
 
-    def set_data(self, data):
+    def set_data(self, data: dict):
         self.set_common(data)
 
     def get_data(self, more=True):
@@ -3590,7 +3488,7 @@ class PenUp(Widget):
     TYPE = "normalset"
     OPTION = False
 
-    def set_data(self, data):
+    def set_data(self, data: dict):
         self.set_common(data)
 
     def get_data(self, more=True):
@@ -3618,11 +3516,8 @@ class IsDown(Widget):
     OPTION = False
     VALUES = {"down": "down"}
 
-    def set_data(self, data):
-        if "down" in data:
-            self.isdown = data["down"]
-        else:
-            self.isdown = self.VALUES["down"]
+    def set_data(self, data: dict):
+        self.isdown = data.get("down", self.VALUES["down"])
         self.set_common(data)
 
     def get_data(self, more=True):
@@ -3655,11 +3550,8 @@ class PenSize(Widget):
     OPTION = False
     VALUES = {"width": "1"}
 
-    def set_data(self, data):
-        if "width" in data:
-            self.width = data["width"]
-        else:
-            self.width = self.VALUES["width"]
+    def set_data(self, data: dict):
+        self.width = data.get("width", self.VALUES["width"])
         self.set_common(data)
 
     def get_data(self, more=True):
@@ -3691,11 +3583,8 @@ class Color(Widget):
     OPTION = True
     VALUES = {"color": "black"}
 
-    def set_data(self, data):
-        if "color" in data:
-            self.color = data["color"]
-        else:
-            self.color = self.VALUES["color"]
+    def set_data(self, data: dict):
+        self.color = data.get("color", self.VALUES["color"])
         self.set_common(data)
 
     def get_data(self, more=True):
@@ -3718,7 +3607,7 @@ class Color(Widget):
         self.ent1.place(x=EXPAND(70), y=EXPAND(HEIGHT//2+8))
         self.preview_color()
 
-    def preview_color(self, event=None):
+    def preview_color(self, event: tk.Event = None):
         text = self.ent1.get()
         if event is not None:
             if event.char == "\x08":
@@ -3772,11 +3661,8 @@ class PenColor(Widget):
     OPTION = True
     VALUES = {"color": "black"}
 
-    def set_data(self, data):
-        if "color" in data:
-            self.color = data["color"]
-        else:
-            self.color = self.VALUES["color"]
+    def set_data(self, data: dict):
+        self.color = data.get("color", self.VALUES["color"])
         self.set_common(data)
 
     def get_data(self, more=True):
@@ -3799,7 +3685,7 @@ class PenColor(Widget):
         self.ent1.place(x=EXPAND(70), y=EXPAND(HEIGHT//2+8))
         self.preview_color()
 
-    def preview_color(self, event=None):
+    def preview_color(self, event: tk.Event = None):
         text = self.ent1.get()
         if event is not None:
             if event.char == "\x08":
@@ -3853,11 +3739,8 @@ class FillColor(Widget):
     OPTION = True
     VALUES = {"color": "black"}
 
-    def set_data(self, data):
-        if "color" in data:
-            self.color = data["color"]
-        else:
-            self.color = self.VALUES["color"]
+    def set_data(self, data: dict):
+        self.color = data.get("color", self.VALUES["color"])
         self.set_common(data)
 
     def get_data(self, more=True):
@@ -3880,7 +3763,7 @@ class FillColor(Widget):
         self.ent1.place(x=EXPAND(70), y=EXPAND(HEIGHT//2+8))
         self.preview_color()
 
-    def preview_color(self, event=None):
+    def preview_color(self, event: tk.Event = None):
         text = self.ent1.get()
         if event is not None:
             if event.char == "\x08":
@@ -3934,11 +3817,8 @@ class BGColor(Widget):
     OPTION = True
     VALUES = {"color": "white"}
 
-    def set_data(self, data):
-        if "color" in data:
-            self.color = data["color"]
-        else:
-            self.color = self.VALUES["color"]
+    def set_data(self, data: dict):
+        self.color = data.get("color", self.VALUES["color"])
         self.set_common(data)
 
     def get_data(self, more=True):
@@ -3961,7 +3841,7 @@ class BGColor(Widget):
         self.ent1.place(x=EXPAND(70), y=EXPAND(HEIGHT//2+8))
         self.preview_color()
 
-    def preview_color(self, event=None):
+    def preview_color(self, event: tk.Event = None):
         text = self.ent1.get()
         if event is not None:
             if event.char == "\x08":
@@ -4015,11 +3895,8 @@ class GetPenColor(Widget):
     OPTION = False
     VALUES = {"color": "color"}
 
-    def set_data(self, data):
-        if "color" in data:
-            self.color = data["color"]
-        else:
-            self.color = self.VALUES["color"]
+    def set_data(self, data: dict):
+        self.color = data.get("color", self.VALUES["color"])
         self.set_common(data)
 
     def get_data(self, more=True):
@@ -4052,11 +3929,8 @@ class GetFillColor(Widget):
     OPTION = False
     VALUES = {"color": "color"}
 
-    def set_data(self, data):
-        if "color" in data:
-            self.color = data["color"]
-        else:
-            self.color = self.VALUES["color"]
+    def set_data(self, data: dict):
+        self.color = data.get("color", self.VALUES["color"])
         self.set_common(data)
 
     def get_data(self, more=True):
@@ -4089,11 +3963,8 @@ class GetBGColor(Widget):
     OPTION = False
     VALUES = {"color": "color"}
 
-    def set_data(self, data):
-        if "color" in data:
-            self.color = data["color"]
-        else:
-            self.color = self.VALUES["color"]
+    def set_data(self, data: dict):
+        self.color = data.get("color", self.VALUES["color"])
         self.set_common(data)
 
     def get_data(self, more=True):
@@ -4125,7 +3996,7 @@ class BeginFill(Widget):
     TYPE = "normalset"
     OPTION = False
 
-    def set_data(self, data):
+    def set_data(self, data: dict):
         self.set_common(data)
 
     def get_data(self, more=True):
@@ -4150,7 +4021,7 @@ class EndFill(Widget):
     TEXT = "塗りつぶしを終える"
     TYPE = "normalset"
 
-    def set_data(self, data):
+    def set_data(self, data: dict):
         self.set_common(data)
 
     def get_data(self, more=True):
@@ -4177,11 +4048,8 @@ class Filling(Widget):
     OPTION = False
     VALUES = {"fill": "fill"}
 
-    def set_data(self, data):
-        if "fill" in data:
-            self.fill = data["fill"]
-        else:
-            self.fill = self.VALUES["fill"]
+    def set_data(self, data: dict):
+        self.fill = data.get("fill", self.VALUES["fill"])
         self.set_common(data)
 
     def get_data(self, more=True):
@@ -4213,7 +4081,7 @@ class ShowTurtle(Widget):
     TYPE = "normalset"
     OPTION = False
 
-    def set_data(self, data):
+    def set_data(self, data: dict):
         self.set_common(data)
 
     def get_data(self, more=True):
@@ -4239,7 +4107,7 @@ class HideTurtle(Widget):
     TYPE = "normalset"
     OPTION = False
 
-    def set_data(self, data):
+    def set_data(self, data: dict):
         self.set_common(data)
 
     def get_data(self, more=True):
@@ -4266,11 +4134,8 @@ class IsVisible(Widget):
     OPTION = False
     VALUES = {"shown": "shown"}
 
-    def set_data(self, data):
-        if "shown" in data:
-            self.shown = data["shown"]
-        else:
-            self.shown = self.VALUES["shown"]
+    def set_data(self, data: dict):
+        self.shown = data.get("shown", self.VALUES["shown"])
         self.set_common(data)
 
     def get_data(self, more=True):
@@ -4303,11 +4168,8 @@ class TurtleSize(Widget):
     OPTION = False
     VALUES = {"size": "1"}
 
-    def set_data(self, data):
-        if "size" in data:
-            self.size = data["size"]
-        else:
-            self.size = self.VALUES["size"]
+    def set_data(self, data: dict):
+        self.size = data.get("size", self.VALUES["size"])
         self.set_common(data)
 
     def get_data(self, more=True):
@@ -4347,39 +4209,15 @@ class Write(Widget):
         "slant": "roman",
         "sideway": "False"}
 
-    def set_data(self, data):
-        if "text" in data:
-            self.text = data["text"]
-        else:
-            self.text = self.VALUES["text"]
-        if "size" in data:
-            self.size = data["size"]
-        else:
-            self.size = self.VALUES["size"]
-        if "move" in data:
-            self.move = data["move"]
-        else:
-            self.move = self.VALUES["move"]
-        if "align" in data:
-            self.align = data["align"]
-        else:
-            self.align = self.VALUES["align"]
-        if "family" in data:
-            self.family = data["family"]
-        else:
-            self.family = self.VALUES["family"]
-        if "weight" in data:
-            self.weight = data["weight"]
-        else:
-            self.weight = self.VALUES["weight"]
-        if "slant" in data:
-            self.slant = data["slant"]
-        else:
-            self.slant = self.VALUES["slant"]
-        if "sideway" in data:
-            self.sideway = data["sideway"]
-        else:
-            self.sideway = self.VALUES["sideway"]
+    def set_data(self, data: dict):
+        self.text = data.get("text", self.VALUES["text"])
+        self.size = data.get("size", self.VALUES["size"])
+        self.move = data.get("move", self.VALUES["move"])
+        self.align = data.get("align", self.VALUES["align"])
+        self.family = data.get("family", self.VALUES["family"])
+        self.weight = data.get("weight", self.VALUES["weight"])
+        self.slant = data.get("slant", self.VALUES["slant"])
+        self.sideway = data.get("sideway", self.VALUES["sideway"])
         self.set_common(data)
 
     def get_data(self, more=True):
@@ -4430,6 +4268,7 @@ class Write(Widget):
         frame0 = tk.Frame(self.win)
         frame0.pack(anchor=tk.N, side=tk.TOP)
         font = (FONT_TYPE1, EXPAND(16), "bold")
+        list_font = (FONT_TYPE1, EXPAND(10))
 
         # タイトル
         lab0 = tk.Label(frame0, text="Options",
@@ -4459,6 +4298,7 @@ class Write(Widget):
         self.opt1 = tk.Entry(fra1, font=font, width=12, justify=tk.RIGHT)
         self.opt1.insert(tk.END, self.text)
         self.opt1.bind('<Button-3>', lambda e: self.show_popup1(e, self.opt1))
+        self.opt1.bind("<KeyPress>", self.preview_font)
         self.opt1.pack(side=tk.LEFT)
 
         fra2 = tk.Frame(frame1)
@@ -4466,8 +4306,11 @@ class Write(Widget):
         lab2 = tk.Label(fra2, text="move    = ", font=font)
         lab2.pack(side=tk.LEFT)
         self.opt2 = ttk.Combobox(fra2, font=font, width=12)
+        self.opt2.option_add('*TCombobox*Listbox.font', list_font)
         self.opt2['values'] = ("True", "False")
         self.opt2.set(self.move)
+        self.opt2.bind("<KeyPress>", self.preview_font)
+        self.opt2.bind("<<ComboboxSelected>>", self.preview_font)
         self.opt2.pack(side=tk.LEFT)
 
         fra3 = tk.Frame(frame1)
@@ -4477,6 +4320,7 @@ class Write(Widget):
         self.opt3 = tk.Entry(fra3, font=font, width=12, justify=tk.RIGHT)
         self.opt3.insert(tk.END, self.align)
         self.opt3.bind('<Button-3>', lambda e: self.show_popup1(e, self.opt3))
+        self.opt3.bind("<KeyPress>", self.preview_font)
         self.opt3.pack(side=tk.LEFT)
 
         fra4 = tk.Frame(frame1)
@@ -4484,27 +4328,35 @@ class Write(Widget):
         lab4 = tk.Label(fra4, text="sideway = ", font=font)
         lab4.pack(side=tk.LEFT)
         self.opt4 = ttk.Combobox(fra4, font=font, width=12)
+        self.opt4.option_add('*TCombobox*Listbox.font', list_font)
         self.opt4['values'] = ("True", "False")
-        self.opt4.set(self.move)
+        self.opt4.set(self.sideway)
         self.opt4.bind("<KeyPress>", self.preview_font)
+        self.opt4.bind("<<ComboboxSelected>>", self.preview_font)
         self.opt4.pack(side=tk.LEFT)
 
         fra6 = tk.Frame(frame1)
         fra6.pack(anchor=tk.W, pady=EXPAND(10))
         lab6 = tk.Label(fra6, text="weight  = ", font=font)
         lab6.pack(side=tk.LEFT)
-        self.opt6 = tk.Entry(fra6, font=font, width=12, justify=tk.RIGHT)
-        self.opt6.insert(tk.END, self.weight)
-        self.opt6.bind('<Button-3>', lambda e: self.show_popup1(e, self.opt6))
+        self.opt6 = ttk.Combobox(fra6, font=font, width=12)
+        self.opt6.option_add('*TCombobox*Listbox.font', list_font)
+        self.opt6['values'] = ("normal", "bold")
+        self.opt6.set(self.weight)
+        self.opt6.bind("<KeyPress>", self.preview_font)
+        self.opt6.bind("<<ComboboxSelected>>", self.preview_font)
         self.opt6.pack(side=tk.LEFT)
 
         fra7 = tk.Frame(frame1)
         fra7.pack(anchor=tk.W, pady=EXPAND(10))
         lab7 = tk.Label(fra7, text="slant   = ", font=font)
         lab7.pack(side=tk.LEFT)
-        self.opt7 = tk.Entry(fra7, font=font, width=12, justify=tk.RIGHT)
-        self.opt7.insert(tk.END, self.slant)
-        self.opt7.bind('<Button-3>', lambda e: self.show_popup1(e, self.opt7))
+        self.opt7 = ttk.Combobox(fra7, font=font, width=12)
+        self.opt7.option_add('*TCombobox*Listbox.font', list_font)
+        self.opt7['values'] = ("roman", "italic")
+        self.opt7.set(self.slant)
+        self.opt7.bind("<KeyPress>", self.preview_font)
+        self.opt7.bind("<<ComboboxSelected>>", self.preview_font)
         self.opt7.pack(side=tk.LEFT)
 
         # 右側のライン
@@ -4567,7 +4419,7 @@ class Write(Widget):
         self.cv1.create_text(320, 80, text="abc ABC 123\nあいう 甲乙",
                              font=font, tag="preview")
 
-    def change_font(self, event):
+    def change_font(self, event: tk.Event):
         selected = self.lsb1.curselection()
         if len(selected) > 0:
             font = self.font_list[selected[0]]
@@ -4600,9 +4452,9 @@ class Write(Widget):
     def run(self, tur: turtle.RawTurtle):
         self.save_data()
         mark = "@" if self.str2bool(self.sideway) else ""
-        font = tkFont(mark + self.str2str(self.family),
-                      self.str2int(self.size), self.str2str(self.weight),
-                      self.str2str(self.slant))
+        font = (mark + self.str2str(self.family),
+                self.str2int(self.size), self.str2str(self.weight),
+                self.str2str(self.slant))
         tur.write(
             self.str2str(self.text),
             move=self.str2bool(self.move),
@@ -4615,7 +4467,7 @@ class Bye(Widget):
     TYPE = "normalset"
     OPTION = False
 
-    def set_data(self, data):
+    def set_data(self, data: dict):
         self.set_common(data)
 
     def get_data(self, more=True):
@@ -4640,7 +4492,7 @@ class ExitOnClick(Widget):
     TEXT = "クリックで終了する"
     TYPE = "normalset"
 
-    def set_data(self, data):
+    def set_data(self, data: dict):
         self.set_common(data)
 
     def get_data(self, more=True):
@@ -4669,7 +4521,7 @@ class Bell(Widget):
     TYPE = "normalset"
     OPTION = False
 
-    def set_data(self, data):
+    def set_data(self, data: dict):
         self.set_common(data)
 
     def get_data(self, more=True):
@@ -4696,11 +4548,8 @@ class Sleep(Widget):
     OPTION = False
     VALUES = {"second": "0"}
 
-    def set_data(self, data):
-        if "second" in data:
-            self.second = data["second"]
-        else:
-            self.second = self.VALUES["second"]
+    def set_data(self, data: dict):
+        self.second = data.get("second", self.VALUES["second"])
         self.set_common(data)
 
     def get_data(self, more=True):
@@ -4732,11 +4581,8 @@ class Comment(Widget):
     OPTION = True
     VALUES = {"comment": "Comment"}
 
-    def set_data(self, data):
-        if "comment" in data:
-            self.comment = data["comment"]
-        else:
-            self.comment = self.VALUES["comment"]
+    def set_data(self, data: dict):
+        self.comment = data.get("comment", self.VALUES["comment"])
         self.set_common(data)
 
     def get_data(self, more=True):
@@ -4791,7 +4637,7 @@ class Undefined(Widget):
     TYPE = "undefined"
     OPTION = True
 
-    def set_data(self, data):
+    def set_data(self, data: dict):
         self.data = data
         self.set_common(data)
 
@@ -4838,10 +4684,10 @@ WidgetType = Union[Widget, VarNumber, VarString, VarBoolean, Title, ScreenSize,
                    PenSize, Color, PenColor, FillColor, BGColor,
                    GetPenColor, GetFillColor, GetBGColor, BeginFill, EndFill,
                    Filling, ShowTurtle, HideTurtle, IsVisible, TurtleSize,
-                   Write, Bye, ExitOnClick, Bell, Sleep, Comment]
+                   Write, Bye, ExitOnClick, Bell, Sleep, Comment, Undefined]
 
 
-def GET_WIDGET_INFO(widget: WidgetType):
+def GET_WIDGET_INFO(widget: WidgetType) -> str:
     length = 14
     if isinstance(widget, type):
         name = widget.__name__
