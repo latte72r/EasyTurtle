@@ -16,10 +16,11 @@ import tkinter as tk
 import traceback
 import turtle
 import webbrowser
+from functools import partial
+from subprocess import CalledProcessError
 from tkinter import colorchooser, filedialog
 from tkinter import font as tkFont
 from tkinter import messagebox, scrolledtext, simpledialog, ttk
-from subprocess import CalledProcessError
 from urllib import request
 from urllib.error import URLError
 
@@ -62,7 +63,7 @@ ROOT = tk.Tk()
 if PYVERSION < (3, 7):
     ROOT.withdraw()
     ver = str(PYVERSION[0]) + "." + str(PYVERSION[1])
-    messagebox.showerror("エラー", "Python" + ver + "には対応していません。")
+    messagebox.showerror("エラー", "Python" + ver + "には対応していません")
     ROOT.destroy()
     sys.exit()
 else:
@@ -227,8 +228,8 @@ elif SYSTEM == "Linux":
             WIN_MAG = 1
     except CalledProcessError:
         messagebox.showwarning("警告", '\
-"x11-xserver-utils"がインストールされていません。\n\
-画面の大きさの調整は無効になります。')
+"x11-xserver-utils"がインストールされていません\n\
+画面の大きさの調整は無効になります')
         WIN_MAG = 1
 
     MIN_WIDTH = EXPAND(1240)
@@ -237,14 +238,14 @@ elif SYSTEM == "Linux":
 # オペレーションシステムがサポートされていない場合
 else:
     ROOT.withdraw()
-    messagebox.showerror("エラー", f"{SYSTEM}には対応していません。")
+    messagebox.showerror("エラー", f"{SYSTEM}には対応していません")
     ROOT.destroy()
     sys.exit()
 
 
 FONT = (FONT_TYPE1, EXPAND(12), "bold")
 
-__version__ = (5, 11, 0)
+__version__ = (5, 12, "0a1")
 
 
 class EasyTurtle:
@@ -254,8 +255,10 @@ class EasyTurtle:
         self.tabs: List[IndividualTab] = []
         self.untitled_tabs: Dict[IndividualTab, int] = {}
         self.copied_widgets: List[Dict[str, Any]] = []
+        self.recent_files: List[str] = []
         self.running_program = False
         self.editing_config = False
+        self.last_directory = None
         self.menu: tk.Menu
 
         # 画面を設定する
@@ -266,24 +269,25 @@ class EasyTurtle:
             thread = threading.Thread(target=self.update_starting)
             thread.start()
 
+        # 画面データを開く
+        self.open_window_data()
+
         # ファイルが指定されていれば開く
         if file is not None:
             self.open_program(file)
 
         else:
-            self.open_window_data()
-
             file_open = False
 
             for file in glob.glob(os.path.join(BOOT_FOLDER, "reboot*.json")):
                 file_open = True
-                self.open_program(file)
+                self.open_program(file, boot=True)
                 os.remove(file)
 
             if not file_open and CONFIG["open_last_file"]:
                 for file in glob.glob(os.path.join(BOOT_FOLDER, "boot*.json")):
                     file_open = True
-                    self.open_program(file)
+                    self.open_program(file, boot=True)
                     os.remove(file)
 
             if not file_open:
@@ -294,6 +298,24 @@ class EasyTurtle:
     def __repr__(self):
         """コンストラクタの文字列定義"""
         return "EasyTurtle()"
+
+    def save_boot_file(self):
+        """起動時のファイルを保存"""
+        shutil.rmtree(BOOT_FOLDER)
+        os.mkdir(BOOT_FOLDER)
+
+        if CONFIG["open_last_file"]:
+            data = {
+                "copy": self.copied_widgets if CONFIG["share_copy"] else [],
+                "dirname": self.last_directory,
+                "recent": self.recent_files}
+
+            with open(os.path.join(BOOT_FOLDER, "windata.json"), "w")as f:
+                json.dump(data, f, indent=2)
+
+            for num, tab in enumerate(self.tabs):
+                tab.save_file(
+                    os.path.join(BOOT_FOLDER, f"boot{num}.json"), boot=True)
 
     def version_info(self, event=None):
         """設定を編集"""
@@ -399,7 +421,7 @@ class EasyTurtle:
         but1.pack(padx=EXPAND(10), pady=(0, EXPAND(20)))
         lab1 = tk.Label(self.win, text="\
 ※画面サイズなどの一部の変更は　\n\
-　次回起動時より有効になります。",
+　次回起動時より有効になります",
                         font=FONT, fg="red")
         lab1.pack(padx=EXPAND(20), pady=(0, EXPAND(10)))
         self.win.resizable(False, False)
@@ -426,7 +448,7 @@ class EasyTurtle:
         if (CONFIG["expand_window"] != last_config["expand_window"]) or \
            (CONFIG["user_document"] != last_config["user_document"]):
             res = messagebox.askyesno("確認", "\
-変更された設定には再起動後に反映されるものが含まれています。\n\
+変更された設定には再起動後に反映されるものが含まれています\n\
 今すぐこのアプリを再起動しますか？")
             if res:
                 self.reboot_program()
@@ -449,19 +471,7 @@ class EasyTurtle:
                             return 1
 
         # ファイルを保存
-        shutil.rmtree(BOOT_FOLDER)
-        os.mkdir(BOOT_FOLDER)
-
-        if CONFIG["open_last_file"]:
-            data = {
-                "copy": self.copied_widgets if CONFIG["share_copy"] else []}
-
-            with open(os.path.join(BOOT_FOLDER, "windata.json"), "w")as f:
-                json.dump(data, f, indent=2)
-
-            for num, tab in enumerate(self.tabs):
-                tab.save_file(
-                    os.path.join(BOOT_FOLDER, f"boot{num}.json"), boot=True)
+        self.save_boot_file()
 
         # 画面を閉じる
         ROOT.destroy()
@@ -491,14 +501,18 @@ class EasyTurtle:
             return
 
         with open(file, "r")as f:
-            data = json.load(f)
+            data: dict = json.load(f)
 
-        os.remove(file)
+        if CONFIG["share_copy"]:
+            self.copied_widgets = data.get("copy", [])
 
-        if CONFIG["share_copy"] and "copy" in data:
-            self.copied_widgets = data["copy"]
+        self.last_directory = data.get("dirname")
+        self.recent_files = data.get("recent", [])
 
-    def open_program(self, file=None):
+        with open(file, "w")as f:
+            json.dump({"recent": self.recent_files}, f)
+
+    def open_program(self, file=None, boot=False):
         """開く動作"""
         # キーバインドから実行された場合
         if isinstance(file, tk.Event):
@@ -508,13 +522,9 @@ class EasyTurtle:
 
         # ファイル名を質問する
         if file is None:
-            tab = self.get_currently_selected()
-            if (tab is not None) and (tab.program_name is not None):
-                directory = os.path.dirname(
-                    tab.program_name)
-                name = tab.basename
+            if self.last_directory is not None:
                 file = filedialog.askopenfilename(
-                    parent=ROOT, initialdir=directory, initialfile=name,
+                    parent=ROOT, initialdir=self.last_directory,
                     filetypes=[("Jsonファイル", "*.json")])
             else:
                 file = filedialog.askopenfilename(
@@ -533,6 +543,14 @@ class EasyTurtle:
         # ファイルを開く
         with open(file, "r")as f:
             data: dict = json.load(f)
+
+        # 最近のファイルリストに追加
+        if not boot:
+            name = os.path.abspath(file).replace("\\", "/")
+            if name in self.recent_files:
+                self.recent_files.remove(name)
+            self.recent_files.insert(0, name)
+            self.recent_files = self.recent_files[:10]
 
         # 選択されているタブ
         select = data.get("selected", True)
@@ -574,7 +592,7 @@ class EasyTurtle:
             # データを上書き
             if CONFIG["ask_save_new"] and version < (4, 11):
                 res = messagebox.askyesno("確認", "\
-選択されたファイルは古いバージョンです。\n\
+選択されたファイルは古いバージョンです\n\
 このバージョン用に保存し直しますか？")
                 if res:
                     newtab.save_file(file)
@@ -587,14 +605,19 @@ class EasyTurtle:
             newtab.program_name = data.get("name", file)
             newtab.decide_title(data.get("untitled", None))
 
+            # タイトルを更新
             newtab.set_title()
+
+            # ディレクトリ名を保存
+            if newtab.program_name is not None:
+                self.last_directory = os.path.dirname(newtab.program_name)
 
         except Exception:
             # タブを削除
             newtab.close_tab()
 
             # エラー表示
-            messagebox.showerror("エラー", "変換エラーが発生しました。")
+            messagebox.showerror("エラー", "変換エラーが発生しました")
             traceback.print_exc()
             return 1
 
@@ -661,23 +684,23 @@ class EasyTurtle:
         try:
             if new_version == "ConnectionError":
                 messagebox.showerror("エラー", "\
-エラーが発生しました。\n\
-ネットワーク接続を確認してください。")
+エラーが発生しました\n\
+ネットワーク接続を確認してください")
             elif new_version == "OtherError":
                 messagebox.showerror("\
-エラーが発生しました。\n\
-しばらくしてからもう一度お試しください。")
+エラーが発生しました\n\
+しばらくしてからもう一度お試しください")
             elif new_version <= __version__:
                 messagebox.showinfo("アップデート", f"\
 バージョン：{old_joined_version}\n\
-お使いのバージョンは最新です。")
+お使いのバージョンは最新です")
             elif sys.argv[0][-14:] == "EasyTurtle.exe":
                 self.ask_update_msi(new_version)
             else:
                 self.ask_update_page(new_version)
         except TypeError:
             messagebox.showerror("エラー", "\
-正規リリースでないため確認できません。")
+正規リリースでないため確認できません")
 
     def ask_update_msi(self, new_version, start=False):
         """自動アップデートするか尋ねる"""
@@ -720,8 +743,8 @@ download/v{joined_version}/EasyTurtle-{joined_version}-amd64.msi"
             request.urlretrieve(url, file_name)
         except AttributeError:
             messagebox.showerror("\
-エラーが発生しました。\n\
-しばらくしてからもう一度お試しください。")
+エラーが発生しました\n\
+しばらくしてからもう一度お試しください")
             traceback.print_exc()
 
         subprocess.Popen(["cmd", "/c", file_name])
@@ -774,7 +797,10 @@ download/v{joined_version}/EasyTurtle-{joined_version}-amd64.msi"
         shutil.rmtree(BOOT_FOLDER)
         os.mkdir(BOOT_FOLDER)
 
-        data = {"copy": self.copied_widgets if CONFIG["share_copy"] else []}
+        data = {
+            "copy": self.copied_widgets if CONFIG["share_copy"] else [],
+            "dirname": self.last_directory,
+            "recent": self.recent_files}
 
         with open(os.path.join(BOOT_FOLDER, "windata.json"), "w")as f:
             json.dump(data, f, indent=2)
@@ -868,6 +894,21 @@ download/v{joined_version}/EasyTurtle-{joined_version}-amd64.msi"
         if tab is not None:
             tab.run_fastest_mode()
 
+    def show_recent_files(self, event=None):
+        # Menubarの作成
+        menu_font = (FONT_TYPE1, EXPAND(10), "bold")
+        self.menu = tk.Menu(ROOT, tearoff=0, font=menu_font)
+
+        if len(self.recent_files) == 0:
+            messagebox.showwarning("警告", "ファイル履歴がありません")
+            return
+
+        for n, file in enumerate(self.recent_files):
+            self.menu.add_command(label=file,
+                                  command=partial(self.open_program, file))
+
+        self.menu.post(EXPAND(100), EXPAND(100))
+
     def get_shape(self, shape, x1: int, y1: int, size: int = -1):
         """カメの形を決定"""
         for x2, y2 in shape:
@@ -909,6 +950,7 @@ download/v{joined_version}/EasyTurtle-{joined_version}-amd64.msi"
         ROOT.bind("<Control-Key-g>", self.goto_line)
         ROOT.bind("<Control-Key-q>", self.close_window)
         ROOT.bind("<Control-Key-r>", self.reboot_program)
+        ROOT.bind("<Control-Key-h>", self.show_recent_files)
         ROOT.bind("<Control-Key-comma>", self.edit_config)
         ROOT.bind("<Key-F1>", self.show_offline_document)
         ROOT.bind("<Key-F5>", self.run_standard_mode)
@@ -925,13 +967,16 @@ download/v{joined_version}/EasyTurtle-{joined_version}-amd64.msi"
 
         # FILEメニューの作成
         filemenu = tk.Menu(self.menubar, tearoff=0, font=menu_font)
-        filemenu.add_command(label="新規ファイル", accelerator="Ctrl+N",
+        filemenu.add_command(label="新しいタブ", accelerator="Ctrl+N",
                              command=self.new_program)
         filemenu.add_command(label="新しいウィンドウ", accelerator="Ctrl+Shift+N",
                              command=self.new_window)
         filemenu.add_separator()
         filemenu.add_command(label="ファイルを開く", accelerator="Ctrl+O",
                              command=self.open_program)
+        filemenu.add_command(label="最近使用した項目", accelerator="Ctrl+H",
+                             command=self.show_recent_files)
+        filemenu.add_separator()
         filemenu.add_command(label="上書き保存", accelerator="Ctrl+S",
                              command=self.save_program)
         filemenu.add_command(label="名前を付けて保存", accelerator="Ctrl+Shift+S",
@@ -1226,7 +1271,7 @@ class IndividualTab:
         if (len(self.widgets) > 999) and \
            CONFIG["show_warning"] and not self.warning_ignore:
             messagebox.showwarning(
-                "警告", "大量のデータを保持すると正常に動作しなくなる可能性があります。")
+                "警告", "大量のデータを保持すると正常に動作しなくなる可能性があります")
             self.warning_ignore = True
 
     def set_scrollbar_posision(self):
@@ -1413,7 +1458,7 @@ class IndividualTab:
                         traceback.print_exc()
                         messagebox.showerror("エラー", f'\
 line: {index+1}, {widget.__class__.__name__}\n\
-エラーが発生しました。\n\n{traceback.format_exc()}')
+エラーが発生しました\n\n{traceback.format_exc()}')
                         return
             else:
                 return
@@ -1434,6 +1479,10 @@ line: {index+1}, {widget.__class__.__name__}\n\
         if file is None:
             if self.program_name is not None:
                 file = self.program_name
+            elif self.et.last_directory is not None:
+                file = filedialog.askopenfilename(
+                    parent=ROOT, initialdir=self.et.last_directory,
+                    filetypes=[("Jsonファイル", "*.json")])
             else:
                 file = filedialog.asksaveasfilename(
                     parent=ROOT, initialdir=DOCUMENTS,
@@ -1463,6 +1512,10 @@ line: {index+1}, {widget.__class__.__name__}\n\
                 file = filedialog.asksaveasfilename(
                     parent=ROOT, initialdir=directory,
                     initialfile=name, filetypes=[("Jsonファイル", "*.json")])
+            elif self.et.last_directory is not None:
+                file = filedialog.askopenfilename(
+                    parent=ROOT, initialdir=self.et.last_directory,
+                    filetypes=[("Jsonファイル", "*.json")])
             else:
                 file = filedialog.asksaveasfilename(
                     parent=ROOT, initialdir=DOCUMENTS,
@@ -1536,7 +1589,12 @@ line: {index+1}, {widget.__class__.__name__}\n\
             # 基本データを設定
             self.default_data = [d.get_data(more=False) for d in self.widgets]
 
+        # タイトルを設定
         self.set_title()
+
+        # ディレクトリ名を保存
+        if self.program_name is not None:
+            self.last_directory = os.path.dirname(self.program_name)
 
     def make_match_class(self, data, index=-1, version=tuple(__version__[:2])):
         """ウィジェットを作成"""
@@ -1686,19 +1744,19 @@ line: {index+1}, {widget.__class__.__name__}\n\
         """追加先の取得"""
         text = self.ent1.get()
         if text == "":
-            messagebox.showerror("エラー", '位置が指定されていません。')
+            messagebox.showerror("エラー", '位置が指定されていません')
             return None
         try:
             index = int(text)
         except ValueError:
-            messagebox.showerror("エラー", '位置は半角数字のみで指定してください。')
+            messagebox.showerror("エラー", '位置は半角数字のみで指定してください')
             return None
         if index > len(self.widgets) + 1:
             messagebox.showwarning("警告", '\
-位置が最大値を超えています。\n自動で最後に追加します。')
+位置が最大値を超えています\n自動で最後に追加します')
             return len(self.widgets)
         elif index < 1:
-            messagebox.showerror("エラー", '位置は正の数で入力してください。')
+            messagebox.showerror("エラー", '位置は正の数で入力してください')
             return None
         else:
             return index - 1
@@ -1706,24 +1764,24 @@ line: {index+1}, {widget.__class__.__name__}\n\
     def goto_line(self):
         """行に移動"""
         text = simpledialog.askstring("行へ移動", '\
-数値を入力してください。\n\
-"-1"でプログラムの最後に移動します。')
-        if text == "":
+数値を入力してください\n\
+"-1"でプログラムの最後に移動します')
+        if (text == "") or (text is None):
             return 0
         try:
             line = int(text)
         except ValueError:
-            messagebox.showerror("エラー", '数値で入力してください。')
+            messagebox.showerror("エラー", '数値で入力してください')
             return 1
         if line == -1:
             self.index = len(self.widgets) - SIZE
         elif line > len(self.widgets):
             messagebox.showwarning("警告", '\
-位置が最大値を超えています。\n\
-自動で最後に移動します。')
+位置が最大値を超えています\n\
+自動で最後に移動します')
             self.index = len(self.widgets) - SIZE
         elif line < 1:
-            messagebox.showerror("エラー", '正の数値で入力してください。')
+            messagebox.showerror("エラー", '正の数値で入力してください')
             return 1
         elif self.index <= line - 1 < self.index + SIZE:
             pass
@@ -1968,8 +2026,16 @@ class Widget:
 
     def binder(self, widget: tk.Widget):
         """ボタンのバインド"""
-        widget.bind('<Button-3>', self.show_popup2)
+        # 右クリックのバインド
+        if isinstance(widget, tk.Entry):
+            widget.bind('<Button-3>', lambda e: self.show_popup1(e, widget))
+        else:
+            widget.bind('<Button-3>', self.show_popup2)
+
+        # ドラッグのバインド
         widget.bind("<B1-Motion>", self.dragged)
+
+        # スクロールのバインド
         if SYSTEM == "Windows":
             widget.bind("<MouseWheel>", self.tab.scroll_on_windows)
         elif SYSTEM == "Linux":
@@ -2345,7 +2411,7 @@ class Widget:
             if name not in self.tab.variable_datas:
                 messagebox.showerror("エラー", f'\
 line: {self.tab.widgets.index(self)+1}, {self.__class__.__name__}\n\
-変数"{name}"は定義されていません。')
+変数"{name}"は定義されていません')
                 self.tab.kill_runner()
                 return ""
             elif self.tab.variable_datas[name][1] == "S" or\
@@ -2355,7 +2421,7 @@ line: {self.tab.widgets.index(self)+1}, {self.__class__.__name__}\n\
             else:
                 messagebox.showwarning("警告", f'\
 line: {self.tab.widgets.index(self)+1}, {self.__class__.__name__}\n\
-変数"{name}"はString型ではありません。')
+変数"{name}"はString型ではありません')
                 string = string.replace(
                     var, str(self.tab.variable_datas[name][0]))
         return string
@@ -2369,7 +2435,7 @@ line: {self.tab.widgets.index(self)+1}, {self.__class__.__name__}\n\
             if name not in self.tab.variable_datas:
                 messagebox.showerror("エラー", f'\
 line: {self.tab.widgets.index(self)+1}, {self.__class__.__name__}\n\
-変数"{name}"は定義されていません。')
+変数"{name}"は定義されていません')
                 self.tab.kill_runner()
                 return False
             elif self.tab.variable_datas[name][1] == "B" or \
@@ -2379,7 +2445,7 @@ line: {self.tab.widgets.index(self)+1}, {self.__class__.__name__}\n\
             else:
                 messagebox.showwarning("警告", f'\
 line: {self.tab.widgets.index(self)+1}, {self.__class__.__name__}\n\
-変数"{name}"はBoolean型ではありません。')
+変数"{name}"はBoolean型ではありません')
                 string = string.replace(
                     var, str(self.tab.variable_datas[name][0]))
         if string == "True":
@@ -2389,7 +2455,7 @@ line: {self.tab.widgets.index(self)+1}, {self.__class__.__name__}\n\
         else:
             messagebox.showerror("エラー", f'\
 line: {self.tab.widgets.index(self)+1}, {self.__class__.__name__}\n\
-{string}はBoolean型ではありません。')
+{string}はBoolean型ではありません')
             self.tab.kill_runner()
             return False
         return boolean
@@ -2401,7 +2467,7 @@ line: {self.tab.widgets.index(self)+1}, {self.__class__.__name__}\n\
             if name not in self.tab.variable_datas:
                 messagebox.showerror("エラー", f'\
 line: {self.tab.widgets.index(self)+1}, {self.__class__.__name__}\n\
-変数"{name}"は定義されていません。')
+変数"{name}"は定義されていません')
                 self.tab.kill_runner()
             elif self.tab.variable_datas[name][1] == "N" or \
                     not CONFIG["show_warning"]:
@@ -2410,7 +2476,7 @@ line: {self.tab.widgets.index(self)+1}, {self.__class__.__name__}\n\
             else:
                 messagebox.showwarning("警告", f'\
 line: {self.tab.widgets.index(self)+1}, {self.__class__.__name__}\n\
-変数"{name}"はNumber型ではありません。')
+変数"{name}"はNumber型ではありません')
                 string = string.replace(
                     var, str(self.tab.variable_datas[name][0]))
         return string
@@ -2421,7 +2487,7 @@ line: {self.tab.widgets.index(self)+1}, {self.__class__.__name__}\n\
         if string == "":
             messagebox.showerror("エラー", f'\
 line: {self.tab.widgets.index(self)+1}, {self.__class__.__name__}\n\
-値が入力されていません。')
+値が入力されていません')
             self.tab.kill_runner()
         operators = ["**", "*", "//", "/", "%", "+", "-", "(", ")"]
         formulas = [string]
@@ -2453,7 +2519,7 @@ line: {self.tab.widgets.index(self)+1}, {self.__class__.__name__}\n\
         except Exception:
             messagebox.showerror("エラー", f'\
 line: {self.tab.widgets.index(self)+1}, {self.__class__.__name__}\n\
-"{string}"を数値に変換できませんでした。')
+"{string}"を数値に変換できませんでした')
             self.tab.kill_runner()
             return 0.0
 
@@ -2463,7 +2529,7 @@ line: {self.tab.widgets.index(self)+1}, {self.__class__.__name__}\n\
         if not float(num).is_integer() and CONFIG["show_warning"]:
             messagebox.showwarning("警告", f'\
 line: {self.tab.widgets.index(self)+1}, {self.__class__.__name__}\n\
-値は整数でなければなりません。')
+値は整数でなければなりません')
         return int(round(num))
 
     def str2uint(self, string: str):
@@ -2472,7 +2538,7 @@ line: {self.tab.widgets.index(self)+1}, {self.__class__.__name__}\n\
         if num < 0:
             messagebox.showerror("エラー", f'\
 line: {self.tab.widgets.index(self)+1}, {self.__class__.__name__}\n\
-値は正の整数でなければなりません。')
+値は正の整数でなければなりません')
             self.tab.kill_runner()
             return 0
         else:
@@ -2484,7 +2550,7 @@ line: {self.tab.widgets.index(self)+1}, {self.__class__.__name__}\n\
         if num < 0:
             messagebox.showerror("エラー", f'\
 line: {self.tab.widgets.index(self)+1}, {self.__class__.__name__}\n\
-値は正の小数でなければなりません。')
+値は正の小数でなければなりません')
             self.tab.kill_runner()
             return 0.0
         else:
@@ -2516,7 +2582,6 @@ class VarNumber(Widget):
         self.ent1 = tk.Entry(self.cv, font=FONT, width=12, justify=tk.RIGHT)
         self.ent1.insert(tk.END, self.name)
         self.binder(self.ent1)
-        self.ent1.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent1))
         self.ent1.place(x=EXPAND(70), y=EXPAND(HEIGHT//2+8))
         lab3 = tk.Label(self.cv, text="②", font=FONT, bg=self.background)
         self.binder(lab3)
@@ -2524,7 +2589,6 @@ class VarNumber(Widget):
         self.ent2 = tk.Entry(self.cv, font=FONT, width=12, justify=tk.RIGHT)
         self.ent2.insert(tk.END, self.value)
         self.binder(self.ent2)
-        self.ent2.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent2))
         self.ent2.place(x=EXPAND(220), y=EXPAND(HEIGHT//2+8))
 
     def save_data(self):
@@ -2561,7 +2625,6 @@ class VarString(Widget):
         self.ent1 = tk.Entry(self.cv, font=FONT, width=12, justify=tk.RIGHT)
         self.ent1.insert(tk.END, self.name)
         self.binder(self.ent1)
-        self.ent1.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent1))
         self.ent1.place(x=EXPAND(70), y=EXPAND(HEIGHT//2+8))
         lab3 = tk.Label(self.cv, text="②", font=FONT, bg=self.background)
         self.binder(lab3)
@@ -2569,7 +2632,6 @@ class VarString(Widget):
         self.ent2 = tk.Entry(self.cv, font=FONT, width=12, justify=tk.RIGHT)
         self.ent2.insert(tk.END, self.value)
         self.binder(self.ent2)
-        self.ent2.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent2))
         self.ent2.place(x=EXPAND(220), y=EXPAND(HEIGHT//2+8))
 
     def save_data(self):
@@ -2606,7 +2668,6 @@ class VarBoolean(Widget):
         self.ent1 = tk.Entry(self.cv, font=FONT, width=12, justify=tk.RIGHT)
         self.ent1.insert(tk.END, self.name)
         self.binder(self.ent1)
-        self.ent1.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent1))
         self.ent1.place(x=EXPAND(70), y=EXPAND(HEIGHT//2+8))
         lab3 = tk.Label(self.cv, text="②", font=FONT, bg=self.background)
         self.binder(lab3)
@@ -2650,7 +2711,6 @@ class Title(Widget):
         self.ent1 = tk.Entry(self.cv, font=FONT, width=12, justify=tk.RIGHT)
         self.ent1.insert(tk.END, self.title)
         self.binder(self.ent1)
-        self.ent1.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent1))
         self.ent1.place(x=EXPAND(70), y=EXPAND(HEIGHT//2+8))
 
     def save_data(self):
@@ -2686,7 +2746,6 @@ class ScreenSize(Widget):
         self.ent1 = tk.Entry(self.cv, font=FONT, width=12, justify=tk.RIGHT)
         self.ent1.insert(tk.END, self.width)
         self.binder(self.ent1)
-        self.ent1.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent1))
         self.ent1.place(x=EXPAND(70), y=EXPAND(HEIGHT//2+8))
         lab3 = tk.Label(self.cv, text="②", font=FONT, bg=self.background)
         self.binder(lab3)
@@ -2694,7 +2753,6 @@ class ScreenSize(Widget):
         self.ent2 = tk.Entry(self.cv, font=FONT, width=12, justify=tk.RIGHT)
         self.ent2.insert(tk.END, self.height)
         self.binder(self.ent2)
-        self.ent2.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent2))
         self.ent2.place(x=EXPAND(220), y=EXPAND(HEIGHT//2+8))
 
     def save_data(self):
@@ -2764,7 +2822,6 @@ class Forward(Widget):
         self.ent1 = tk.Entry(self.cv, font=FONT, width=12, justify=tk.RIGHT)
         self.ent1.insert(tk.END, self.distance)
         self.binder(self.ent1)
-        self.ent1.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent1))
         self.ent1.place(x=EXPAND(70), y=EXPAND(HEIGHT//2+8))
 
     def save_data(self):
@@ -2797,7 +2854,6 @@ class Backward(Widget):
         self.ent1 = tk.Entry(self.cv, font=FONT, width=12, justify=tk.RIGHT)
         self.ent1.insert(tk.END, self.distance)
         self.binder(self.ent1)
-        self.ent1.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent1))
         self.ent1.place(x=EXPAND(70), y=EXPAND(HEIGHT//2+8))
 
     def save_data(self):
@@ -2830,7 +2886,6 @@ class Right(Widget):
         self.ent1 = tk.Entry(self.cv, font=FONT, width=12, justify=tk.RIGHT)
         self.ent1.insert(tk.END, self.angle)
         self.binder(self.ent1)
-        self.ent1.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent1))
         self.ent1.place(x=EXPAND(70), y=EXPAND(HEIGHT//2+8))
 
     def save_data(self):
@@ -2863,7 +2918,6 @@ class Left(Widget):
         self.ent1 = tk.Entry(self.cv, font=FONT, width=12, justify=tk.RIGHT)
         self.ent1.insert(tk.END, self.angle)
         self.binder(self.ent1)
-        self.ent1.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent1))
         self.ent1.place(x=EXPAND(70), y=EXPAND(HEIGHT//2+8))
 
     def save_data(self):
@@ -2897,7 +2951,6 @@ class GoTo(Widget):
         self.ent1 = tk.Entry(self.cv, font=FONT, width=12, justify=tk.RIGHT)
         self.ent1.insert(tk.END, self.x)
         self.binder(self.ent1)
-        self.ent1.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent1))
         self.ent1.place(x=EXPAND(70), y=EXPAND(HEIGHT//2+8))
         lab3 = tk.Label(self.cv, text="②", font=FONT, bg=self.background)
         self.binder(lab3)
@@ -2905,7 +2958,6 @@ class GoTo(Widget):
         self.ent2 = tk.Entry(self.cv, font=FONT, width=12, justify=tk.RIGHT)
         self.ent2.insert(tk.END, self.y)
         self.binder(self.ent2)
-        self.ent2.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent2))
         self.ent2.place(x=EXPAND(220), y=EXPAND(HEIGHT//2+8))
 
     def save_data(self):
@@ -2941,7 +2993,6 @@ class SetX(Widget):
         self.ent1 = tk.Entry(self.cv, font=FONT, width=12, justify=tk.RIGHT)
         self.ent1.insert(tk.END, self.x)
         self.binder(self.ent1)
-        self.ent1.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent1))
         self.ent1.place(x=EXPAND(70), y=EXPAND(HEIGHT//2+8))
 
     def save_data(self):
@@ -2974,7 +3025,6 @@ class SetY(Widget):
         self.ent1 = tk.Entry(self.cv, font=FONT, width=12, justify=tk.RIGHT)
         self.ent1.insert(tk.END, self.y)
         self.binder(self.ent1)
-        self.ent1.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent1))
         self.ent1.place(x=EXPAND(70), y=EXPAND(HEIGHT//2+8))
 
     def save_data(self):
@@ -3007,7 +3057,6 @@ class SetHeading(Widget):
         self.ent1 = tk.Entry(self.cv, font=FONT, width=12, justify=tk.RIGHT)
         self.ent1.insert(tk.END, self.angle)
         self.binder(self.ent1)
-        self.ent1.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent1))
         self.ent1.place(x=EXPAND(70), y=EXPAND(HEIGHT//2+8))
 
     def save_data(self):
@@ -3067,7 +3116,6 @@ class Position(Widget):
         self.ent1 = tk.Entry(self.cv, font=FONT, width=12, justify=tk.RIGHT)
         self.ent1.insert(tk.END, self.x)
         self.binder(self.ent1)
-        self.ent1.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent1))
         self.ent1.place(x=EXPAND(70), y=EXPAND(HEIGHT//2+8))
         lab3 = tk.Label(self.cv, text="②", font=FONT, bg=self.background)
         self.binder(lab3)
@@ -3075,7 +3123,6 @@ class Position(Widget):
         self.ent2 = tk.Entry(self.cv, font=FONT, width=12, justify=tk.RIGHT)
         self.ent2.insert(tk.END, self.y)
         self.binder(self.ent2)
-        self.ent2.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent2))
         self.ent2.place(x=EXPAND(220), y=EXPAND(HEIGHT//2+8))
 
     def save_data(self):
@@ -3119,7 +3166,6 @@ class ToWards(Widget):
         self.ent1 = tk.Entry(self.cv, font=FONT, width=12, justify=tk.RIGHT)
         self.ent1.insert(tk.END, self.x)
         self.binder(self.ent1)
-        self.ent1.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent1))
         self.ent1.place(x=EXPAND(70), y=EXPAND(HEIGHT//2+8))
         lab3 = tk.Label(self.cv, text="②", font=FONT, bg=self.background)
         self.binder(lab3)
@@ -3127,7 +3173,6 @@ class ToWards(Widget):
         self.ent2 = tk.Entry(self.cv, font=FONT, width=12, justify=tk.RIGHT)
         self.ent2.insert(tk.END, self.y)
         self.binder(self.ent1)
-        self.ent2.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent1))
         self.ent2.place(x=EXPAND(220), y=EXPAND(HEIGHT//2+8))
         lab4 = tk.Label(self.cv, text="③", font=FONT, bg=self.background)
         self.binder(lab4)
@@ -3135,7 +3180,6 @@ class ToWards(Widget):
         self.ent3 = tk.Entry(self.cv, font=FONT, width=12, justify=tk.RIGHT)
         self.ent3.insert(tk.END, self.angle)
         self.binder(self.ent1)
-        self.ent3.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent1))
         self.ent3.place(x=EXPAND(370), y=EXPAND(HEIGHT//2+8))
 
     def save_data(self):
@@ -3179,7 +3223,6 @@ class Distance(Widget):
         self.ent1 = tk.Entry(self.cv, font=FONT, width=12, justify=tk.RIGHT)
         self.ent1.insert(tk.END, self.x)
         self.binder(self.ent1)
-        self.ent1.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent1))
         self.ent1.place(x=EXPAND(70), y=EXPAND(HEIGHT//2+8))
         lab3 = tk.Label(self.cv, text="②", font=FONT, bg=self.background)
         self.binder(lab3)
@@ -3187,7 +3230,6 @@ class Distance(Widget):
         self.ent2 = tk.Entry(self.cv, font=FONT, width=12, justify=tk.RIGHT)
         self.ent2.insert(tk.END, self.y)
         self.binder(self.ent1)
-        self.ent2.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent1))
         self.ent2.place(x=EXPAND(220), y=EXPAND(HEIGHT//2+8))
         lab4 = tk.Label(self.cv, text="③", font=FONT, bg=self.background)
         self.binder(lab4)
@@ -3195,7 +3237,6 @@ class Distance(Widget):
         self.ent3 = tk.Entry(self.cv, font=FONT, width=12, justify=tk.RIGHT)
         self.ent3.insert(tk.END, self.distance)
         self.binder(self.ent1)
-        self.ent3.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent1))
         self.ent3.place(x=EXPAND(370), y=EXPAND(HEIGHT // 2 + 8))
 
     def save_data(self):
@@ -3233,7 +3274,6 @@ class XCor(Widget):
         self.ent1 = tk.Entry(self.cv, font=FONT, width=12, justify=tk.RIGHT)
         self.ent1.insert(tk.END, self.x)
         self.binder(self.ent1)
-        self.ent1.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent1))
         self.ent1.place(x=EXPAND(70), y=EXPAND(HEIGHT//2+8))
 
     def save_data(self):
@@ -3268,7 +3308,6 @@ class YCor(Widget):
         self.ent1 = tk.Entry(self.cv, font=FONT, width=12, justify=tk.RIGHT)
         self.ent1.insert(tk.END, self.y)
         self.binder(self.ent1)
-        self.ent1.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent1))
         self.ent1.place(x=EXPAND(70), y=EXPAND(HEIGHT//2+8))
 
     def save_data(self):
@@ -3303,7 +3342,6 @@ class Heading(Widget):
         self.ent1 = tk.Entry(self.cv, font=FONT, width=12, justify=tk.RIGHT)
         self.ent1.insert(tk.END, self.angle)
         self.binder(self.ent1)
-        self.ent1.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent1))
         self.ent1.place(x=EXPAND(70), y=EXPAND(HEIGHT//2+8))
 
     def save_data(self):
@@ -3340,7 +3378,6 @@ class Circle(Widget):
         self.ent1 = tk.Entry(self.cv, font=FONT, width=12, justify=tk.RIGHT)
         self.ent1.insert(tk.END, self.radius)
         self.binder(self.ent1)
-        self.ent1.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent1))
         self.ent1.place(x=EXPAND(70), y=EXPAND(HEIGHT//2+8))
         lab3 = tk.Label(self.cv, text="②", font=FONT, bg=self.background)
         self.binder(lab3)
@@ -3348,7 +3385,6 @@ class Circle(Widget):
         self.ent2 = tk.Entry(self.cv, font=FONT, width=12, justify=tk.RIGHT)
         self.ent2.insert(tk.END, self.extent)
         self.binder(self.ent2)
-        self.ent2.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent2))
         self.ent2.place(x=EXPAND(220), y=EXPAND(HEIGHT//2+8))
 
     def save_data(self):
@@ -3384,7 +3420,6 @@ class Dot(Widget):
         self.ent1 = tk.Entry(self.cv, font=FONT, width=12, justify=tk.RIGHT)
         self.ent1.insert(tk.END, self.size)
         self.binder(self.ent1)
-        self.ent1.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent1))
         self.ent1.place(x=EXPAND(70), y=EXPAND(HEIGHT//2+8))
 
     def save_data(self):
@@ -3443,7 +3478,6 @@ class Speed(Widget):
         self.ent1 = tk.Entry(self.cv, font=FONT, width=12, justify=tk.RIGHT)
         self.ent1.insert(tk.END, self.speed)
         self.binder(self.ent1)
-        self.ent1.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent1))
         self.ent1.place(x=EXPAND(70), y=EXPAND(HEIGHT//2+8))
 
     def save_data(self):
@@ -3532,7 +3566,6 @@ class IsDown(Widget):
         self.ent1 = tk.Entry(self.cv, font=FONT, width=12, justify=tk.RIGHT)
         self.ent1.insert(tk.END, self.isdown)
         self.binder(self.ent1)
-        self.ent1.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent1))
         self.ent1.place(x=EXPAND(70), y=EXPAND(HEIGHT//2+8))
 
     def save_data(self):
@@ -3566,7 +3599,6 @@ class PenSize(Widget):
         self.ent1 = tk.Entry(self.cv, font=FONT, width=12, justify=tk.RIGHT)
         self.ent1.insert(tk.END, self.width)
         self.binder(self.ent1)
-        self.ent1.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent1))
         self.ent1.place(x=EXPAND(70), y=EXPAND(HEIGHT//2+8))
 
     def save_data(self):
@@ -3602,7 +3634,6 @@ class Color(Widget):
         self.ent1.config(vcmd=(self.ent1.register(self.preview_color)))
         strvar.set(self.color)
         self.binder(self.ent1)
-        self.ent1.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent1))
         self.ent1.bind("<KeyPress>", self.preview_color)
         self.ent1.place(x=EXPAND(70), y=EXPAND(HEIGHT//2+8))
         self.preview_color()
@@ -3651,7 +3682,7 @@ class Color(Widget):
         except turtle.TurtleGraphicsError:
             messagebox.showerror("エラー", f'\
 line: {self.tab.widgets.index(self)+1}, {self.__class__.__name__}\n\
-"{self.color}"を色として認識できませんでした。', parent=ROOT)
+"{self.color}"を色として認識できませんでした', parent=ROOT)
             self.tab.kill_runner()
 
 
@@ -3680,7 +3711,6 @@ class PenColor(Widget):
         self.ent1.config(vcmd=(self.ent1.register(self.preview_color)))
         strvar.set(self.color)
         self.binder(self.ent1)
-        self.ent1.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent1))
         self.ent1.bind("<KeyPress>", self.preview_color)
         self.ent1.place(x=EXPAND(70), y=EXPAND(HEIGHT//2+8))
         self.preview_color()
@@ -3729,7 +3759,7 @@ class PenColor(Widget):
         except turtle.TurtleGraphicsError:
             messagebox.showerror("エラー", f'\
 line: {self.tab.widgets.index(self)+1}, {self.__class__.__name__}\n\
-"{self.color}"を色として認識できませんでした。', parent=ROOT)
+"{self.color}"を色として認識できませんでした', parent=ROOT)
             self.tab.kill_runner()
 
 
@@ -3758,7 +3788,6 @@ class FillColor(Widget):
         self.ent1.config(vcmd=(self.ent1.register(self.preview_color)))
         strvar.set(self.color)
         self.binder(self.ent1)
-        self.ent1.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent1))
         self.ent1.bind("<KeyPress>", self.preview_color)
         self.ent1.place(x=EXPAND(70), y=EXPAND(HEIGHT//2+8))
         self.preview_color()
@@ -3807,7 +3836,7 @@ class FillColor(Widget):
         except turtle.TurtleGraphicsError:
             messagebox.showerror("エラー", f'\
 line: {self.tab.widgets.index(self)+1}, {self.__class__.__name__}\n\
-"{self.color}"を色として認識できませんでした。', parent=ROOT)
+"{self.color}"を色として認識できませんでした', parent=ROOT)
             self.tab.kill_runner()
 
 
@@ -3836,7 +3865,6 @@ class BGColor(Widget):
         self.ent1.config(vcmd=(self.ent1.register(self.preview_color)))
         strvar.set(self.color)
         self.binder(self.ent1)
-        self.ent1.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent1))
         self.ent1.bind("<KeyPress>", self.preview_color)
         self.ent1.place(x=EXPAND(70), y=EXPAND(HEIGHT//2+8))
         self.preview_color()
@@ -3885,7 +3913,7 @@ class BGColor(Widget):
         except turtle.TurtleGraphicsError:
             messagebox.showerror("エラー", f'\
 line: {self.tab.widgets.index(self)+1}, {self.__class__.__name__}\n\
-"{self.color}"を色として認識できませんでした。', parent=ROOT)
+"{self.color}"を色として認識できませんでした', parent=ROOT)
             self.tab.kill_runner()
 
 
@@ -3911,7 +3939,6 @@ class GetPenColor(Widget):
         self.ent1 = tk.Entry(self.cv, font=FONT, width=12, justify=tk.RIGHT)
         self.ent1.insert(tk.END, self.color)
         self.binder(self.ent1)
-        self.ent1.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent1))
         self.ent1.place(x=EXPAND(70), y=EXPAND(HEIGHT//2+8))
 
     def save_data(self):
@@ -3945,7 +3972,6 @@ class GetFillColor(Widget):
         self.ent1 = tk.Entry(self.cv, font=FONT, width=12, justify=tk.RIGHT)
         self.ent1.insert(tk.END, self.color)
         self.binder(self.ent1)
-        self.ent1.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent1))
         self.ent1.place(x=EXPAND(70), y=EXPAND(HEIGHT//2+8))
 
     def save_data(self):
@@ -3979,7 +4005,6 @@ class GetBGColor(Widget):
         self.ent1 = tk.Entry(self.cv, font=FONT, width=12, justify=tk.RIGHT)
         self.ent1.insert(tk.END, self.color)
         self.binder(self.ent1)
-        self.ent1.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent1))
         self.ent1.place(x=EXPAND(70), y=EXPAND(HEIGHT//2+8))
 
     def save_data(self):
@@ -4064,7 +4089,6 @@ class Filling(Widget):
         self.ent1 = tk.Entry(self.cv, font=FONT, width=12, justify=tk.RIGHT)
         self.ent1.insert(tk.END, self.fill)
         self.binder(self.ent1)
-        self.ent1.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent1))
         self.ent1.place(x=EXPAND(70), y=EXPAND(HEIGHT//2+8))
 
     def save_data(self):
@@ -4150,7 +4174,6 @@ class IsVisible(Widget):
         self.ent1 = tk.Entry(self.cv, font=FONT, width=12, justify=tk.RIGHT)
         self.ent1.insert(tk.END, self.shown)
         self.binder(self.ent1)
-        self.ent1.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent1))
         self.ent1.place(x=EXPAND(70), y=EXPAND(HEIGHT//2+8))
 
     def save_data(self):
@@ -4184,7 +4207,6 @@ class TurtleSize(Widget):
         self.ent1 = tk.Entry(self.cv, font=FONT, width=12, justify=tk.RIGHT)
         self.ent1.insert(tk.END, self.size)
         self.binder(self.ent1)
-        self.ent1.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent1))
         self.ent1.place(x=EXPAND(70), y=EXPAND(HEIGHT//2+8))
 
     def save_data(self):
@@ -4245,7 +4267,6 @@ class Write(Widget):
         self.ent1 = tk.Entry(self.cv, font=FONT, width=12, justify=tk.RIGHT)
         self.ent1.insert(tk.END, self.text)
         self.binder(self.ent1)
-        self.ent1.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent1))
         self.ent1.place(x=EXPAND(70), y=EXPAND(HEIGHT//2+8))
         lab3 = tk.Label(self.cv, text="②", font=FONT, bg=self.background)
         self.binder(lab3)
@@ -4253,7 +4274,6 @@ class Write(Widget):
         self.ent2 = tk.Entry(self.cv, font=FONT, width=12, justify=tk.RIGHT)
         self.ent2.insert(tk.END, self.size)
         self.binder(self.ent2)
-        self.ent2.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent2))
         self.ent2.place(x=EXPAND(220), y=EXPAND(HEIGHT//2+8))
 
     def show_option(self):
@@ -4297,7 +4317,6 @@ class Write(Widget):
         lab1.pack(side=tk.LEFT)
         self.opt1 = tk.Entry(fra1, font=font, width=12, justify=tk.RIGHT)
         self.opt1.insert(tk.END, self.text)
-        self.opt1.bind('<Button-3>', lambda e: self.show_popup1(e, self.opt1))
         self.opt1.bind("<KeyPress>", self.preview_font)
         self.opt1.pack(side=tk.LEFT)
 
@@ -4319,7 +4338,6 @@ class Write(Widget):
         lab3.pack(side=tk.LEFT)
         self.opt3 = tk.Entry(fra3, font=font, width=12, justify=tk.RIGHT)
         self.opt3.insert(tk.END, self.align)
-        self.opt3.bind('<Button-3>', lambda e: self.show_popup1(e, self.opt3))
         self.opt3.bind("<KeyPress>", self.preview_font)
         self.opt3.pack(side=tk.LEFT)
 
@@ -4369,7 +4387,6 @@ class Write(Widget):
         lab5.pack(side=tk.LEFT)
         self.opt5 = tk.Entry(fra5, font=font, width=12, justify=tk.RIGHT)
         self.opt5.insert(tk.END, self.size)
-        self.opt5.bind('<Button-3>', lambda e: self.show_popup1(e, self.opt5))
         self.opt5.bind("<KeyPress>", self.preview_font)
         self.opt5.pack(side=tk.LEFT)
 
@@ -4379,7 +4396,6 @@ class Write(Widget):
         lab8.pack(side=tk.LEFT)
         self.opt8 = tk.Entry(fra8, font=font, width=12, justify=tk.RIGHT)
         self.opt8.insert(tk.END, self.family)
-        self.opt8.bind('<Button-3>', lambda e: self.show_popup1(e, self.opt8))
         self.opt8.bind("<KeyPress>", self.preview_font)
         self.opt8.pack(side=tk.LEFT)
 
@@ -4564,7 +4580,6 @@ class Sleep(Widget):
         self.ent1 = tk.Entry(self.cv, font=FONT, width=12, justify=tk.RIGHT)
         self.ent1.insert(tk.END, self.second)
         self.binder(self.ent1)
-        self.ent1.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent1))
         self.ent1.place(x=EXPAND(70), y=EXPAND(HEIGHT//2+8))
 
     def save_data(self):
@@ -4596,7 +4611,6 @@ class Comment(Widget):
         text = self.comment.split("\n")[0]
         self.ent1.insert(tk.END, text)
         self.binder(self.ent1)
-        self.ent1.bind('<Button-3>', lambda e: self.show_popup1(e, self.ent1))
         self.ent1.place(x=EXPAND(46), y=EXPAND(HEIGHT//2+5))
 
     def show_option(self):
