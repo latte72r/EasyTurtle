@@ -86,6 +86,8 @@ if SYSTEM == "Windows":
     FONT_TYPE1 = "Courier New"
     FONT_TYPE2 = "Times New Roman"
 
+    CURSOR = "arrow"
+
     os.chdir(os.path.dirname(sys.argv[0]))
 
     ICON_FILE = os.path.abspath("./Files/win_icon.gif")
@@ -116,7 +118,8 @@ if SYSTEM == "Windows":
         "user_document": EXECUTABLE,
         "auto_update": True,
         "open_last_file": True,
-        "share_copy": False}
+        "share_copy": False,
+        "center_scroll": True}
 
     CONFIG = DEFAULT_CONFIG
     UPDATE_CONFIG()
@@ -170,6 +173,8 @@ elif SYSTEM == "Linux":
         FONT_TYPE1 = "Courier"
         FONT_TYPE2 = "Times"
 
+    CURSOR = "left_ptr"
+
     os.chdir(os.getcwd())
 
     ICON_FILE = os.path.abspath("./Files/win_icon.gif")
@@ -192,7 +197,8 @@ elif SYSTEM == "Linux":
         "user_document": EXECUTABLE,
         "auto_update": True,
         "open_last_file": True,
-        "share_copy": False}
+        "share_copy": False,
+        "center_scroll": False}
 
     CONFIG = DEFAULT_CONFIG
     UPDATE_CONFIG()
@@ -245,7 +251,7 @@ else:
 
 FONT = (FONT_TYPE1, EXPAND(12), "bold")
 
-__version__ = (5, 12, "0a1")
+__version__ = (5, 12, "0a2")
 
 
 class EasyTurtle:
@@ -273,7 +279,7 @@ class EasyTurtle:
         self.open_window_data()
 
         # ファイルが指定されていれば開く
-        if file is not None:
+        if file is not None and os.path.exists(file):
             self.open_program(file)
 
         else:
@@ -360,32 +366,38 @@ class EasyTurtle:
         if self.editing_config:
             return
         UPDATE_CONFIG()
+
         self.win = tk.Toplevel(ROOT)
         self.win.title("設定 - EasyTurtle")
         self.win.protocol("WM_DELETE_WINDOW", self.finish_editing_config)
         self.win.wait_visibility()
         self.win.grab_set()
+
         lab1 = tk.Label(self.win, text="Configure",
                         font=(FONT_TYPE2, EXPAND(30)))
         lab1.pack(padx=EXPAND(20), pady=EXPAND(10))
+
         self.var1 = tk.BooleanVar()
         self.var1.set(CONFIG["save_more_info"])
         text = "より多くの情報を保存する"
         chb1 = tk.Checkbutton(self.win, text=text,
                               font=FONT, variable=self.var1)
         chb1.pack(padx=EXPAND(10), pady=(0, EXPAND(10)), anchor=tk.NW)
+
         self.var2 = tk.BooleanVar()
         self.var2.set(CONFIG["ask_save_new"])
         text = "古いファイルを変更するか確認する"
         chb2 = tk.Checkbutton(self.win, text=text,
                               font=FONT, variable=self.var2)
         chb2.pack(padx=EXPAND(10), pady=(0, EXPAND(10)), anchor=tk.NW)
+
         self.var3 = tk.BooleanVar()
         self.var3.set(CONFIG["show_warning"])
         text = "警告と追加情報を表示する"
         chb3 = tk.Checkbutton(self.win, text=text,
                               font=FONT, variable=self.var3)
         chb3.pack(padx=EXPAND(10), pady=(0, EXPAND(10)), anchor=tk.NW)
+
         self.var4 = tk.BooleanVar()
         self.var4.set(CONFIG["expand_window"])
         text = "画面の大きさをを調整する"
@@ -410,20 +422,30 @@ class EasyTurtle:
         chb7 = tk.Checkbutton(self.win, text=text,
                               font=FONT, variable=self.var7)
         chb7.pack(padx=EXPAND(10), pady=(0, EXPAND(10)), anchor=tk.NW)
+
         self.var8 = tk.BooleanVar()
         self.var8.set(CONFIG["share_copy"])
         text = "コピーを他のタブと共有する"
         chb8 = tk.Checkbutton(self.win, text=text,
                               font=FONT, variable=self.var8)
         chb8.pack(padx=EXPAND(10), pady=(0, EXPAND(10)), anchor=tk.NW)
+
+        self.var9 = tk.BooleanVar()
+        self.var9.set(CONFIG["center_scroll"])
+        text = "中クリックでの移動を有効化する"
+        chb9 = tk.Checkbutton(self.win, text=text,
+                              font=FONT, variable=self.var9)
+        chb9.pack(padx=EXPAND(10), pady=(0, EXPAND(10)), anchor=tk.NW)
+
         but1 = tk.Button(self.win, text="決定", width=20,
                          font=FONT, command=self.decide_config)
         but1.pack(padx=EXPAND(10), pady=(0, EXPAND(20)))
+
         lab1 = tk.Label(self.win, text="\
-※画面サイズなどの一部の変更は　\n\
-　次回起動時より有効になります",
+※画面サイズなどの一部の変更は\n　次回起動時より有効になります",
                         font=FONT, fg="red")
         lab1.pack(padx=EXPAND(20), pady=(0, EXPAND(10)))
+
         self.win.resizable(False, False)
         self.editing_config = True
 
@@ -439,14 +461,16 @@ class EasyTurtle:
             "user_document":    self.var5.get(),
             "auto_update":      self.var6.get(),
             "open_last_file":   self.var7.get(),
-            "share_copy":       self.var8.get()}
+            "share_copy":       self.var8.get(),
+            "center_scroll":    self.var9.get()}
 
         with open(CONFIG_FILE, "w", encoding="UTF-8")as f:
             json.dump(CONFIG, f, indent=4)
         self.finish_editing_config()
 
         if (CONFIG["expand_window"] != last_config["expand_window"]) or \
-           (CONFIG["user_document"] != last_config["user_document"]):
+           (CONFIG["user_document"] != last_config["user_document"]) or \
+           (CONFIG["center_scroll"] != last_config["center_scroll"]):
             res = messagebox.askyesno("確認", "\
 変更された設定には再起動後に反映されるものが含まれています\n\
 今すぐこのアプリを再起動しますか？")
@@ -467,7 +491,7 @@ class EasyTurtle:
                     if res is None:
                         return 1
                     elif res:
-                        if tab.save_program() == 1:
+                        if tab.save_program(close=True) == 1:
                             return 1
 
         # ファイルを保存
@@ -541,8 +565,12 @@ class EasyTurtle:
                 return
 
         # ファイルを開く
-        with open(file, "r")as f:
-            data: dict = json.load(f)
+        if os.path.exists(file):
+            with open(file, "r")as f:
+                data: dict = json.load(f)
+        else:
+            messagebox.showerror("エラー", "ファイルが存在しません")
+            return 1
 
         # 最近のファイルリストに追加
         if not boot:
@@ -600,6 +628,9 @@ class EasyTurtle:
             # 基本データを設定
             newtab.default_data = data.get(
                 "default", [d.get_data(more=False) for d in newtab.widgets])
+
+            # 最後にチェックされたウィジェット
+            newtab.last_checked = data.get("last", -1)
 
             # プログラムの名称設定
             newtab.program_name = data.get("name", file)
@@ -1083,6 +1114,9 @@ class IndividualTab:
         self.canceled_changes = []
         self.warning_ignore = False
         self.program_name = None
+        self.center_clicked = False
+        self.center_distance = 0
+        self.last_checked = -1
         self.decide_title()
 
         # タブ一覧に追加
@@ -1109,7 +1143,7 @@ class IndividualTab:
             if res is None:
                 return 1
             elif res:
-                if self.save_program() == 1:
+                if self.save_program(close=True) == 1:
                     return 1
 
         # すべて削除
@@ -1322,28 +1356,6 @@ class IndividualTab:
 
         self.redraw_widgets()
 
-    def scroll_on_windows(self, event: tk.Event):
-        """Windowsでのスクロール時の動作"""
-        data = self.widgets
-        index = self.index - (event.delta // 120)
-        max_size = (len(data) - SIZE)
-        self.index = (0 if index <= 0 else max_size
-                      if (index > max_size) and (len(data) > SIZE)
-                      else self.index
-                      if len(data) <= SIZE else index)
-        self.redraw_widgets(change=False)
-
-    def scroll_on_linux(self, event: tk.Event):
-        """Linuxでのスクロール時の動作"""
-        data = self.widgets
-        index = self.index - (1 if event.num == 4 else -1)
-        max_size = (len(data) - SIZE)
-        self.index = (0 if index <= 0 else max_size
-                      if (index > max_size) and (len(data) > SIZE)
-                      else self.index
-                      if len(data) <= SIZE else index)
-        self.redraw_widgets(change=False)
-
     def scroll_button_clicked(self, *event):
         """スクロールバーボタンが押された時の動作"""
         data = self.widgets
@@ -1418,6 +1430,7 @@ class IndividualTab:
         bary.pack(side=tk.RIGHT, fill=tk.Y)
         barx = tk.Scrollbar(frame, orient=tk.HORIZONTAL)
         barx.pack(side=tk.BOTTOM, fill=tk.X)
+        self.scrollbar_width = barx.winfo_reqheight() + 4
         canvas = tk.Canvas(frame, bg="snow")
         canvas.pack(side=tk.LEFT, fill=tk.BOTH)
 
@@ -1431,6 +1444,9 @@ class IndividualTab:
         tur = turtle.RawTurtle(canvas)
         tur.shape("turtle")
         tur.getscreen().colormode(255)
+        winx = self.runner_size[0] + self.scrollbar_width
+        winy = self.runner_size[1] + self.scrollbar_width
+        self.win.geometry(f"{winx}x{winy}")
         canvas.config(width=self.runner_size[0],
                       height=self.runner_size[1],
                       scrollregion=(0, 0,
@@ -1470,7 +1486,7 @@ line: {index+1}, {widget.__class__.__name__}\n\
             d.delete(back_up=False)
         self.redraw_widgets(change=False)
 
-    def save_program(self, file=None):
+    def save_program(self, file=None, close=False):
         """上書き保存"""
         if self.et.running_program:
             return
@@ -1480,7 +1496,7 @@ line: {index+1}, {widget.__class__.__name__}\n\
             if self.program_name is not None:
                 file = self.program_name
             elif self.et.last_directory is not None:
-                file = filedialog.askopenfilename(
+                file = filedialog.asksaveasfilename(
                     parent=ROOT, initialdir=self.et.last_directory,
                     filetypes=[("Jsonファイル", "*.json")])
             else:
@@ -1499,7 +1515,15 @@ line: {index+1}, {widget.__class__.__name__}\n\
         # 保存する
         self.save_file(file)
 
-    def save_program_as(self, file=None):
+        # 最近のファイルリストに追加
+        if not close:
+            name = os.path.abspath(file).replace("\\", "/")
+            if name in self.et.recent_files:
+                self.et.recent_files.remove(name)
+            self.et.recent_files.insert(0, name)
+            self.et.recent_files = self.et.recent_files[:10]
+
+    def save_program_as(self, file=None, close=False):
         """名前を付けて保存"""
         if self.et.running_program:
             return
@@ -1513,7 +1537,7 @@ line: {index+1}, {widget.__class__.__name__}\n\
                     parent=ROOT, initialdir=directory,
                     initialfile=name, filetypes=[("Jsonファイル", "*.json")])
             elif self.et.last_directory is not None:
-                file = filedialog.askopenfilename(
+                file = filedialog.asksaveasfilename(
                     parent=ROOT, initialdir=self.et.last_directory,
                     filetypes=[("Jsonファイル", "*.json")])
             else:
@@ -1531,6 +1555,14 @@ line: {index+1}, {widget.__class__.__name__}\n\
 
         # 保存する
         self.save_file(file)
+
+        # 最近のファイルリストに追加
+        if not close:
+            name = os.path.abspath(file).replace("\\", "/")
+            if name in self.et.recent_files:
+                self.et.recent_files.remove(name)
+            self.et.recent_files.insert(0, name)
+            self.et.recent_files = self.et.recent_files[:10]
 
     def save_file(self, file, boot=False):
         """ファイルを保存する"""
@@ -1554,6 +1586,7 @@ line: {index+1}, {widget.__class__.__name__}\n\
                 "untitled": (self.et.untitled_tabs[self]
                              if self in self.et.untitled_tabs else None),
                 "selected": self == self.et.get_currently_selected(),
+                "last": self.last_checked,
                 "body": body}
         elif CONFIG["save_more_info"]:
             data = {
@@ -1565,6 +1598,7 @@ line: {index+1}, {widget.__class__.__name__}\n\
                 "addmode": self.var2.get(),
                 "adjust": self.var3.get(),
                 "position": self.ent1.get(),
+                "last": self.last_checked,
                 "body": body}
         else:
             data = {"version": __version__[:2], "body": body}
@@ -1800,11 +1834,9 @@ line: {index+1}, {widget.__class__.__name__}\n\
         # 画面の左側を作成
         frame2 = tk.Frame(frame1)
         frame2.pack(side=tk.LEFT, padx=(10, 0))
-        frame2.bind("<MouseWheel>", self.scroll_on_windows)
         self.cv1 = tk.Canvas(frame2, width=EXPAND(WIDTH),
                              height=EXPAND(HEIGHT*SIZE), bg="#E6E6E6")
         self.cv1.pack(side=tk.LEFT)
-        self.cv1.bind("<MouseWheel>", self.scroll_on_windows)
         self.cv1.create_rectangle(EXPAND(4), EXPAND(4),
                                   EXPAND(WIDTH), EXPAND(HEIGHT*SIZE),
                                   width=EXPAND(2))
@@ -1974,6 +2006,7 @@ class Widget:
         self.info = GET_WIDGET_INFO(self)
         self.pressed_x = self.pressed_y = 0
         self.item_id = -1
+        self.mouse_position = 0
 
         self.TEXT: str
         self.TYPE: str
@@ -2031,16 +2064,24 @@ class Widget:
             widget.bind('<Button-3>', lambda e: self.show_popup1(e, widget))
         else:
             widget.bind('<Button-3>', self.show_popup2)
+            widget.bind("<Button-1>", self.click_left)
+            widget.bind("<ButtonRelease-1>", self.release_left)
 
         # ドラッグのバインド
-        widget.bind("<B1-Motion>", self.dragged)
+        widget.bind("<B1-Motion>", self.drag_move)
+
+        # 中スクロールのバインド
+        if CONFIG["center_scroll"]:
+            widget.bind("<Button-2>", self.click_center)
+            widget.bind("<ButtonRelease-2>", self.release_center)
+            widget.bind("<B2-Motion>", self.scroll_center)
 
         # スクロールのバインド
         if SYSTEM == "Windows":
-            widget.bind("<MouseWheel>", self.tab.scroll_on_windows)
+            widget.bind("<MouseWheel>", self.scroll_on_windows)
         elif SYSTEM == "Linux":
-            widget.bind("<Button-4>", self.tab.scroll_on_linux)
-            widget.bind("<Button-5>", self.tab.scroll_on_linux)
+            widget.bind("<Button-4>", self.scroll_on_linux)
+            widget.bind("<Button-5>", self.scroll_on_linux)
 
     def draw_cv(self):
         """キャンバスを描く"""
@@ -2081,61 +2122,67 @@ class Widget:
         chk1.bind("<Button-1>", self.check_clicked)
         chk1.place(x=EXPAND(14), y=EXPAND(HEIGHT//2+8))
 
-    def check_clicked(self, event: tk.Event):
-        if (hasattr(event, "state")) and (event.state == 1):
-            self.shift_check()
-        else:
-            self.tab.back_up()
+    def click_left(self, event: tk.Event):
+        """マウスの左ボタンをクリック"""
+        # カーソルを上下矢印に設定
+        self.cv.config(cursor="sb_v_double_arrow")
 
-    def shift_check(self):
-        """Shift+右クリック"""
-        selected = self.tab.get_selected()
-        sindex = self.tab.widgets.index(self)
-        if len(selected) == 0:
-            return
-        elif len(selected) == 1:
-            dindex = self.tab.widgets.index(selected[0])
-            if sindex < dindex:
-                self.range_check(sindex, dindex, exc=sindex)
-            else:
-                self.range_check(dindex, sindex, exc=sindex)
-        else:
-            lindex = None
-            for new in selected:
-                nindex = self.tab.widgets.index(new)
-                if lindex is None:
-                    if sindex < nindex:
-                        self.range_check(sindex, nindex, exc=sindex)
-                        return
-                elif lindex < sindex < nindex:
-                    if (sindex - lindex) < (nindex - sindex):
-                        self.range_check(lindex, sindex, exc=sindex)
-                    else:
-                        self.range_check(sindex, nindex, exc=sindex)
-                    return
-                lindex = nindex
-            if lindex is not None and sindex > lindex:
-                self.range_check(lindex, sindex, exc=sindex)
+    def release_left(self, event: tk.Event):
+        """マウスの左ボタンを離す"""
+        # カーソルをデフォルトに設定
+        self.cv.config(cursor=CURSOR)
 
-    def range_check(self, first: int, last: int, exc=None):
-        """指定範囲をチェック"""
-        for widget in self.tab.widgets:
-            widget.bln1.set(False)
-        for widget in self.tab.widgets[first: last + 1]:
-            widget.bln1.set(True)
-        if exc is not None:
-            self.tab.widgets[exc].bln1.set(False)
+    def click_center(self, event: tk.Event):
+        """中ボタンでのスクロール開始"""
+        # カーソルを十字矢印に設定
+        self.cv.config(cursor="fleur")
 
-    def check_enabled(self):
-        """有効・無効の表示"""
-        self.cv.delete("enabled")
-        color = "blue" if self.enabled else "red"
-        self.cv.create_oval(EXPAND(14), EXPAND(10),
-                            EXPAND(30), EXPAND(HEIGHT//2-10),
-                            width=2, outline="lightgray",
-                            fill=color, tag="enabled")
+        self.mouse_position = self.cv.winfo_pointery()
+        self.tab.center_clicked = True
+        self.scroll_center()
 
-    def dragged(self, event: tk.Event):
+    def release_center(self, event: tk.Event):
+        """中ボタンでのスクロール終了"""
+        # カーソルをデフォルトに設定
+        self.cv.config(cursor=CURSOR)
+
+        self.tab.center_clicked = False
+
+    def scroll_center(self, event=None):
+        """中ボタンでのスクロール時の動作"""
+        move = self.cv.winfo_pointery() - self.mouse_position
+        self.tab.center_distance += round(move / EXPAND(HEIGHT))
+        distance = self.tab.center_distance // 8
+        self.tab.center_distance = self.tab.center_distance % 8
+        if distance != 0:
+            self.tab.index += distance
+            self.tab.redraw_widgets(change=False)
+        if self.tab.center_clicked:
+            self.cv.after(100, self.scroll_center)
+
+    def scroll_on_windows(self, event: tk.Event):
+        """Windowsでのスクロール時の動作"""
+        data = self.tab.widgets
+        index = self.tab.index - (event.delta // 120)
+        max_size = (len(data) - SIZE)
+        self.tab.index = (0 if index <= 0 else max_size
+                          if (index > max_size) and (len(data) > SIZE)
+                          else self.tab.index
+                          if len(data) <= SIZE else index)
+        self.tab.redraw_widgets(change=False)
+
+    def scroll_on_linux(self, event: tk.Event):
+        """Linuxでのスクロール時の動作"""
+        data = self.tab.widgets
+        index = self.tab.index - (1 if event.num == 4 else -1)
+        max_size = (len(data) - SIZE)
+        self.tab.index = (0 if index <= 0 else max_size
+                          if (index > max_size) and (len(data) > SIZE)
+                          else self.tab.index
+                          if len(data) <= SIZE else index)
+        self.tab.redraw_widgets(change=False)
+
+    def drag_move(self, event: tk.Event):
         """ドラッグ時の動作"""
         index = self.tab.widgets.index(self) - self.tab.index
         if (index < 0) or (index > SIZE):
@@ -2148,6 +2195,46 @@ class Widget:
             self.down()
         elif 1.5 * EXPAND(HEIGHT) < event.y:
             self.down()
+
+    def check_clicked(self, event: tk.Event):
+        """クリックを確認する"""
+        index = self.tab.widgets.index(self)
+
+        # Shiftと同時に押された時
+        if (hasattr(event, "state")) and (event.state == 1):
+            if self.tab.last_checked == -1:
+                self.tab.last_checked = index
+            if index < self.tab.last_checked:
+                self.range_check(index, self.tab.last_checked, exc=index)
+            else:
+                self.range_check(self.tab.last_checked, index, exc=index)
+
+        # 最後にチェックされたウィジェットを更新
+        elif not self.tab.widgets[index].bln1.get():
+            self.tab.last_checked = index
+
+    def range_check(self, first: int, last: int, exc=None):
+        """指定範囲をチェック"""
+        # 一度全てチェックを外しておく
+        for widget in self.tab.widgets:
+            widget.bln1.set(False)
+
+        # 指定範囲をチェックする
+        for widget in self.tab.widgets[first: last + 1]:
+            widget.bln1.set(True)
+
+        # excは除外する
+        if exc is not None:
+            self.tab.widgets[exc].bln1.set(False)
+
+    def check_enabled(self):
+        """有効・無効の表示"""
+        self.cv.delete("enabled")
+        color = "blue" if self.enabled else "red"
+        self.cv.create_oval(EXPAND(14), EXPAND(10),
+                            EXPAND(30), EXPAND(HEIGHT//2-10),
+                            width=2, outline="lightgray",
+                            fill=color, tag="enabled")
 
     def paste_up(self):
         """上へのペースト"""
@@ -2775,8 +2862,12 @@ class ScreenSize(Widget):
 
         # 画面サイズの変更
         canvas = tur.getscreen().getcanvas()
-        canvas.config(width=width, height=height,
-                      scrollregion=(0, 0, maxwidth, maxheight))
+        winx = maxwidth + self.tab.scrollbar_width
+        winy = maxheight + self.tab.scrollbar_width
+        self.tab.win.geometry(f"{winx}x{winy}")
+        canvas.config(
+            width=width, height=height,
+            scrollregion=(0, 0, maxwidth, maxheight))
         canvas.xview_moveto((1 - width / maxwidth) / 2)
         canvas.yview_moveto((1 - height / maxheight) / 2)
 
@@ -4045,6 +4136,7 @@ class BeginFill(Widget):
 class EndFill(Widget):
     TEXT = "塗りつぶしを終える"
     TYPE = "normalset"
+    OPTION = False
 
     def set_data(self, data: dict):
         self.set_common(data)
@@ -4507,6 +4599,7 @@ class Bye(Widget):
 class ExitOnClick(Widget):
     TEXT = "クリックで終了する"
     TYPE = "normalset"
+    OPTION = False
 
     def set_data(self, data: dict):
         self.set_common(data)
