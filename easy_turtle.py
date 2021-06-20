@@ -119,7 +119,7 @@ if SYSTEM == "Windows":
         "auto_update": True,
         "open_last_file": True,
         "share_copy": False,
-        "center_scroll": True}
+        "scroll_center": True}
 
     CONFIG = DEFAULT_CONFIG
     UPDATE_CONFIG()
@@ -198,7 +198,7 @@ elif SYSTEM == "Linux":
         "auto_update": True,
         "open_last_file": True,
         "share_copy": False,
-        "center_scroll": False}
+        "scroll_center": False}
 
     CONFIG = DEFAULT_CONFIG
     UPDATE_CONFIG()
@@ -251,7 +251,7 @@ else:
 
 FONT = (FONT_TYPE1, EXPAND(12), "bold")
 
-__version__ = (5, 12, "0a2")
+__version__ = (5, 12, 0)
 
 
 class EasyTurtle:
@@ -431,7 +431,7 @@ class EasyTurtle:
         chb8.pack(padx=EXPAND(10), pady=(0, EXPAND(10)), anchor=tk.NW)
 
         self.var9 = tk.BooleanVar()
-        self.var9.set(CONFIG["center_scroll"])
+        self.var9.set(CONFIG["scroll_center"])
         text = "中クリックでの移動を有効化する"
         chb9 = tk.Checkbutton(self.win, text=text,
                               font=FONT, variable=self.var9)
@@ -462,7 +462,7 @@ class EasyTurtle:
             "auto_update":      self.var6.get(),
             "open_last_file":   self.var7.get(),
             "share_copy":       self.var8.get(),
-            "center_scroll":    self.var9.get()}
+            "scroll_center":    self.var9.get()}
 
         with open(CONFIG_FILE, "w", encoding="UTF-8")as f:
             json.dump(CONFIG, f, indent=4)
@@ -470,7 +470,7 @@ class EasyTurtle:
 
         if (CONFIG["expand_window"] != last_config["expand_window"]) or \
            (CONFIG["user_document"] != last_config["user_document"]) or \
-           (CONFIG["center_scroll"] != last_config["center_scroll"]):
+           (CONFIG["scroll_center"] != last_config["scroll_center"]):
             res = messagebox.askyesno("確認", "\
 変更された設定には再起動後に反映されるものが含まれています\n\
 今すぐこのアプリを再起動しますか？")
@@ -2071,7 +2071,7 @@ class Widget:
         widget.bind("<B1-Motion>", self.drag_move)
 
         # 中スクロールのバインド
-        if CONFIG["center_scroll"]:
+        if CONFIG["scroll_center"]:
             widget.bind("<Button-2>", self.click_center)
             widget.bind("<ButtonRelease-2>", self.release_center)
             widget.bind("<B2-Motion>", self.scroll_center)
