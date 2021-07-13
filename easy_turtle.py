@@ -119,7 +119,8 @@ if SYSTEM == "Windows":
         "auto_update": True,
         "open_last_file": True,
         "share_copy": False,
-        "scroll_center": True}
+        "scroll_center": True,
+        "enable_backup": True}
 
     CONFIG = DEFAULT_CONFIG
     UPDATE_CONFIG()
@@ -198,7 +199,8 @@ elif SYSTEM == "Linux":
         "auto_update": True,
         "open_last_file": True,
         "share_copy": False,
-        "scroll_center": False}
+        "scroll_center": False,
+        "enable_backup": True}
 
     CONFIG = DEFAULT_CONFIG
     UPDATE_CONFIG()
@@ -251,7 +253,7 @@ else:
 
 FONT = (FONT_TYPE1, EXPAND(12), "bold")
 
-__version__ = (5, 12, 0)
+__version__ = (5, 13, "0a1")
 
 
 class EasyTurtle:
@@ -259,7 +261,7 @@ class EasyTurtle:
         """初期化"""
         # 変数を設定する
         self.tabs: List[IndividualTab] = []
-        self.untitled_tabs: Dict[IndividualTab, int] = {}
+        self.untitled_tabs: Dict[ProgrammingTab, int] = {}
         self.copied_widgets: List[Dict[str, Any]] = []
         self.recent_files: List[str] = []
         self.running_program = False
@@ -280,24 +282,24 @@ class EasyTurtle:
 
         # ファイルが指定されていれば開く
         if file is not None and os.path.exists(file):
-            self.open_program(file)
+            self.open_file(file)
 
         else:
             file_open = False
 
             for file in glob.glob(os.path.join(BOOT_FOLDER, "reboot*.json")):
                 file_open = True
-                self.open_program(file, boot=True)
+                self.open_file(file, boot=True)
                 os.remove(file)
 
             if not file_open and CONFIG["open_last_file"]:
                 for file in glob.glob(os.path.join(BOOT_FOLDER, "boot*.json")):
                     file_open = True
-                    self.open_program(file, boot=True)
+                    self.open_file(file, boot=True)
                     os.remove(file)
 
             if not file_open:
-                IndividualTab(self)
+                ProgrammingTab(self)
 
         ROOT.mainloop()
 
@@ -361,122 +363,6 @@ class EasyTurtle:
         self.editing_config = False
         self.win.destroy()
 
-    def edit_config(self, event=None):
-        """設定を編集"""
-        if self.editing_config:
-            return
-        UPDATE_CONFIG()
-
-        self.win = tk.Toplevel(ROOT)
-        self.win.title("設定 - EasyTurtle")
-        self.win.protocol("WM_DELETE_WINDOW", self.finish_editing_config)
-        self.win.wait_visibility()
-        self.win.grab_set()
-
-        lab1 = tk.Label(self.win, text="Configure",
-                        font=(FONT_TYPE2, EXPAND(30)))
-        lab1.pack(padx=EXPAND(20), pady=EXPAND(10))
-
-        self.var1 = tk.BooleanVar()
-        self.var1.set(CONFIG["save_more_info"])
-        text = "より多くの情報を保存する"
-        chb1 = tk.Checkbutton(self.win, text=text,
-                              font=FONT, variable=self.var1)
-        chb1.pack(padx=EXPAND(10), pady=(0, EXPAND(10)), anchor=tk.NW)
-
-        self.var2 = tk.BooleanVar()
-        self.var2.set(CONFIG["ask_save_new"])
-        text = "古いファイルを変更するか確認する"
-        chb2 = tk.Checkbutton(self.win, text=text,
-                              font=FONT, variable=self.var2)
-        chb2.pack(padx=EXPAND(10), pady=(0, EXPAND(10)), anchor=tk.NW)
-
-        self.var3 = tk.BooleanVar()
-        self.var3.set(CONFIG["show_warning"])
-        text = "警告と追加情報を表示する"
-        chb3 = tk.Checkbutton(self.win, text=text,
-                              font=FONT, variable=self.var3)
-        chb3.pack(padx=EXPAND(10), pady=(0, EXPAND(10)), anchor=tk.NW)
-
-        self.var4 = tk.BooleanVar()
-        self.var4.set(CONFIG["expand_window"])
-        text = "画面の大きさをを調整する"
-        chb4 = tk.Checkbutton(self.win, text=text,
-                              font=FONT, variable=self.var4)
-        chb4.pack(padx=EXPAND(10), pady=(0, EXPAND(10)), anchor=tk.NW)
-        self.var5 = tk.BooleanVar()
-        self.var5.set(CONFIG["user_document"])
-        text = "ユーザードキュメントを使用する"
-        chb5 = tk.Checkbutton(self.win, text=text,
-                              font=FONT, variable=self.var5)
-        chb5.pack(padx=EXPAND(10), pady=(0, EXPAND(10)), anchor=tk.NW)
-        self.var6 = tk.BooleanVar()
-        self.var6.set(CONFIG["auto_update"])
-        text = "起動時にアップデートを確認する"
-        chb6 = tk.Checkbutton(self.win, text=text,
-                              font=FONT, variable=self.var6)
-        chb6.pack(padx=EXPAND(10), pady=(0, EXPAND(10)), anchor=tk.NW)
-        self.var7 = tk.BooleanVar()
-        self.var7.set(CONFIG["open_last_file"])
-        text = "前回開いていたファイルを開く"
-        chb7 = tk.Checkbutton(self.win, text=text,
-                              font=FONT, variable=self.var7)
-        chb7.pack(padx=EXPAND(10), pady=(0, EXPAND(10)), anchor=tk.NW)
-
-        self.var8 = tk.BooleanVar()
-        self.var8.set(CONFIG["share_copy"])
-        text = "コピーを他のタブと共有する"
-        chb8 = tk.Checkbutton(self.win, text=text,
-                              font=FONT, variable=self.var8)
-        chb8.pack(padx=EXPAND(10), pady=(0, EXPAND(10)), anchor=tk.NW)
-
-        self.var9 = tk.BooleanVar()
-        self.var9.set(CONFIG["scroll_center"])
-        text = "中クリックでの移動を有効化する"
-        chb9 = tk.Checkbutton(self.win, text=text,
-                              font=FONT, variable=self.var9)
-        chb9.pack(padx=EXPAND(10), pady=(0, EXPAND(10)), anchor=tk.NW)
-
-        but1 = tk.Button(self.win, text="決定", width=20,
-                         font=FONT, command=self.decide_config)
-        but1.pack(padx=EXPAND(10), pady=(0, EXPAND(20)))
-
-        lab1 = tk.Label(self.win, text="\
-※画面サイズなどの一部の変更は\n　次回起動時より有効になります",
-                        font=FONT, fg="red")
-        lab1.pack(padx=EXPAND(20), pady=(0, EXPAND(10)))
-
-        self.win.resizable(False, False)
-        self.editing_config = True
-
-    def decide_config(self):
-        """設定を決定"""
-        global CONFIG
-        last_config = CONFIG
-        CONFIG = {
-            "save_more_info":   self.var1.get(),
-            "ask_save_new":     self.var2.get(),
-            "show_warning":     self.var3.get(),
-            "expand_window":    self.var4.get(),
-            "user_document":    self.var5.get(),
-            "auto_update":      self.var6.get(),
-            "open_last_file":   self.var7.get(),
-            "share_copy":       self.var8.get(),
-            "scroll_center":    self.var9.get()}
-
-        with open(CONFIG_FILE, "w", encoding="UTF-8")as f:
-            json.dump(CONFIG, f, indent=4)
-        self.finish_editing_config()
-
-        if (CONFIG["expand_window"] != last_config["expand_window"]) or \
-           (CONFIG["user_document"] != last_config["user_document"]) or \
-           (CONFIG["scroll_center"] != last_config["scroll_center"]):
-            res = messagebox.askyesno("確認", "\
-変更された設定には再起動後に反映されるものが含まれています\n\
-今すぐこのアプリを再起動しますか？")
-            if res:
-                self.reboot_program()
-
     def close_window(self, event=None):
         """終了時の定義"""
         if self.running_program:
@@ -485,14 +371,7 @@ class EasyTurtle:
         # 保存するか確認する
         if not CONFIG["open_last_file"]:
             for tab in self.tabs:
-                data = [d.get_data(more=False) for d in tab.widgets]
-                if tab.default_data != data:
-                    res = messagebox.askyesnocancel("確認", "保存しますか？")
-                    if res is None:
-                        return 1
-                    elif res:
-                        if tab.save_program(close=True) == 1:
-                            return 1
+                tab.close_window()
 
         # ファイルを保存
         self.save_boot_file()
@@ -536,8 +415,16 @@ class EasyTurtle:
         with open(file, "w")as f:
             json.dump({"recent": self.recent_files}, f)
 
-    def open_program(self, file=None, boot=False):
-        """開く動作"""
+    def append_recent_files(self, file):
+        """最近のファイルリストに追加"""
+        name = os.path.abspath(file).replace("\\", "/")
+        if name in self.recent_files:
+            self.recent_files.remove(name)
+        self.recent_files.insert(0, name)
+        self.recent_files = self.recent_files[:10]
+
+    def open_file(self, file=None, boot=False):
+        """ファイルを開く動作"""
         # キーバインドから実行された場合
         if isinstance(file, tk.Event):
             file = None
@@ -559,11 +446,6 @@ class EasyTurtle:
         if file == "":
             return
 
-        for tab in self.tabs:
-            if tab.program_name == file:
-                tab.select_tab()
-                return
-
         # ファイルを開く
         if os.path.exists(file):
             with open(file, "r")as f:
@@ -572,19 +454,39 @@ class EasyTurtle:
             messagebox.showerror("エラー", "ファイルが存在しません")
             return 1
 
-        # 最近のファイルリストに追加
-        if not boot:
-            name = os.path.abspath(file).replace("\\", "/")
-            if name in self.recent_files:
-                self.recent_files.remove(name)
-            self.recent_files.insert(0, name)
-            self.recent_files = self.recent_files[:10]
+        # タブのタイプで分別する
+        tabtype = data.get("tabtype", "program")
 
-        # 選択されているタブ
-        select = data.get("selected", True)
+        # タブを開く
+        if tabtype == "program":
+            self.open_program(file=file, data=data, boot=boot)
+        elif tabtype == "configure":
+            self.open_config(data=data)
+
+    def open_config(self, data: dict):
+        """設定を開く動作"""
+        # タブがすでにあれば選択する
+        for tab in self.tabs:
+            if isinstance(tab, ConfigureTab):
+                tab.select_tab()
+                return
 
         # 新しいタブを作成する
-        newtab = IndividualTab(self, select=select)
+        newtab = ConfigureTab(self, select=data.get("selected", True))
+
+        # データを設定する
+        newtab.set_data(data)
+
+    def open_program(self, file, data: dict, boot=False):
+        """プログラムを開く動作"""
+        # タブがすでにあれば選択する
+        for tab in self.tabs:
+            if tab.program_name == file:
+                tab.select_tab()
+                return
+
+        # 新しいタブを作成する
+        newtab = ProgrammingTab(self, select=data.get("selected", True))
 
         try:
             # サイズ警告を初期化
@@ -642,6 +544,10 @@ class EasyTurtle:
             # ディレクトリ名を保存
             if newtab.program_name is not None:
                 self.last_directory = os.path.dirname(newtab.program_name)
+
+            # 最近のファイルリストに追加
+            if not boot:
+                self.append_recent_files(file)
 
         except Exception:
             # タブを削除
@@ -812,7 +718,7 @@ download/v{joined_version}/EasyTurtle-{joined_version}-amd64.msi"
 
     def new_program(self, event=None):
         """新規プログラム"""
-        IndividualTab(self)
+        ProgrammingTab(self)
 
     def new_window(self, event=None):
         """新規ウィンドウを起動"""
@@ -852,78 +758,153 @@ download/v{joined_version}/EasyTurtle-{joined_version}-amd64.msi"
 
     def save_program(self, event=None):
         tab = self.get_currently_selected()
-        if tab is not None:
+        if tab is None:
+            pass
+        elif isinstance(tab, ProgrammingTab):
             tab.save_program()
+        elif isinstance(tab, ConfigureTab):
+            tab.decide_config()
+        else:
+            ROOT.bell()
 
     def save_program_as(self, event=None):
         tab = self.get_currently_selected()
+        if tab is None:
+            pass
+        elif isinstance(tab, ProgrammingTab):
+            tab.save_program()
+        else:
+            ROOT.bell()
         if tab is not None:
             tab.save_program_as()
 
     def copy_selected(self, event=None):
         tab = self.get_currently_selected()
-        if tab is not None:
+        if tab is None:
+            pass
+        elif isinstance(tab, ProgrammingTab):
             tab.copy_selected()
+        else:
+            ROOT.bell()
 
     def paste_widgets(self, event=None):
         tab = self.get_currently_selected()
-        if tab is not None:
+        if tab is None:
+            pass
+        elif isinstance(tab, ProgrammingTab):
             tab.paste_widgets()
+        else:
+            ROOT.bell()
 
     def cut_selected(self, event=None):
         tab = self.get_currently_selected()
-        if tab is not None:
+        if tab is None:
+            pass
+        elif isinstance(tab, ProgrammingTab):
             tab.cut_selected()
+        else:
+            ROOT.bell()
 
     def delete_selected(self, event=None):
         tab = self.get_currently_selected()
-        if tab is not None:
+        if tab is None:
+            pass
+        elif isinstance(tab, ProgrammingTab):
             tab.delete_selected()
+        else:
+            ROOT.bell()
 
     def select_all(self, event=None):
         tab = self.get_currently_selected()
-        if tab is not None:
+        if tab is None:
+            pass
+        elif isinstance(tab, ProgrammingTab):
             tab.select_all()
+        else:
+            ROOT.bell()
 
     def undo_change(self, event=None):
         tab = self.get_currently_selected()
-        if tab is not None:
+        if tab is None:
+            pass
+        elif isinstance(tab, ProgrammingTab):
             tab.undo_change()
+        else:
+            ROOT.bell()
 
     def redo_change(self, event=None):
         tab = self.get_currently_selected()
-        if tab is not None:
+        if tab is None:
+            pass
+        elif isinstance(tab, ProgrammingTab):
             tab.redo_change()
+        else:
+            ROOT.bell()
 
     def enable_selected(self, event=None):
         tab = self.get_currently_selected()
-        if tab is not None:
+        if tab is None:
+            pass
+        elif isinstance(tab, ProgrammingTab):
             tab.enable_selected()
+        else:
+            ROOT.bell()
 
     def disable_selected(self, event=None):
         tab = self.get_currently_selected()
-        if tab is not None:
+        if tab is None:
+            pass
+        elif isinstance(tab, ProgrammingTab):
             tab.disable_selected()
+        else:
+            ROOT.bell()
 
     def clear_selected(self, event=None):
         tab = self.get_currently_selected()
-        if tab is not None:
+        if tab is None:
+            pass
+        elif isinstance(tab, ProgrammingTab):
             tab.clear_selected()
+        else:
+            ROOT.bell()
 
     def goto_line(self, event=None):
         tab = self.get_currently_selected()
-        if tab is not None:
+        if tab is None:
+            pass
+        elif isinstance(tab, ProgrammingTab):
             tab.goto_line()
+        else:
+            ROOT.bell()
 
     def run_standard_mode(self, event=None):
         tab = self.get_currently_selected()
-        if tab is not None:
+        if tab is None:
+            pass
+        elif isinstance(tab, ProgrammingTab):
             tab.run_standard_mode()
+        else:
+            ROOT.bell()
 
     def run_fastest_mode(self, event=None):
         tab = self.get_currently_selected()
-        if tab is not None:
+        if tab is None:
+            pass
+        elif isinstance(tab, ProgrammingTab):
             tab.run_fastest_mode()
+        else:
+            ROOT.bell()
+
+    def edit_config(self, event=None):
+        """設定タブを開く"""
+        config_tab = False
+        for tab in self.tabs:
+            if isinstance(tab, ConfigureTab):
+                tab.select_tab()
+                config_tab = True
+                break
+        if not config_tab:
+            ConfigureTab(self)
 
     def show_recent_files(self, event=None):
         # Menubarの作成
@@ -934,9 +915,9 @@ download/v{joined_version}/EasyTurtle-{joined_version}-amd64.msi"
             messagebox.showwarning("警告", "ファイル履歴がありません")
             return
 
-        for n, file in enumerate(self.recent_files):
-            self.menu.add_command(label=file,
-                                  command=partial(self.open_program, file))
+        for file in self.recent_files:
+            self.menu.add_command(
+                label=file, command=partial(self.open_file, file))
 
         self.menu.post(EXPAND(100), EXPAND(100))
 
@@ -976,7 +957,7 @@ download/v{joined_version}/EasyTurtle-{joined_version}-amd64.msi"
         ROOT.bind("<Control-Key-l>", self.clear_selected)
         ROOT.bind("<Control-Key-n>", self.new_program)
         ROOT.bind("<Control-Key-d>", self.delete_selected)
-        ROOT.bind("<Control-Key-o>", self.open_program)
+        ROOT.bind("<Control-Key-o>", self.open_file)
         ROOT.bind("<Control-Key-s>", self.save_program)
         ROOT.bind("<Control-Key-g>", self.goto_line)
         ROOT.bind("<Control-Key-q>", self.close_window)
@@ -1004,7 +985,7 @@ download/v{joined_version}/EasyTurtle-{joined_version}-amd64.msi"
                              command=self.new_window)
         filemenu.add_separator()
         filemenu.add_command(label="ファイルを開く", accelerator="Ctrl+O",
-                             command=self.open_program)
+                             command=self.open_file)
         filemenu.add_command(label="最近使用した項目", accelerator="Ctrl+H",
                              command=self.show_recent_files)
         filemenu.add_separator()
@@ -1099,7 +1080,289 @@ download/v{joined_version}/EasyTurtle-{joined_version}-amd64.msi"
         lab2.pack(side=tk.RIGHT, padx=EXPAND(10))
 
 
-class IndividualTab:
+class ConfigureTab:
+    def __init__(self, parent: EasyTurtle, select=True):
+        """初期化"""
+        self.et = parent
+
+        # 変数を初期化する
+        self.program_name = None
+
+        # タブ一覧に追加
+        self.et.tabs.append(self)
+
+        # 画面を設定する
+        self.setup()
+        self.et.notebook.select(self.mainframe)
+
+        # タブを選択する
+        if select is True:
+            self.select_tab()
+
+    def __repr__(self):
+        """コンストラクタの文字列定義"""
+        return "ConfigureTab()"
+
+    def close_tab(self, ask=True):
+        """タブ終了時の定義"""
+        # 保存するか確認する
+        if CONFIG != self.get_current_data() and ask:
+            res = messagebox.askyesnocancel("確認", "設定を保存しますか？")
+            if res is None:
+                return
+            elif res:
+                self.decide_config()
+
+        # タブを削除
+        self.et.notebook.forget(self.et.tabs.index(self))
+        self.et.notebook.event_generate("<<NotebookTabClosed>>")
+
+        # リストから削除
+        self.et.tabs.remove(self)
+
+        return 0
+
+    def close_window(self, event=None):
+        """アプリ終了時の定義"""
+        if CONFIG != self.get_current_data():
+            res = messagebox.askyesnocancel("確認", "設定を保存しますか？")
+            if res is None:
+                return
+            elif res:
+                self.decide_config()
+
+    def set_title(self, event=None):
+        """タイトルを設定する"""
+        index = self.et.tabs.index(self)
+        if CONFIG == self.get_current_data():
+            self.et.notebook.tab(index, text=" 設定 ")
+        else:
+            self.et.notebook.tab(index, text=" *設定* ")
+
+    def set_data(self, data: dict):
+        """データをセット"""
+        # データを取得
+        config = {}
+        for key, value in DEFAULT_CONFIG.items():
+            if key in data:
+                config[key] = data[key]
+            else:
+                config[key] = value
+
+        # データを設定
+        self.var1.set(config["save_more_info"])
+        self.var2.set(config["ask_save_new"])
+        self.var3.set(config["show_warning"])
+        self.var4.set(config["expand_window"])
+        self.var5.set(config["user_document"])
+        self.var6.set(config["auto_update"])
+        self.var7.set(config["open_last_file"])
+        self.var8.set(config["share_copy"])
+        self.var9.set(config["scroll_center"])
+        self.var10.set(config["enable_backup"])
+
+        # タイトルを設定
+        self.set_title()
+
+    def initialize(self):
+        """データを初期化"""
+        # データを設定
+        self.var1.set(DEFAULT_CONFIG["save_more_info"])
+        self.var2.set(DEFAULT_CONFIG["ask_save_new"])
+        self.var3.set(DEFAULT_CONFIG["show_warning"])
+        self.var4.set(DEFAULT_CONFIG["expand_window"])
+        self.var5.set(DEFAULT_CONFIG["user_document"])
+        self.var6.set(DEFAULT_CONFIG["auto_update"])
+        self.var7.set(DEFAULT_CONFIG["open_last_file"])
+        self.var8.set(DEFAULT_CONFIG["share_copy"])
+        self.var9.set(DEFAULT_CONFIG["scroll_center"])
+        self.var10.set(DEFAULT_CONFIG["enable_backup"])
+
+        # タイトルを設定
+        self.set_title()
+
+    def select_tab(self):
+        """タブを選択"""
+        self.et.notebook.select(self.mainframe)
+
+    def save_file(self, file, boot=None):
+        """ファイルを保存する"""
+        # データを決定
+        config = self.get_current_data() if boot is True else CONFIG
+        data = {"tabtype": "configure", "version": __version__[:2], **config}
+
+        # フォルダを作成
+        os.makedirs(os.path.dirname(file), exist_ok=True)
+
+        # データを書き込み
+        with open(file, "w")as f:
+            json.dump(data, f, indent=2)
+
+    def get_current_data(self):
+        """現在の入力データを取得する"""
+        return {
+            "save_more_info":   self.var1.get(),
+            "ask_save_new":     self.var2.get(),
+            "show_warning":     self.var3.get(),
+            "expand_window":    self.var4.get(),
+            "user_document":    self.var5.get(),
+            "auto_update":      self.var6.get(),
+            "open_last_file":   self.var7.get(),
+            "share_copy":       self.var8.get(),
+            "scroll_center":    self.var9.get(),
+            "enable_backup":    self.var10.get()}
+
+    def decide_config(self):
+        """設定を決定"""
+        global CONFIG
+        last_config = {c: CONFIG[c] for c in CONFIG}
+        CONFIG = self.get_current_data()
+
+        self.save_file(CONFIG_FILE)
+        self.set_title()
+
+        if CONFIG["enable_backup"] != last_config["enable_backup"]:
+            for tab in self.et.tabs:
+                if isinstance(tab, ProgrammingTab):
+                    tab.backed_up = []
+                    tab.canceled_changes = []
+                    tab.back_up()
+
+        if (CONFIG["expand_window"] != last_config["expand_window"]) or \
+           (CONFIG["user_document"] != last_config["user_document"]) or \
+           (CONFIG["scroll_center"] != last_config["scroll_center"]):
+            res = messagebox.askyesno("確認", "\
+変更された設定には再起動後に反映されるものが含まれています\n\
+今すぐこのアプリを再起動しますか？")
+            if res:
+                self.et.reboot_program()
+
+    def setup(self):
+        """セットアップ"""
+        # 基本ウィンドウを作成
+        self.mainframe = tk.Frame(self.et.notebook)
+        self.et.notebook.add(self.mainframe, text=" 設定 ")
+        frame1 = tk.Frame(self.mainframe)
+        frame1.pack()
+
+        font = (FONT_TYPE1, EXPAND(16), "bold")
+
+        # 画面の左側を作成
+        frame2 = tk.Frame(frame1)
+        frame2.pack(side=tk.LEFT, padx=20, anchor=tk.N)
+
+        # 開始時
+        lfm1 = tk.LabelFrame(
+            frame2, text="開始時", font=(FONT_TYPE1, EXPAND(28), "bold"))
+        lfm1.pack(side=tk.TOP, pady=EXPAND(20))
+
+        self.var6 = tk.BooleanVar()
+        self.var6.set(CONFIG["auto_update"])
+        chb6 = tk.Checkbutton(
+            lfm1, text="起動時にアップデートを確認する　",
+            font=font, variable=self.var6, command=self.set_title)
+        chb6.pack(padx=EXPAND(10), pady=EXPAND(10), anchor=tk.NW)
+
+        self.var7 = tk.BooleanVar()
+        self.var7.set(CONFIG["open_last_file"])
+        chb7 = tk.Checkbutton(
+            lfm1, text="前回開いていたファイルを開く　　",
+            font=font, variable=self.var7, command=self.set_title)
+        chb7.pack(padx=EXPAND(10), pady=(0, EXPAND(10)), anchor=tk.NW)
+
+        self.var4 = tk.BooleanVar()
+        self.var4.set(CONFIG["expand_window"])
+        chb4 = tk.Checkbutton(
+            lfm1, text="画面の大きさをを調整する　　　　",
+            font=font, variable=self.var4, command=self.set_title)
+        chb4.pack(padx=EXPAND(10), pady=(0, EXPAND(20)), anchor=tk.NW)
+
+        # ファイル
+        lfm2 = tk.LabelFrame(
+            frame2, text="ファイル", font=(FONT_TYPE1, EXPAND(28), "bold"))
+        lfm2.pack(side=tk.TOP, pady=EXPAND(20))
+
+        self.var1 = tk.BooleanVar()
+        self.var1.set(CONFIG["save_more_info"])
+        chb1 = tk.Checkbutton(
+            lfm2, text="より多くの情報を保存する　　　　",
+            font=font, variable=self.var1, command=self.set_title)
+        chb1.pack(padx=EXPAND(10), pady=EXPAND(10), anchor=tk.NW)
+
+        self.var2 = tk.BooleanVar()
+        self.var2.set(CONFIG["ask_save_new"])
+        chb2 = tk.Checkbutton(
+            lfm2, text="古いファイルを変更するか確認する",
+            font=font, variable=self.var2, command=self.set_title)
+        chb2.pack(padx=EXPAND(10), pady=(0, EXPAND(10)), anchor=tk.NW)
+
+        self.var5 = tk.BooleanVar()
+        self.var5.set(CONFIG["user_document"])
+        chb5 = tk.Checkbutton(
+            lfm2, text="ユーザードキュメントを使用する　",
+            font=font, variable=self.var5, command=self.set_title)
+        chb5.pack(padx=EXPAND(10), pady=(0, EXPAND(10)), anchor=tk.NW)
+
+        self.var10 = tk.BooleanVar()
+        self.var10.set(CONFIG["enable_backup"])
+        chb10 = tk.Checkbutton(
+            lfm2, text="バックアップを有効化する　　　　",
+            font=font, variable=self.var10, command=self.set_title)
+        chb10.pack(padx=EXPAND(10), pady=(0, EXPAND(20)), anchor=tk.NW)
+
+        # 画面右側を作成
+        frame3 = tk.Frame(frame1)
+        frame3.pack(side=tk.RIGHT, padx=10, anchor=tk.N)
+
+        # その他
+        lfm3 = tk.LabelFrame(
+            frame3, text="その他", font=(FONT_TYPE1, EXPAND(28), "bold"))
+        lfm3.pack(side=tk.TOP, pady=EXPAND(20))
+
+        self.var3 = tk.BooleanVar()
+        self.var3.set(CONFIG["show_warning"])
+        chb3 = tk.Checkbutton(
+            lfm3, text="警告と追加情報を表示する　　　　",
+            font=font, variable=self.var3, command=self.set_title)
+        chb3.pack(padx=EXPAND(10), pady=EXPAND(10), anchor=tk.NW)
+
+        self.var8 = tk.BooleanVar()
+        self.var8.set(CONFIG["share_copy"])
+        chb8 = tk.Checkbutton(
+            lfm3, text="コピーを他のタブと共有する　　　",
+            font=font, variable=self.var8, command=self.set_title)
+        chb8.pack(padx=EXPAND(10), pady=(0, EXPAND(10)), anchor=tk.NW)
+
+        self.var9 = tk.BooleanVar()
+        self.var9.set(CONFIG["scroll_center"])
+        chb9 = tk.Checkbutton(
+            lfm3, text="中クリックでの移動を有効化する　",
+            font=font, variable=self.var9, command=self.set_title)
+        chb9.pack(padx=EXPAND(10), pady=(0, EXPAND(20)), anchor=tk.NW)
+
+        frame4 = tk.Frame(frame3)
+        frame4.pack(side=tk.TOP, pady=(EXPAND(80), 0))
+
+        but2 = tk.Button(
+            frame4, text="初期化",
+            width=20, font=font, command=self.initialize)
+        but2.pack(padx=EXPAND(10), pady=(0, EXPAND(20)))
+
+        but1 = tk.Button(
+            frame4, text="決定",
+            width=20, font=font, command=self.decide_config)
+        but1.pack(padx=EXPAND(10), pady=(0, EXPAND(20)))
+
+        lab1 = tk.Label(
+            frame4, font=font, fg="red", text="\
+※画面サイズなどの一部の変更は\n　次回起動時より有効になります")
+        lab1.pack(padx=EXPAND(20), pady=(0, EXPAND(10)))
+
+        # タイトルを設定
+        self.set_title()
+
+
+class ProgrammingTab:
     def __init__(self, parent: EasyTurtle, select=True):
         """初期化"""
         self.et = parent
@@ -1111,7 +1374,7 @@ class IndividualTab:
         self.copied_widgets: List[Dict[str, Any]] = []
         self.default_data: List[Dict[str, Any]] = []
         self.backed_up: List[Dict[str, Any]] = []
-        self.canceled_changes = []
+        self.canceled_changes: List[Dict[str, Any]] = []
         self.warning_ignore = False
         self.program_name = None
         self.center_clicked = False
@@ -1124,15 +1387,17 @@ class IndividualTab:
 
         # 画面を設定する
         self.setup()
-        if select:
+
+        # タブを選択する
+        if select is True:
             self.select_tab()
 
     def __repr__(self):
         """コンストラクタの文字列定義"""
-        return "IndividualTab()"
+        return "ProgrammingTab()"
 
     def close_tab(self, ask=True):
-        """終了時の定義"""
+        """タブ終了時の定義"""
         if self.et.running_program:
             return
 
@@ -1159,6 +1424,17 @@ class IndividualTab:
             self.et.untitled_tabs.pop(self)
 
         return 0
+
+    def close_window(self, event=None):
+        """アプリ終了時の定義"""
+        data = [d.get_data(more=False) for d in self.widgets]
+        if self.default_data != data:
+            res = messagebox.askyesnocancel("確認", "保存しますか？")
+            if res is None:
+                return 1
+            elif res:
+                if self.save_program(close=True) == 1:
+                    return 1
 
     def redraw_widgets(self, change=True):
         """全部描き直し"""
@@ -1217,6 +1493,9 @@ class IndividualTab:
 
     def back_up(self):
         """バックアップ"""
+        if not CONFIG["enable_backup"]:
+            return
+
         # データを取得
         data = self.get_data()
 
@@ -1231,6 +1510,9 @@ class IndividualTab:
     def undo_change(self):
         """一回戻る"""
         if self.et.running_program:
+            return
+        elif not CONFIG["enable_backup"]:
+            ROOT.bell()
             return
 
         # データを取得
@@ -1261,6 +1543,9 @@ class IndividualTab:
     def redo_change(self):
         """やり直し"""
         if self.et.running_program:
+            return
+        elif not CONFIG["enable_backup"]:
+            ROOT.bell()
             return
 
         # データを取得
@@ -1303,7 +1588,7 @@ class IndividualTab:
     def check_length(self):
         """データの大きさをチェック"""
         if (len(self.widgets) > 999) and \
-           CONFIG["show_warning"] and not self.warning_ignore:
+                CONFIG["show_warning"] and not self.warning_ignore:
             messagebox.showwarning(
                 "警告", "大量のデータを保持すると正常に動作しなくなる可能性があります")
             self.warning_ignore = True
@@ -1517,11 +1802,7 @@ line: {index+1}, {widget.__class__.__name__}\n\
 
         # 最近のファイルリストに追加
         if not close:
-            name = os.path.abspath(file).replace("\\", "/")
-            if name in self.et.recent_files:
-                self.et.recent_files.remove(name)
-            self.et.recent_files.insert(0, name)
-            self.et.recent_files = self.et.recent_files[:10]
+            self.et.append_recent_files(file)
 
     def save_program_as(self, file=None, close=False):
         """名前を付けて保存"""
@@ -1558,11 +1839,7 @@ line: {index+1}, {widget.__class__.__name__}\n\
 
         # 最近のファイルリストに追加
         if not close:
-            name = os.path.abspath(file).replace("\\", "/")
-            if name in self.et.recent_files:
-                self.et.recent_files.remove(name)
-            self.et.recent_files.insert(0, name)
-            self.et.recent_files = self.et.recent_files[:10]
+            self.et.append_recent_files(file)
 
     def save_file(self, file, boot=False):
         """ファイルを保存する"""
@@ -1573,6 +1850,7 @@ line: {index+1}, {widget.__class__.__name__}\n\
         # データを決定
         if boot:
             data = {
+                "tabtype": "program",
                 "version": __version__[:2],
                 "copy": [] if CONFIG["share_copy"] else self.copied_widgets,
                 "index": self.index,
@@ -1590,6 +1868,7 @@ line: {index+1}, {widget.__class__.__name__}\n\
                 "body": body}
         elif CONFIG["save_more_info"]:
             data = {
+                "tabtype": "program",
                 "version": __version__[:2],
                 "copy": [] if CONFIG["share_copy"] else self.copied_widgets,
                 "index": self.index,
@@ -1601,12 +1880,15 @@ line: {index+1}, {widget.__class__.__name__}\n\
                 "last": self.last_checked,
                 "body": body}
         else:
-            data = {"version": __version__[:2], "body": body}
+            data = {
+                "tabtype": "program",
+                "version": __version__[:2],
+                "body": body}
 
         # フォルダを作成
         os.makedirs(os.path.dirname(file), exist_ok=True)
 
-        # 同じ名前のファイルを削除
+        # 同じ名前のタブを削除
         for tab in self.et.tabs:
             if tab != self and tab.program_name == file:
                 tab.close_tab(ask=False)
@@ -1635,8 +1917,6 @@ line: {index+1}, {widget.__class__.__name__}\n\
         name = data["_name"]
         if name in Names:
             Widgets[Names.index(name)](self, data, index)
-        elif (name == "Geometry") and (version < (5, 0)):
-            ScreenSize(self, data, index)
         else:
             Undefined(self, {"_name": name, **data}, index)
 
@@ -1898,7 +2178,7 @@ line: {index+1}, {widget.__class__.__name__}\n\
 
 
 class CustomNotebook(ttk.Notebook):
-    """各タブに閉じるボタンがあるttkノートブック"""
+    """タブに閉じるボタンがあるノートブック"""
 
     __initialized = False
 
@@ -1935,6 +2215,7 @@ class CustomNotebook(ttk.Notebook):
             return
 
         element = self.identify(event.x, event.y)
+
         # ユーザーがマウスを閉じるボタンから離した時
         if "close" not in element:
             self.state(["!pressed"])
@@ -1999,7 +2280,7 @@ class CustomNotebook(ttk.Notebook):
 
 
 class Widget:
-    def __init__(self, parent: IndividualTab, data={}, index=-1):
+    def __init__(self, parent: ProgrammingTab, data={}, index=-1):
         """初期化"""
         self.tab = parent
         self.et = self.tab.et
@@ -4792,6 +5073,7 @@ WidgetType = Union[Widget, VarNumber, VarString, VarBoolean, Title, ScreenSize,
                    GetPenColor, GetFillColor, GetBGColor, BeginFill, EndFill,
                    Filling, ShowTurtle, HideTurtle, IsVisible, TurtleSize,
                    Write, Bye, ExitOnClick, Bell, Sleep, Comment, Undefined]
+IndividualTab = Union[ProgrammingTab, ConfigureTab]
 
 
 def GET_WIDGET_INFO(widget: WidgetType) -> str:
