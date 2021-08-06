@@ -1,231 +1,232 @@
 {
+  "tabtype": "program",
   "version": [
     5,
-    3
+    13
   ],
   "body": [
     {
       "name": "size",
-      "value": "8",
-      "_name": "VarNumber",
-      "_enabled": true
+      "value": "20",
+      "_enabled": true,
+      "_name": "VarNumber"
     },
     {
       "title": "Apple",
-      "_name": "Title",
-      "_enabled": true
+      "_enabled": true,
+      "_name": "Title"
     },
     {
       "width": "[size]*28",
       "height": "[size]*28",
-      "_name": "ScreenSize",
-      "_enabled": true
+      "_enabled": true,
+      "_name": "ScreenSize"
     },
     {
-      "_name": "PenUp",
-      "_enabled": true
+      "_enabled": true,
+      "_name": "PenUp"
     },
     {
       "color": "red",
-      "_name": "Color",
-      "_enabled": true
+      "_enabled": true,
+      "_name": "Color"
     },
     {
       "distance": "[size]*10",
-      "_name": "Forward",
-      "_enabled": true
+      "_enabled": true,
+      "_name": "Forward"
     },
     {
       "angle": "90",
-      "_name": "Left",
-      "_enabled": true
+      "_enabled": true,
+      "_name": "Left"
     },
     {
-      "_name": "PenDown",
-      "_enabled": true
+      "_enabled": true,
+      "_name": "PenDown"
     },
     {
-      "_name": "BeginFill",
-      "_enabled": true
+      "_enabled": true,
+      "_name": "BeginFill"
     },
     {
       "radius": "[size]*10",
       "extent": "360",
-      "_name": "Circle",
-      "_enabled": true
+      "_enabled": true,
+      "_name": "Circle"
     },
     {
-      "_name": "EndFill",
-      "_enabled": true
+      "_enabled": true,
+      "_name": "EndFill"
     },
     {
-      "_name": "PenUp",
-      "_enabled": true
+      "_enabled": true,
+      "_name": "PenUp"
     },
     {
       "angle": "90",
-      "_name": "Left",
-      "_enabled": true
+      "_enabled": true,
+      "_name": "Left"
     },
     {
       "distance": "[size]*10",
-      "_name": "Forward",
-      "_enabled": true
+      "_enabled": true,
+      "_name": "Forward"
     },
     {
       "angle": "90",
-      "_name": "Right",
-      "_enabled": true
+      "_enabled": true,
+      "_name": "Right"
     },
     {
       "distance": "[size]*5",
-      "_name": "Forward",
-      "_enabled": true
+      "_enabled": true,
+      "_name": "Forward"
     },
     {
       "angle": "90",
-      "_name": "Left",
-      "_enabled": true
+      "_enabled": true,
+      "_name": "Left"
     },
     {
       "distance": "[size]*4",
-      "_name": "Forward",
-      "_enabled": true
+      "_enabled": true,
+      "_name": "Forward"
     },
     {
       "angle": "150",
-      "_name": "Left",
-      "_enabled": true
+      "_enabled": true,
+      "_name": "Left"
     },
     {
-      "_name": "PenDown",
-      "_enabled": true
+      "_enabled": true,
+      "_name": "PenDown"
     },
     {
       "width": "[size]",
-      "_name": "PenSize",
-      "_enabled": true
+      "_enabled": true,
+      "_name": "PenSize"
     },
     {
       "color": "brown",
-      "_name": "Color",
-      "_enabled": true
+      "_enabled": true,
+      "_name": "Color"
     },
     {
       "radius": "[size]*8",
       "extent": "60",
-      "_name": "Circle",
-      "_enabled": true
+      "_enabled": true,
+      "_name": "Circle"
     },
     {
-      "_name": "PenUp",
-      "_enabled": true
+      "_enabled": true,
+      "_name": "PenUp"
     },
     {
       "angle": "150",
-      "_name": "Left",
-      "_enabled": true
+      "_enabled": true,
+      "_name": "Left"
     },
     {
       "distance": "[size]*4",
-      "_name": "Forward",
-      "_enabled": true
+      "_enabled": true,
+      "_name": "Forward"
     },
     {
       "angle": "90",
-      "_name": "Right",
-      "_enabled": true
+      "_enabled": true,
+      "_name": "Right"
     },
     {
       "distance": "[size]",
-      "_name": "Forward",
-      "_enabled": true
+      "_enabled": true,
+      "_name": "Forward"
     },
     {
-      "_name": "PenDown",
-      "_enabled": true
+      "_enabled": true,
+      "_name": "PenDown"
     },
     {
       "color": "black",
-      "_name": "Color",
-      "_enabled": true
+      "_enabled": true,
+      "_name": "Color"
     },
     {
       "distance": "[size]*5",
-      "_name": "Forward",
-      "_enabled": true
+      "_enabled": true,
+      "_name": "Forward"
     },
     {
-      "_name": "PenUp",
-      "_enabled": true
+      "_enabled": true,
+      "_name": "PenUp"
     },
     {
       "distance": "[size]*2",
-      "_name": "Backward",
-      "_enabled": true
+      "_enabled": true,
+      "_name": "Backward"
     },
     {
       "angle": "150",
-      "_name": "Right",
-      "_enabled": true
+      "_enabled": true,
+      "_name": "Right"
     },
     {
-      "_name": "PenDown",
-      "_enabled": true
+      "_enabled": true,
+      "_name": "PenDown"
     },
     {
       "color": "lightgreen",
-      "_name": "Color",
-      "_enabled": true
+      "_enabled": true,
+      "_name": "Color"
     },
     {
-      "_name": "BeginFill",
-      "_enabled": true
+      "_enabled": true,
+      "_name": "BeginFill"
     },
     {
       "radius": "[size]*4",
       "extent": "120",
-      "_name": "Circle",
-      "_enabled": true
+      "_enabled": true,
+      "_name": "Circle"
     },
     {
       "angle": "60",
-      "_name": "Left",
-      "_enabled": true
+      "_enabled": true,
+      "_name": "Left"
     },
     {
       "radius": "[size]*4",
       "extent": "120",
-      "_name": "Circle",
-      "_enabled": true
+      "_enabled": true,
+      "_name": "Circle"
     },
     {
-      "_name": "EndFill",
-      "_enabled": true
+      "_enabled": true,
+      "_name": "EndFill"
     },
     {
       "width": "[size]//2",
-      "_name": "PenSize",
-      "_enabled": true
+      "_enabled": true,
+      "_name": "PenSize"
     },
     {
       "color": "black",
-      "_name": "Color",
-      "_enabled": true
+      "_enabled": true,
+      "_name": "Color"
     },
     {
       "angle": "120",
-      "_name": "Left",
-      "_enabled": true
+      "_enabled": true,
+      "_name": "Left"
     },
     {
       "distance": "[size]*7",
-      "_name": "Forward",
-      "_enabled": true
+      "_enabled": true,
+      "_name": "Forward"
     },
     {
-      "_name": "HideTurtle",
-      "_enabled": true
+      "_enabled": true,
+      "_name": "HideTurtle"
     }
   ]
 }
