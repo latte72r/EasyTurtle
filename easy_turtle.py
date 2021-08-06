@@ -1,6 +1,7 @@
 
 # ©2020-2021 Ryo Fujinami.
 
+import atexit
 import glob
 import json
 import os
@@ -125,22 +126,20 @@ if SYSTEM == "Windows":
     CONFIG = DEFAULT_CONFIG
     UPDATE_CONFIG()
 
-    if CONFIG["user_document"]:
-        user = os.environ['USERPROFILE']
-        if os.path.exists(os.path.join(user, "onedrive/ドキュメント/")):
-            DOCUMENTS = os.path.join(user, "onedrive/ドキュメント/EasyTurtle/")
-        else:
-            DOCUMENTS = os.path.join(user, "Documents/EasyTurtle/")
-        samples = os.path.join(DOCUMENTS, "Samples")
-        os.makedirs(DOCUMENTS, exist_ok=True)
-        try:
-            if not os.path.exists(samples):
-                shutil.copytree('./Samples', samples)
-        except FileExistsError:
-            pass
+    user = os.environ['USERPROFILE']
+    if os.path.exists(os.path.join(user, "onedrive/ドキュメント/")):
+        USER_DOCUMENT = os.path.join(user, "onedrive/ドキュメント/EasyTurtle/")
     else:
-        DOCUMENTS = os.path.abspath("./")
-        os.makedirs(DOCUMENTS, exist_ok=True)
+        USER_DOCUMENT = os.path.join(user, "Documents/EasyTurtle/")
+    samples = os.path.join(USER_DOCUMENT, "Samples")
+    os.makedirs(USER_DOCUMENT, exist_ok=True)
+    try:
+        if not os.path.exists(samples):
+            shutil.copytree('./Samples', samples)
+    except FileExistsError:
+        pass
+    ACTIVE_DOCUMENT = os.path.abspath("./")
+    os.makedirs(ACTIVE_DOCUMENT, exist_ok=True)
 
     SYSTEM_WIDTH = windll.user32.GetSystemMetrics(0)
     SYSTEM_HEIGHT = windll.user32.GetSystemMetrics(1)
@@ -205,22 +204,20 @@ elif SYSTEM == "Linux":
     CONFIG = DEFAULT_CONFIG
     UPDATE_CONFIG()
 
-    if CONFIG["user_document"]:
-        user = os.environ['USER']
-        if os.path.exists(os.path.join("/home", user, "ドキュメント/")):
-            DOCUMENTS = os.path.join("/home", user, "ドキュメント/EasyTurtle/")
-        else:
-            DOCUMENTS = os.path.join("/home", user, "Documents/EasyTurtle/")
-        os.makedirs(DOCUMENTS, exist_ok=True)
-        samples = os.path.join(DOCUMENTS, "Samples")
-        try:
-            if not os.path.exists(samples):
-                shutil.copytree('./Samples', samples)
-        except FileExistsError:
-            pass
+    user = os.environ['USER']
+    if os.path.exists(os.path.join("/home", user, "ドキュメント/")):
+        USER_DOCUMENT = os.path.join("/home", user, "ドキュメント/EasyTurtle/")
     else:
-        DOCUMENTS = os.path.abspath("./")
-        os.makedirs(DOCUMENTS, exist_ok=True)
+        USER_DOCUMENT = os.path.join("/home", user, "Documents/EasyTurtle/")
+    os.makedirs(USER_DOCUMENT, exist_ok=True)
+    samples = os.path.join(USER_DOCUMENT, "Samples")
+    try:
+        if not os.path.exists(samples):
+            shutil.copytree('./Samples', samples)
+    except FileExistsError:
+        pass
+    ACTIVE_DOCUMENT = os.path.abspath("./")
+    os.makedirs(ACTIVE_DOCUMENT, exist_ok=True)
 
     try:
         response = subprocess.check_output("xrandr | fgrep '*'", shell=True)
@@ -253,7 +250,7 @@ else:
 
 FONT = (FONT_TYPE1, EXPAND(12), "bold")
 
-__version__ = (5, 13, "0a1")
+__version__ = (5, 13, "0a2")
 
 
 class EasyTurtle:
@@ -265,8 +262,8 @@ class EasyTurtle:
         self.copied_widgets: List[Dict[str, Any]] = []
         self.recent_files: List[str] = []
         self.running_program = False
-        self.editing_config = False
         self.last_directory = None
+        self.killed_program = False
         self.menu: tk.Menu
 
         # 画面を設定する
@@ -301,6 +298,7 @@ class EasyTurtle:
             if not file_open:
                 ProgrammingTab(self)
 
+        atexit.register(self.forced_termination)
         ROOT.mainloop()
 
     def __repr__(self):
@@ -358,10 +356,33 @@ class EasyTurtle:
                   padx=EXPAND(20), pady=(0, EXPAND(10)))
         self.win.resizable(False, False)
 
-    def finish_editing_config(self, event=None):
-        """設定を終了"""
-        self.editing_config = False
-        self.win.destroy()
+    def forced_termination(self):
+        """強制終了時の動作"""
+        if self.killed_program:
+            return
+
+        # フォルダーを作成
+        shutil.rmtree(BOOT_FOLDER)
+        os.mkdir(BOOT_FOLDER)
+
+        data = {
+            "copy": self.copied_widgets if CONFIG["share_copy"] else [],
+            "dirname": self.last_directory,
+            "recent": self.recent_files}
+
+        with open(os.path.join(BOOT_FOLDER, "windata.json"), "w")as f:
+            json.dump(data, f, indent=2)
+
+        for num, tab in enumerate(self.tabs):
+            tab.forced_save_file(
+                os.path.join(BOOT_FOLDER, f"boot{num}.json"))
+
+        # 画面を閉じる
+        try:
+            ROOT.destroy()
+        except tk.TclError:
+            pass
+        sys.exit()
 
     def close_window(self, event=None):
         """終了時の定義"""
@@ -378,6 +399,7 @@ class EasyTurtle:
 
         # 画面を閉じる
         ROOT.destroy()
+        self.killed_program = True
         sys.exit()
 
     def get_currently_selected(self):
@@ -423,6 +445,12 @@ class EasyTurtle:
         self.recent_files.insert(0, name)
         self.recent_files = self.recent_files[:10]
 
+    def get_document_path(self):
+        if CONFIG["user_document"]:
+            return USER_DOCUMENT
+        else:
+            return ACTIVE_DOCUMENT
+
     def open_file(self, file=None, boot=False):
         """ファイルを開く動作"""
         # キーバインドから実行された場合
@@ -439,7 +467,7 @@ class EasyTurtle:
                     filetypes=[("Jsonファイル", "*.json")])
             else:
                 file = filedialog.askopenfilename(
-                    parent=ROOT, initialdir=DOCUMENTS,
+                    parent=ROOT, initialdir=self.get_document_path(),
                     filetypes=[("Jsonファイル", "*.json")])
 
         # ファイルが選択されていなければ終了
@@ -1185,6 +1213,21 @@ class ConfigureTab:
         """タブを選択"""
         self.et.notebook.select(self.mainframe)
 
+    def forced_save_file(self, file):
+        # データを決定
+        try:
+            config = self.get_current_data()
+        except tk.TclError:
+            config = CONFIG
+        data = {"tabtype": "configure", "version": __version__[:2], **config}
+
+        # フォルダを作成
+        os.makedirs(os.path.dirname(file), exist_ok=True)
+
+        # データを書き込み
+        with open(file, "w")as f:
+            json.dump(data, f, indent=2)
+
     def save_file(self, file, boot=None):
         """ファイルを保存する"""
         # データを決定
@@ -1229,7 +1272,6 @@ class ConfigureTab:
                     tab.back_up()
 
         if (CONFIG["expand_window"] != last_config["expand_window"]) or \
-           (CONFIG["user_document"] != last_config["user_document"]) or \
            (CONFIG["scroll_center"] != last_config["scroll_center"]):
             res = messagebox.askyesno("確認", "\
 変更された設定には再起動後に反映されるものが含まれています\n\
@@ -1689,9 +1731,11 @@ class ProgrammingTab:
         if fastest:
             self.runner_speed = 0
             self.running_fastest = True
+            self.runner_mode = "fastest"
         else:
             self.runner_speed = 3
             self.running_fastest = False
+            self.runner_mode = "standard"
 
         # ウインドウを作成
         self.win = tk.Toplevel(ROOT)
@@ -1786,7 +1830,7 @@ line: {index+1}, {widget.__class__.__name__}\n\
                     filetypes=[("Jsonファイル", "*.json")])
             else:
                 file = filedialog.asksaveasfilename(
-                    parent=ROOT, initialdir=DOCUMENTS,
+                    parent=ROOT, initialdir=self.et.get_document_path(),
                     filetypes=[("Jsonファイル", "*.json")])
 
         # ファイルが選択されていなければ終了
@@ -1823,7 +1867,7 @@ line: {index+1}, {widget.__class__.__name__}\n\
                     filetypes=[("Jsonファイル", "*.json")])
             else:
                 file = filedialog.asksaveasfilename(
-                    parent=ROOT, initialdir=DOCUMENTS,
+                    parent=ROOT, initialdir=self.et.get_document_path(),
                     filetypes=[("Jsonファイル", "*.json")])
 
         # ファイルが選択されていなければ終了
@@ -1840,6 +1884,41 @@ line: {index+1}, {widget.__class__.__name__}\n\
         # 最近のファイルリストに追加
         if not close:
             self.et.append_recent_files(file)
+
+    def forced_save_file(self, file):
+        """ファイルを保存する"""
+        # データを取得
+        try:
+            body = [d.get_data(more=True) for d in self.widgets]
+        except tk.TclError:
+            body = self.backed_up[-1]["body"] if self.backed_up != [] else []
+
+        # データを決定
+        data = {
+            "tabtype": "program",
+            "version": __version__[:2],
+            "copy": [] if CONFIG["share_copy"] else self.copied_widgets,
+            "index": self.index,
+            "backedup": self.backed_up,
+            "canceled": self.canceled_changes,
+            "name": self.program_name,
+            "default": self.default_data,
+            "untitled": (self.et.untitled_tabs[self]
+                         if self in self.et.untitled_tabs else None),
+            "last": self.last_checked,
+            "body": body}
+
+        # フォルダを作成
+        os.makedirs(os.path.dirname(file), exist_ok=True)
+
+        # 同じ名前のタブを削除
+        for tab in self.et.tabs:
+            if tab != self and tab.program_name == file:
+                tab.close_tab(ask=False)
+
+        # データを書き込み
+        with open(file, "w")as f:
+            json.dump(data, f, indent=2)
 
     def save_file(self, file, boot=False):
         """ファイルを保存する"""
@@ -2415,10 +2494,14 @@ class Widget:
 
     def click_center(self, event: tk.Event):
         """中ボタンでのスクロール開始"""
+        if self.tab.center_clicked:
+            return
+
         # カーソルを十字矢印に設定
         self.cv.config(cursor="fleur")
 
         self.mouse_position = self.cv.winfo_pointery()
+        self.center_start = self.tab.index
         self.tab.center_clicked = True
         self.scroll_center()
 
@@ -3135,6 +3218,10 @@ class ScreenSize(Widget):
         width = maxwidth = self.str2uint(self.width)
         height = maxheight = self.str2uint(self.height)
 
+        # 元の位置を取得
+        xcor = tur.xcor() - self.tab.runner_size[0] // 2
+        ycor = tur.ycor() + self.tab.runner_size[1] // 2
+
         # 警告を表示
         if width > SYSTEM_WIDTH:
             width = SYSTEM_WIDTH
@@ -3155,7 +3242,7 @@ class ScreenSize(Widget):
         # 亀を移動
         tur.penup()
         tur.speed(0)
-        tur.goto(maxwidth // 2, maxheight // -2)
+        tur.goto(maxwidth // 2 + xcor, maxheight // -2 + ycor)
         tur.speed(self.tab.runner_speed)
         if self.tab.runner_pendown:
             tur.pendown()
@@ -4961,7 +5048,8 @@ class Sleep(Widget):
 
     def run(self, tur: turtle.RawTurtle):
         self.save_data()
-        time.sleep(self.str2ufloat(self.second))
+        if self.tab.runner_mode == "standard":
+            time.sleep(self.str2ufloat(self.second))
 
 
 class Comment(Widget):
