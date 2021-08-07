@@ -250,7 +250,7 @@ else:
 
 FONT = (FONT_TYPE1, EXPAND(12), "bold")
 
-__version__ = (5, 13, 0)
+__version__ = (5, 14, "0a1")
 
 
 class EasyTurtle:
@@ -404,7 +404,7 @@ class EasyTurtle:
 
     def get_currently_selected(self):
         try:
-            return self.tabs[self.notebook.index(self.notebook.select())]
+            return self.tabs[self.notebook.get_selected()]
         except tk.TclError:
             return None
 
@@ -1002,7 +1002,7 @@ download/v{joined_version}/EasyTurtle-{joined_version}-amd64.msi"
         ROOT.config(menu=self.menubar)
 
         # Notebookの作成
-        self.notebook = CustomNotebook(self, ROOT)
+        self.notebook = Notebook(self, ROOT)
         self.notebook.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
 
         # FILEメニューの作成
@@ -1121,7 +1121,7 @@ class ConfigureTab:
 
         # 画面を設定する
         self.setup()
-        self.et.notebook.select(self.mainframe)
+        self.et.notebook.select(self.et.notebook.index(self.mainframe))
 
         # タブを選択する
         if select is True:
@@ -1143,7 +1143,6 @@ class ConfigureTab:
 
         # タブを削除
         self.et.notebook.forget(self.et.tabs.index(self))
-        self.et.notebook.event_generate("<<NotebookTabClosed>>")
 
         # リストから削除
         self.et.tabs.remove(self)
@@ -1163,9 +1162,9 @@ class ConfigureTab:
         """タイトルを設定する"""
         index = self.et.tabs.index(self)
         if CONFIG == self.get_current_data():
-            self.et.notebook.tab(index, text=" 設定 ")
+            self.et.notebook.set_title(index, "設定")
         else:
-            self.et.notebook.tab(index, text=" *設定* ")
+            self.et.notebook.set_title(index, "*設定*")
 
     def set_data(self, data: dict):
         """データをセット"""
@@ -1178,16 +1177,16 @@ class ConfigureTab:
                 config[key] = value
 
         # データを設定
-        self.var1.set(config["save_more_info"])
-        self.var2.set(config["ask_save_new"])
-        self.var3.set(config["show_warning"])
-        self.var4.set(config["expand_window"])
-        self.var5.set(config["user_document"])
-        self.var6.set(config["auto_update"])
-        self.var7.set(config["open_last_file"])
-        self.var8.set(config["share_copy"])
-        self.var9.set(config["scroll_center"])
-        self.var10.set(config["enable_backup"])
+        self.tgb1.set(config["save_more_info"])
+        self.tgb2.set(config["ask_save_new"])
+        self.tgb3.set(config["show_warning"])
+        self.tgb4.set(config["expand_window"])
+        self.tgb5.set(config["user_document"])
+        self.tgb6.set(config["auto_update"])
+        self.tgb7.set(config["open_last_file"])
+        self.tgb8.set(config["share_copy"])
+        self.tgb9.set(config["scroll_center"])
+        self.tgb10.set(config["enable_backup"])
 
         # タイトルを設定
         self.set_title()
@@ -1195,23 +1194,23 @@ class ConfigureTab:
     def initialize(self):
         """データを初期化"""
         # データを設定
-        self.var1.set(DEFAULT_CONFIG["save_more_info"])
-        self.var2.set(DEFAULT_CONFIG["ask_save_new"])
-        self.var3.set(DEFAULT_CONFIG["show_warning"])
-        self.var4.set(DEFAULT_CONFIG["expand_window"])
-        self.var5.set(DEFAULT_CONFIG["user_document"])
-        self.var6.set(DEFAULT_CONFIG["auto_update"])
-        self.var7.set(DEFAULT_CONFIG["open_last_file"])
-        self.var8.set(DEFAULT_CONFIG["share_copy"])
-        self.var9.set(DEFAULT_CONFIG["scroll_center"])
-        self.var10.set(DEFAULT_CONFIG["enable_backup"])
+        self.tgb1.set(DEFAULT_CONFIG["save_more_info"])
+        self.tgb2.set(DEFAULT_CONFIG["ask_save_new"])
+        self.tgb3.set(DEFAULT_CONFIG["show_warning"])
+        self.tgb4.set(DEFAULT_CONFIG["expand_window"])
+        self.tgb5.set(DEFAULT_CONFIG["user_document"])
+        self.tgb6.set(DEFAULT_CONFIG["auto_update"])
+        self.tgb7.set(DEFAULT_CONFIG["open_last_file"])
+        self.tgb8.set(DEFAULT_CONFIG["share_copy"])
+        self.tgb9.set(DEFAULT_CONFIG["scroll_center"])
+        self.tgb10.set(DEFAULT_CONFIG["enable_backup"])
 
         # タイトルを設定
         self.set_title()
 
     def select_tab(self):
         """タブを選択"""
-        self.et.notebook.select(self.mainframe)
+        self.et.notebook.select(self.et.notebook.index(self.mainframe))
 
     def forced_save_file(self, file):
         # データを決定
@@ -1244,16 +1243,16 @@ class ConfigureTab:
     def get_current_data(self):
         """現在の入力データを取得する"""
         return {
-            "save_more_info":   self.var1.get(),
-            "ask_save_new":     self.var2.get(),
-            "show_warning":     self.var3.get(),
-            "expand_window":    self.var4.get(),
-            "user_document":    self.var5.get(),
-            "auto_update":      self.var6.get(),
-            "open_last_file":   self.var7.get(),
-            "share_copy":       self.var8.get(),
-            "scroll_center":    self.var9.get(),
-            "enable_backup":    self.var10.get()}
+            "save_more_info":   self.tgb1.get(),
+            "ask_save_new":     self.tgb2.get(),
+            "show_warning":     self.tgb3.get(),
+            "expand_window":    self.tgb4.get(),
+            "user_document":    self.tgb5.get(),
+            "auto_update":      self.tgb6.get(),
+            "open_last_file":   self.tgb7.get(),
+            "share_copy":       self.tgb8.get(),
+            "scroll_center":    self.tgb9.get(),
+            "enable_backup":    self.tgb10.get()}
 
     def decide_config(self):
         """設定を決定"""
@@ -1283,7 +1282,7 @@ class ConfigureTab:
         """セットアップ"""
         # 基本ウィンドウを作成
         self.mainframe = tk.Frame(self.et.notebook)
-        self.et.notebook.add(self.mainframe, text=" 設定 ")
+        self.et.notebook.add_tab(self.mainframe)
         frame1 = tk.Frame(self.mainframe)
         frame1.pack()
 
@@ -1298,59 +1297,66 @@ class ConfigureTab:
             frame2, text="開始時", font=(FONT_TYPE1, EXPAND(28), "bold"))
         lfm1.pack(side=tk.TOP, pady=EXPAND(20))
 
-        self.var6 = tk.BooleanVar()
-        self.var6.set(CONFIG["auto_update"])
-        chb6 = tk.Checkbutton(
-            lfm1, text="起動時にアップデートを確認する　",
-            font=font, variable=self.var6, command=self.set_title)
-        chb6.pack(padx=EXPAND(10), pady=EXPAND(10), anchor=tk.NW)
+        tfm6 = tk.Frame(lfm1)
+        tfm6.pack(side=tk.TOP, anchor=tk.W, padx=EXPAND(10), pady=EXPAND(10))
+        lab6 = tk.Label(tfm6, text="起動時にアップデートを確認する　", font=font)
+        lab6.pack(side=tk.LEFT)
+        self.tgb6 = ToggleButton(
+            tfm6, start=CONFIG["auto_update"], command=self.set_title)
+        self.tgb6.pack(side=tk.LEFT)
 
-        self.var7 = tk.BooleanVar()
-        self.var7.set(CONFIG["open_last_file"])
-        chb7 = tk.Checkbutton(
-            lfm1, text="前回開いていたファイルを開く　　",
-            font=font, variable=self.var7, command=self.set_title)
-        chb7.pack(padx=EXPAND(10), pady=(0, EXPAND(10)), anchor=tk.NW)
+        tfm7 = tk.Frame(lfm1)
+        tfm7.pack(side=tk.TOP, anchor=tk.W, padx=EXPAND(10), pady=EXPAND(10))
+        lab7 = tk.Label(tfm7, text="前回開いていたファイルを開く　　", font=font)
+        lab7.pack(side=tk.LEFT)
+        self.tgb7 = ToggleButton(
+            tfm7, start=CONFIG["open_last_file"], command=self.set_title)
+        self.tgb7.pack(side=tk.LEFT)
 
-        self.var4 = tk.BooleanVar()
-        self.var4.set(CONFIG["expand_window"])
-        chb4 = tk.Checkbutton(
-            lfm1, text="画面の大きさをを調整する　　　　",
-            font=font, variable=self.var4, command=self.set_title)
-        chb4.pack(padx=EXPAND(10), pady=(0, EXPAND(20)), anchor=tk.NW)
+        tfm4 = tk.Frame(lfm1)
+        tfm4.pack(side=tk.TOP, anchor=tk.W, padx=EXPAND(10), pady=EXPAND(10))
+        lab4 = tk.Label(tfm4, text="画面の大きさをを調整する　　　　", font=font)
+        lab4.pack(side=tk.LEFT)
+        self.tgb4 = ToggleButton(
+            tfm4, start=CONFIG["expand_window"], command=self.set_title)
+        self.tgb4.pack(side=tk.LEFT)
 
         # ファイル
         lfm2 = tk.LabelFrame(
             frame2, text="ファイル", font=(FONT_TYPE1, EXPAND(28), "bold"))
         lfm2.pack(side=tk.TOP, pady=EXPAND(20))
 
-        self.var1 = tk.BooleanVar()
-        self.var1.set(CONFIG["save_more_info"])
-        chb1 = tk.Checkbutton(
-            lfm2, text="より多くの情報を保存する　　　　",
-            font=font, variable=self.var1, command=self.set_title)
-        chb1.pack(padx=EXPAND(10), pady=EXPAND(10), anchor=tk.NW)
+        tfm1 = tk.Frame(lfm2)
+        tfm1.pack(side=tk.TOP, anchor=tk.W, padx=EXPAND(10), pady=EXPAND(10))
+        lab1 = tk.Label(tfm1, text="より多くの情報を保存する　　　　", font=font)
+        lab1.pack(side=tk.LEFT)
+        self.tgb1 = ToggleButton(
+            tfm1, start=CONFIG["save_more_info"], command=self.set_title)
+        self.tgb1.pack(side=tk.LEFT)
 
-        self.var2 = tk.BooleanVar()
-        self.var2.set(CONFIG["ask_save_new"])
-        chb2 = tk.Checkbutton(
-            lfm2, text="古いファイルを変更するか確認する",
-            font=font, variable=self.var2, command=self.set_title)
-        chb2.pack(padx=EXPAND(10), pady=(0, EXPAND(10)), anchor=tk.NW)
+        tfm2 = tk.Frame(lfm2)
+        tfm2.pack(side=tk.TOP, anchor=tk.W, padx=EXPAND(10), pady=EXPAND(10))
+        lab2 = tk.Label(tfm2, text="古いファイルを変更するか確認する", font=font)
+        lab2.pack(side=tk.LEFT)
+        self.tgb2 = ToggleButton(
+            tfm2, start=CONFIG["ask_save_new"], command=self.set_title)
+        self.tgb2.pack(side=tk.LEFT)
 
-        self.var5 = tk.BooleanVar()
-        self.var5.set(CONFIG["user_document"])
-        chb5 = tk.Checkbutton(
-            lfm2, text="ユーザードキュメントを使用する　",
-            font=font, variable=self.var5, command=self.set_title)
-        chb5.pack(padx=EXPAND(10), pady=(0, EXPAND(10)), anchor=tk.NW)
+        tfm5 = tk.Frame(lfm2)
+        tfm5.pack(side=tk.TOP, anchor=tk.W, padx=EXPAND(10), pady=EXPAND(10))
+        lab5 = tk.Label(tfm5, text="ユーザードキュメントを使用する　", font=font)
+        lab5.pack(side=tk.LEFT)
+        self.tgb5 = ToggleButton(
+            tfm5, start=CONFIG["user_document"], command=self.set_title)
+        self.tgb5.pack(side=tk.LEFT)
 
-        self.var10 = tk.BooleanVar()
-        self.var10.set(CONFIG["enable_backup"])
-        chb10 = tk.Checkbutton(
-            lfm2, text="バックアップを有効化する　　　　",
-            font=font, variable=self.var10, command=self.set_title)
-        chb10.pack(padx=EXPAND(10), pady=(0, EXPAND(20)), anchor=tk.NW)
+        tfm10 = tk.Frame(lfm2)
+        tfm10.pack(side=tk.TOP, anchor=tk.W, padx=EXPAND(10), pady=EXPAND(10))
+        lab10 = tk.Label(tfm10, text="バックアップを有効化する　　　　", font=font)
+        lab10.pack(side=tk.LEFT)
+        self.tgb10 = ToggleButton(
+            tfm10, start=CONFIG["enable_backup"], command=self.set_title)
+        self.tgb10.pack(side=tk.LEFT)
 
         # 画面右側を作成
         frame3 = tk.Frame(frame1)
@@ -1361,26 +1367,29 @@ class ConfigureTab:
             frame3, text="その他", font=(FONT_TYPE1, EXPAND(28), "bold"))
         lfm3.pack(side=tk.TOP, pady=EXPAND(20))
 
-        self.var3 = tk.BooleanVar()
-        self.var3.set(CONFIG["show_warning"])
-        chb3 = tk.Checkbutton(
-            lfm3, text="警告と追加情報を表示する　　　　",
-            font=font, variable=self.var3, command=self.set_title)
-        chb3.pack(padx=EXPAND(10), pady=EXPAND(10), anchor=tk.NW)
+        tfm3 = tk.Frame(lfm3)
+        tfm3.pack(side=tk.TOP, anchor=tk.W, padx=EXPAND(10), pady=EXPAND(10))
+        lab3 = tk.Label(tfm3, text="警告と追加情報を表示する　　　　", font=font)
+        lab3.pack(side=tk.LEFT)
+        self.tgb3 = ToggleButton(
+            tfm3, start=CONFIG["show_warning"], command=self.set_title)
+        self.tgb3.pack(side=tk.LEFT)
 
-        self.var8 = tk.BooleanVar()
-        self.var8.set(CONFIG["share_copy"])
-        chb8 = tk.Checkbutton(
-            lfm3, text="コピーを他のタブと共有する　　　",
-            font=font, variable=self.var8, command=self.set_title)
-        chb8.pack(padx=EXPAND(10), pady=(0, EXPAND(10)), anchor=tk.NW)
+        tfm8 = tk.Frame(lfm3)
+        tfm8.pack(side=tk.TOP, anchor=tk.W, padx=EXPAND(10), pady=EXPAND(10))
+        lab8 = tk.Label(tfm8, text="コピーを他のタブと共有する　　　", font=font)
+        lab8.pack(side=tk.LEFT)
+        self.tgb8 = ToggleButton(
+            tfm8, start=CONFIG["share_copy"], command=self.set_title)
+        self.tgb8.pack(side=tk.LEFT)
 
-        self.var9 = tk.BooleanVar()
-        self.var9.set(CONFIG["scroll_center"])
-        chb9 = tk.Checkbutton(
-            lfm3, text="中クリックでの移動を有効化する　",
-            font=font, variable=self.var9, command=self.set_title)
-        chb9.pack(padx=EXPAND(10), pady=(0, EXPAND(20)), anchor=tk.NW)
+        tfm9 = tk.Frame(lfm3)
+        tfm9.pack(side=tk.TOP, anchor=tk.W, padx=EXPAND(10), pady=EXPAND(10))
+        lab9 = tk.Label(tfm9, text="中クリックでの移動を有効化する　", font=font)
+        lab9.pack(side=tk.LEFT)
+        self.tgb9 = ToggleButton(
+            tfm9, start=CONFIG["scroll_center"], command=self.set_title)
+        self.tgb9.pack(side=tk.LEFT)
 
         frame4 = tk.Frame(frame3)
         frame4.pack(side=tk.TOP, pady=(EXPAND(80), 0))
@@ -1458,7 +1467,6 @@ class ProgrammingTab:
 
         # タブを削除
         self.et.notebook.forget(self.et.tabs.index(self))
-        self.et.notebook.event_generate("<<NotebookTabClosed>>")
 
         # リストから削除
         self.et.tabs.remove(self)
@@ -1504,9 +1512,9 @@ class ProgrammingTab:
         """タイトルを設定する"""
         index = self.et.tabs.index(self)
         if [d.get_data(more=False) for d in self.widgets] == self.default_data:
-            self.et.notebook.tab(index, text=f" {self.basename} ")
+            self.et.notebook.set_title(index, f"{self.basename}")
         else:
-            self.et.notebook.tab(index, text=f" *{self.basename}* ")
+            self.et.notebook.set_title(index, f"*{self.basename}*")
 
     def decide_title(self, index=None):
         if self.program_name is None:
@@ -1531,7 +1539,7 @@ class ProgrammingTab:
 
     def select_tab(self):
         """タブを選択"""
-        self.et.notebook.select(self.mainframe)
+        self.et.notebook.select(self.et.notebook.index(self.mainframe))
 
     def back_up(self):
         """バックアップ"""
@@ -2186,7 +2194,7 @@ line: {index+1}, {widget.__class__.__name__}\n\
         """セットアップ"""
         # 基本ウィンドウを作成
         self.mainframe = tk.Frame(self.et.notebook)
-        self.et.notebook.add(self.mainframe, text="無題")
+        self.et.notebook.add_tab(self.mainframe)
         frame1 = tk.Frame(self.mainframe)
         frame1.pack()
 
@@ -2256,106 +2264,273 @@ line: {index+1}, {widget.__class__.__name__}\n\
         self.redraw_widgets()
 
 
-class CustomNotebook(ttk.Notebook):
-    """タブに閉じるボタンがあるノートブック"""
+class ToggleButton(tk.Canvas):
+    def __init__(
+            self, master=None, /,
+            fg="white", bg1="lightgray", bg2="lightgreen",
+            radius=16, width=24, height=40, start=False, smooth=4,
+            outline=False, margin=8, command=None):
 
-    __initialized = False
+        self.foreground = fg
+        self.background1 = bg1
+        self.background2 = bg2
+        self.radius = radius
+        self.width = width
+        self.height = height
+        self.current = start
+        self.command = command
+        self.smooth = smooth
+        self.outline = "black" if outline else fg
+        self.margin = margin
 
-    def __init__(self, parent: EasyTurtle, *args, **kwargs):
-        """初期化"""
+        self.cvh = (radius*2 if radius*2 > height else height)+self.margin*2
+        self.cvw = self.cvh + width
+
+        tk.Canvas.__init__(
+            self, master, width=self.cvw, height=self.cvh, takefocus=True)
+
+        self.redraw_background()
+
+        self.position = self.width if self.current else 0
+        self.redraw_slider()
+
+        self.bind("<space>", self.slider_press)
+
+        self.tag_bind("background", "<Enter>", self.check_hand_enter)
+        self.tag_bind("background", "<Leave>", self.check_hand_leave)
+        self.tag_bind("background", "<ButtonPress-1>", self.slider_press)
+
+        self.tag_bind("slider", "<Enter>", self.check_hand_enter)
+        self.tag_bind("slider", "<Leave>", self.check_hand_leave)
+        self.tag_bind("slider", "<ButtonPress-1>", self.slider_press)
+
+    def redraw_background(self):
+        self.delete("background")
+        background = self.background2 if self.current else self.background1
+        if self.radius*2 > self.height:
+            self.create_rectangle(
+                self.radius+self.margin,
+                self.radius+self.margin-self.height//2,
+                self.radius+self.width+self.margin,
+                self.radius+self.margin+self.height//2,
+                width=0, fill=background, tag="background")
+
+            self.create_arc(
+                self.radius-self.height//2+self.margin,
+                self.radius-self.height//2+self.margin,
+                self.radius+self.height//2+self.margin,
+                self.radius+self.height//2+self.margin,
+                outline=background, fill=background,
+                start=90, extent=180, tag="background")
+
+            self.create_arc(
+                self.radius-self.height//2+self.margin+self.width,
+                self.radius-self.height//2+self.margin,
+                self.radius+self.height//2+self.margin+self.width,
+                self.radius+self.height//2+self.margin,
+                outline=background, fill=background,
+                start=-90, extent=180, tag="background")
+        else:
+            self.create_rectangle(
+                self.height//2+self.margin, self.margin,
+                self.height//2+self.width+self.margin,
+                self.height+self.margin,
+                width=0, fill=background, tag="background")
+
+            self.create_arc(
+                self.margin, self.margin,
+                self.height+self.margin, self.height+self.margin,
+                outline=background, fill=background,
+                start=90, extent=180, tag="background")
+
+            self.create_arc(
+                self.margin+self.width, self.margin,
+                self.height+self.margin+self.width, self.height+self.margin,
+                outline=background, fill=background,
+                start=-90, extent=180, tag="background")
+
+    def redraw_slider(self):
+        self.delete("slider")
+        if self.radius*2 > self.height:
+            self.slider = self.create_oval(
+                self.margin+self.position, self.margin,
+                self.radius*2+self.margin+self.position,
+                self.radius*2+self.margin,
+                fill=self.foreground, tag="slider", outline=self.outline)
+        else:
+            self.slider = self.create_oval(
+                self.height//2-self.radius+self.margin+self.position,
+                self.height//2-self.radius+self.margin,
+                self.height//2+self.radius+self.margin+self.position,
+                self.height//2+self.radius+self.margin,
+                fill=self.foreground, tag="slider", outline=self.outline)
+
+    def slider_press(self, event):
+        self.frompos = self.width if self.current else 0
+        self.current = not self.current
+        self.topos = self.width if self.current else 0
+        self.redraw_background()
+        self.move = 0
+        self.move_slider()
+        if self.command is not None:
+            self.command()
+
+    def move_slider(self):
+        if self.move >= self.smooth:
+            return
+        self.move += 1
+        self.position = (self.frompos * (
+            self.smooth - self.move) + self.topos * self.move) // self.smooth
+        self.redraw_slider()
+        self.after(10, self.move_slider)
+
+    def check_hand_enter(self, event):
+        self.config(cursor="hand2")
+
+    def check_hand_leave(self, event):
+        self.config(cursor="")
+
+    def set_command(self, command):
+        self.command = command
+
+    def set(self, value):
+        if value == self.current:
+            return
+        self.frompos = self.width if self.current else 0
+        self.current = value
+        self.topos = self.width if self.current else 0
+        self.redraw_background()
+        self.move = 0
+        self.move_slider()
+        if self.command is not None:
+            self.command()
+
+    def get(self):
+        return self.current
+
+
+class Notebook(tk.Canvas):
+    def __init__(
+            self, parent: EasyTurtle, master=None, /, height=48, margin=20,
+            font=("Courier New", 20, "bold")):
+
         self.et = parent
 
-        if not self.__initialized:
-            self.__initialize_custom_style()
-            self.__inititialized = True
+        self.height = height
+        self.margin = margin
+        self.font = tkFont.Font(font=font)
+        self.selected = None
+        self.cursor = None
 
-        kwargs["style"] = "CustomNotebook"
-        ttk.Notebook.__init__(self, *args, **kwargs)
+        self.tabs: dict[tk.Canvas, tk.Frame] = {}
 
-        self._active = None
+        tk.Canvas.__init__(self, master, height=height)
 
-        self.bind("<ButtonPress-1>", self.on_close_press, True)
-        self.bind("<ButtonRelease-1>", self.on_close_release)
+        self.frame = tk.Canvas(self, takefocus=True, height=height)
+        self.frame.pack(side=tk.TOP, anchor=tk.NW)
 
-    def on_close_press(self, event: tk.Event):
-        """ボタンが閉じるボタンの上に押されたとき"""
+        self.frame.bind("<Left>", self.go_left)
+        self.frame.bind("<Right>", self.go_right)
 
-        element = self.identify(event.x, event.y)
+    def add_tab(self, frame):
+        width = self.font.measure(" ×") + self.margin * 2
+        cv = tk.Canvas(
+            self.frame, height=self.height, width=width,
+            bg="lightgray", cursor="hand2")
+        cv.pack(side=tk.LEFT)
+        cv.title = ""
+        cv.bind("<Button-1>", lambda e: self.clicked_cv(cv))
+        cv.tag_bind(
+            "close", "<Button-1>", lambda e: self.clicked_close(cv))
+        self.tabs[cv] = frame
 
-        if "close" in element:
-            index = self.index("@%d,%d" % (event.x, event.y))
-            self.state(['pressed'])
-            self._active = index
-            return "break"
+    def go_left(self, event):
+        index = self.get_selected()
+        if index != 0:
+            self.select(index-1)
 
-    def on_close_release(self, event: tk.Event):
-        """ボタンを離したとき"""
-        if not self.instate(['pressed']):
-            return
+    def go_right(self, event):
+        index = self.get_selected()
+        if index != len(self.tabs) - 1:
+            self.select(index+1)
 
-        element = self.identify(event.x, event.y)
+    def clicked_cv(self, cv):
+        index = tuple(self.tabs.keys()).index(cv)
+        self.select(index)
 
-        # ユーザーがマウスを閉じるボタンから離した時
-        if "close" not in element:
-            self.state(["!pressed"])
-            return
+    def clicked_close(self, cv):
+        index = tuple(self.tabs.keys()).index(cv)
+        self.et.tabs[index].close_tab()
 
-        index = self.index("@%d,%d" % (event.x, event.y))
+    def select(self, index):
+        if len(self.tabs.keys()) > index:
+            self.selected = tuple(self.tabs.keys())[index]
+        self.redraw()
 
-        if self.et.tabs[index].close_tab() == 1:
-            return
+    def index(self, frame):
+        return tuple(self.tabs.values()).index(frame)
 
-        self.state(["!pressed"])
-        self._active = None
+    def redraw(self):
+        index = self.get_selected()
+        for num, cv in enumerate(self.tabs.keys()):
+            if num == index:
+                cv.config(bg="white")
+                self.tabs[cv].pack(side=tk.TOP)
+            else:
+                cv.config(bg="lightgray")
+                self.tabs[cv].forget()
+            self.draw_close(num)
 
-    def __initialize_custom_style(self):
-        """カスタムスタイルを初期化"""
-        style = ttk.Style()
+    def get_selected(self):
+        if self.selected is None:
+            return None
+        else:
+            return tuple(self.tabs.keys()).index(self.selected)
 
-        self.img_close = tk.PhotoImage(data='''
-                R0lGODlhCAAIAMIBAAAAADs7O4+Pj9nZ2Ts7Ozs7Ozs7Ozs7OyH+EUNyZWF0ZWQg
-                d2l0aCBHSU1QACH5BAEKAAQALAAAAAAIAAgAAAMVGDBEA0qNJyGw7AmxmuaZhWEU
-                5kEJADs=
-                ''', width=EXPAND(8)).zoom(EXPAND(1), EXPAND(1))
+    def forget(self, index):
+        cv = tuple(self.tabs.keys())[index]
+        if len(self.tabs) == 1:
+            self.selected = None
+        elif self.get_selected() == index:
+            if index == 0:
+                self.select(1)
+            else:
+                self.select(index-1)
+        self.tabs[cv].forget()
+        cv.destroy()
+        self.tabs.pop(cv)
 
-        self.img_closeactive = tk.PhotoImage(data='''
-                R0lGODlhCAAIAMIEAAAAAP/SAP/bNNnZ2cbGxsbGxsbGxsbGxiH5BAEKAAQALAAA
-                AAAIAAgAAAMVGDBEA0qNJyGw7AmxmuaZhWEU5kEJADs=
-                ''', width=EXPAND(8)).zoom(EXPAND(1), EXPAND(1))
+    def draw_close(self, index):
+        cv = tuple(self.tabs.keys())[index]
+        cv.delete("close")
+        twidth = self.font.measure(cv.title)
+        cwidth = self.font.measure("×")
+        bg = "white" if index == self.get_selected() else "lightgray"
+        cv.create_polygon(
+            twidth+int(self.margin*1.5)+cwidth//2,
+            (self.height-self.margin)//2,
+            twidth+cwidth+int(self.margin*2.5)-cwidth//2,
+            (self.height-self.margin)//2,
+            twidth+cwidth+int(self.margin*2.5)-cwidth//2,
+            (self.height+self.margin)//2,
+            twidth+int(self.margin*1.5)+cwidth//2,
+            (self.height+self.margin)//2,
+            fill=bg, tag="close")
+        cv.create_text(
+            twidth+self.margin*2+cwidth//2, self.height//2,
+            text="×", font=self.font, fill="red", tag="close")
 
-        self.img_closepressed = tk.PhotoImage(data='''
-                R0lGODlhCAAIAMIEAAAAAOUqKv9mZtnZ2Ts7Ozs7Ozs7Ozs7OyH+EUNyZWF0ZWQg
-                d2l0aCBHSU1QACH5BAEKAAQALAAAAAAIAAgAAAMVGDBEA0qNJyGw7AmxmuaZhWEU
-                5kEJADs=
-                ''', width=EXPAND(8)).zoom(EXPAND(1), EXPAND(1))
-
-        style.configure("CustomNotebook.Tab",
-                        font=(FONT_TYPE1, EXPAND(12), "bold"))
-
-        style.element_create("close", "image", self.img_close.name,
-                             ("active", "!pressed", "!disabled",
-                              self.img_closeactive.name),
-                             ("active", "pressed", "!disabled",
-                              self.img_closepressed.name), border=8, sticky='')
-        style.layout("CustomNotebook", [
-                     ("CustomNotebook.client", {"sticky": "nswe"})])
-        style.layout("CustomNotebook.Tab", [
-            ("CustomNotebook.tab", {
-                "sticky": "nswe",
-                "children": [
-                    ("CustomNotebook.padding", {
-                        "side": "top",
-                        "sticky": "nswe",
-                        "children": [
-                            ("CustomNotebook.focus", {
-                                "side": "top",
-                                "sticky": "nswe",
-                                "children": [
-                                    ("CustomNotebook.label", {
-                                     "side": "left", "sticky": ''}),
-                                    ("CustomNotebook.close", {
-                                     "side": "right", "sticky": ''})
-                                ]})]})]})])
+    def set_title(self, index, title):
+        twidth = self.font.measure(title)
+        cwidth = self.font.measure("×")
+        cv = tuple(self.tabs.keys())[index]
+        cv.title = title
+        cv.config(width=twidth+cwidth+self.margin*3)
+        cv.delete("title")
+        cv.create_text(
+            twidth//2+self.margin, self.height//2,
+            text=title, font=self.font, tag="title")
+        self.draw_close(index)
 
 
 class Widget:
