@@ -1,4 +1,4 @@
-﻿
+
 # ©2020-2021 Ryo Fujinami.
 
 import atexit
@@ -252,7 +252,7 @@ else:
 
 FONT = (FONT_TYPE1, EXPAND(12), "bold")
 
-__version__ = (5, 14, "0a2")
+__version__ = (5, 14, 0)
 
 
 class EasyTurtle:
@@ -2269,7 +2269,7 @@ line: {index+1}, {widget.__class__.__name__}\n\
 
 class ToggleButton(tk.Canvas):
     def __init__(
-            self, master=None, /,
+            self, master=None,
             fg="white", bg1=GRAY, bg2="lightgreen", radius=EXPAND(10),
             width=EXPAND(18), height=EXPAND(28), start=False,
             smooth=4, outline=False, margin=EXPAND(4), command=None):
@@ -2418,7 +2418,7 @@ class ToggleButton(tk.Canvas):
 
 class Notebook(tk.Canvas):
     def __init__(
-            self, parent: EasyTurtle, master=None, /,
+            self, parent: EasyTurtle, master=None,
             height=EXPAND(32), margin=EXPAND(8),
             font=(FONT_TYPE1, EXPAND(12), "bold")):
 

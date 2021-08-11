@@ -114,22 +114,12 @@ th, td {
   border-color: #00aeef;
 }
 
-.tuto {
+.main {
   padding: 30px;
   background-color: #ffffff;
 }
 
-.tuto h2 {
-  color: #00aeef;
-  border-color: #00aeef;
-}
-
-.widget {
-  padding: 30px;
-  background-color: #ffffff;
-}
-
-.widget h2 {
+.main h2 {
   color: #00aeef;
   border-color: #00aeef;
 }
