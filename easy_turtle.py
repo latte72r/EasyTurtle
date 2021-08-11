@@ -1,4 +1,4 @@
-
+﻿
 # ©2020-2021 Ryo Fujinami.
 
 import atexit
@@ -88,6 +88,7 @@ if SYSTEM == "Windows":
     FONT_TYPE2 = "Times New Roman"
 
     CURSOR = "arrow"
+    GRAY = "#CDCDCD"
 
     os.chdir(os.path.dirname(sys.argv[0]))
 
@@ -174,6 +175,7 @@ elif SYSTEM == "Linux":
         FONT_TYPE2 = "Times"
 
     CURSOR = "left_ptr"
+    GRAY = "#BDBDBD"
 
     os.chdir(os.getcwd())
 
@@ -250,7 +252,7 @@ else:
 
 FONT = (FONT_TYPE1, EXPAND(12), "bold")
 
-__version__ = (5, 14, "0a1")
+__version__ = (5, 14, "0a2")
 
 
 class EasyTurtle:
@@ -1089,12 +1091,13 @@ download/v{joined_version}/EasyTurtle-{joined_version}-amd64.msi"
         # 背景のキャンバス
         cv = tk.Canvas(ROOT, width=MIN_WIDTH, height=MIN_HEIGHT)
         cv.pack()
-        cv.create_text(MIN_WIDTH // 2 - EXPAND(80), MIN_HEIGHT // 2,
-                       text="EasyTurtle", fill="green",
-                       font=(FONT_TYPE2, EXPAND(80), "bold", "italic"))
+        cv.create_text(
+            MIN_WIDTH // 2 - EXPAND(80), MIN_HEIGHT // 2 - EXPAND(40),
+            text="EasyTurtle", fill="green",
+            font=(FONT_TYPE2, EXPAND(80), "bold", "italic"))
         cv.create_polygon(*self.get_shape(
             shape, MIN_WIDTH // 2 + EXPAND(260),
-            MIN_HEIGHT // 2 - EXPAND(10), EXPAND(-4)), fill="green")
+            MIN_HEIGHT // 2 - EXPAND(50), EXPAND(-4)), fill="green")
 
         # 背景の右下
         frame = tk.Frame(ROOT)
@@ -2267,9 +2270,9 @@ line: {index+1}, {widget.__class__.__name__}\n\
 class ToggleButton(tk.Canvas):
     def __init__(
             self, master=None, /,
-            fg="white", bg1="lightgray", bg2="lightgreen",
-            radius=16, width=24, height=40, start=False, smooth=4,
-            outline=False, margin=8, command=None):
+            fg="white", bg1=GRAY, bg2="lightgreen", radius=EXPAND(10),
+            width=EXPAND(18), height=EXPAND(28), start=False,
+            smooth=4, outline=False, margin=EXPAND(4), command=None):
 
         self.foreground = fg
         self.background1 = bg1
@@ -2286,8 +2289,12 @@ class ToggleButton(tk.Canvas):
         self.cvh = (radius*2 if radius*2 > height else height)+self.margin*2
         self.cvw = self.cvh + width
 
-        tk.Canvas.__init__(
-            self, master, width=self.cvw, height=self.cvh, takefocus=True)
+        if master is not None:
+            tk.Canvas.__init__(
+                self, master, width=self.cvw, height=self.cvh, takefocus=True)
+        else:
+            tk.Canvas.__init__(
+                self, width=self.cvw, height=self.cvh, takefocus=True)
 
         self.redraw_background()
 
@@ -2411,38 +2418,91 @@ class ToggleButton(tk.Canvas):
 
 class Notebook(tk.Canvas):
     def __init__(
-            self, parent: EasyTurtle, master=None, /, height=48, margin=20,
-            font=("Courier New", 20, "bold")):
+            self, parent: EasyTurtle, master=None, /,
+            height=EXPAND(32), margin=EXPAND(8),
+            font=(FONT_TYPE1, EXPAND(12), "bold")):
 
         self.et = parent
 
         self.height = height
         self.margin = margin
         self.font = tkFont.Font(font=font)
+
         self.selected = None
-        self.cursor = None
+        self.adjust = EXPAND(2)
+        self.drag_point = 0
+        self.image = tk.PhotoImage(width=1, height=1)
 
         self.tabs: dict[tk.Canvas, tk.Frame] = {}
 
-        tk.Canvas.__init__(self, master, height=height)
+        if master is not None:
+            tk.Canvas.__init__(self, master, height=height)
+        else:
+            tk.Canvas.__init__(self, height=height)
 
-        self.frame = tk.Canvas(self, takefocus=True, height=height)
+        self.frame = tk.Frame(self, takefocus=True, height=height)
         self.frame.pack(side=tk.TOP, anchor=tk.NW)
 
         self.frame.bind("<Left>", self.go_left)
         self.frame.bind("<Right>", self.go_right)
 
+        self.create_plus()
+
+    def create_plus(self):
+        pixel = self.font.measure("+") + self.margin
+        self.plus = tk.Button(
+            self.frame, text="+", width=pixel, height=pixel, image=self.image,
+            fg="gray", bg="#E6E6E6", font=self.font, cursor="hand2",
+            compound=tk.CENTER, command=self.et.new_program)
+
     def add_tab(self, frame):
-        width = self.font.measure(" ×") + self.margin * 2
+        width = self.font.measure("×") + self.margin * 3
         cv = tk.Canvas(
-            self.frame, height=self.height, width=width,
-            bg="lightgray", cursor="hand2")
-        cv.pack(side=tk.LEFT)
+            self.frame, height=self.height, width=width, bg=GRAY,
+            cursor="hand2", relief=tk.RAISED, bd=2)
         cv.title = ""
-        cv.bind("<Button-1>", lambda e: self.clicked_cv(cv))
+        cv.bind("<Button-1>", lambda e: self.clicked_left(cv))
+        cv.bind("<ButtonRelease-1>", lambda e: self.release_left(cv))
+        cv.bind(
+            "<B1-Motion>", lambda e: self.drag_move(e, cv, self.drag_point))
         cv.tag_bind(
             "close", "<Button-1>", lambda e: self.clicked_close(cv))
         self.tabs[cv] = frame
+        self.redraw()
+
+    def drag_move(self, event: tk.Event, cv, point):
+        if self.drag_point != point:
+            return
+        self.drag_point += 1
+        width = self.font.measure(cv.title+"×")+self.margin*3
+        index = tuple(self.tabs.keys()).index(cv)
+        if index != 0:
+            pre = tuple(self.tabs.keys())[index - 1]
+            pwidth = self.font.measure(pre.title+"×")+self.margin*3
+            if -pwidth > event.x:
+                self.move_to(index, index - 1)
+        if index != len(self.tabs.keys()) - 1:
+            nex = tuple(self.tabs.keys())[index + 1]
+            nwidth = self.font.measure(nex.title+"×")+self.margin*3
+            if width + nwidth < event.x:
+                self.move_to(index, index + 1)
+        self.redraw()
+
+    def move_to(self, from_index, to_index):
+        keys = list(self.tabs.keys())
+        values = list(self.tabs.values())
+        key = keys.pop(from_index)
+        value = values.pop(from_index)
+        tab = self.et.tabs.pop(from_index)
+        if from_index < to_index:
+            keys.insert(to_index, key)
+            values.insert(to_index, value)
+            self.et.tabs.insert(to_index, tab)
+        else:
+            keys.insert(to_index, key)
+            values.insert(to_index, value)
+            self.et.tabs.insert(to_index, tab)
+        self.tabs = {k: v for k, v in zip(keys, values)}
 
     def go_left(self, event):
         index = self.get_selected()
@@ -2454,9 +2514,16 @@ class Notebook(tk.Canvas):
         if index != len(self.tabs) - 1:
             self.select(index+1)
 
-    def clicked_cv(self, cv):
+    def clicked_left(self, cv):
+        if SYSTEM == "Windows":
+            cv.config(cursor="sb_h_double_arrow")
+            cv.config(relief=tk.SUNKEN)
         index = tuple(self.tabs.keys()).index(cv)
         self.select(index)
+
+    def release_left(self, cv):
+        cv.config(cursor="hand2")
+        cv.config(relief=tk.RAISED)
 
     def clicked_close(self, cv):
         index = tuple(self.tabs.keys()).index(cv)
@@ -2472,14 +2539,19 @@ class Notebook(tk.Canvas):
 
     def redraw(self):
         index = self.get_selected()
+        for cv in self.tabs.keys():
+            cv.pack_forget()
         for num, cv in enumerate(self.tabs.keys()):
             if num == index:
                 cv.config(bg="white")
                 self.tabs[cv].pack(side=tk.TOP)
             else:
-                cv.config(bg="lightgray")
-                self.tabs[cv].forget()
+                cv.config(bg=GRAY)
+                self.tabs[cv].pack_forget()
+            cv.pack(side=tk.LEFT)
             self.draw_close(num)
+        self.plus.pack_forget()
+        self.plus.pack(side=tk.LEFT, anchor=tk.CENTER)
 
     def get_selected(self):
         if self.selected is None:
@@ -2496,7 +2568,7 @@ class Notebook(tk.Canvas):
                 self.select(1)
             else:
                 self.select(index-1)
-        self.tabs[cv].forget()
+        self.tabs[cv].pack_forget()
         cv.destroy()
         self.tabs.pop(cv)
 
@@ -2505,19 +2577,15 @@ class Notebook(tk.Canvas):
         cv.delete("close")
         twidth = self.font.measure(cv.title)
         cwidth = self.font.measure("×")
-        bg = "white" if index == self.get_selected() else "lightgray"
-        cv.create_polygon(
+        bg = "white" if index == self.get_selected() else GRAY
+        cv.create_rectangle(
             twidth+int(self.margin*1.5)+cwidth//2,
-            (self.height-self.margin)//2,
+            (self.height-self.margin)//2+self.adjust,
             twidth+cwidth+int(self.margin*2.5)-cwidth//2,
-            (self.height-self.margin)//2,
-            twidth+cwidth+int(self.margin*2.5)-cwidth//2,
-            (self.height+self.margin)//2,
-            twidth+int(self.margin*1.5)+cwidth//2,
-            (self.height+self.margin)//2,
-            fill=bg, tag="close")
+            (self.height+self.margin)//2+self.adjust,
+            fill=bg, outline=bg, tag="close")
         cv.create_text(
-            twidth+self.margin*2+cwidth//2, self.height//2,
+            twidth+self.margin*2+cwidth//2, self.height//2+self.adjust,
             text="×", font=self.font, fill="red", tag="close")
 
     def set_title(self, index, title):
@@ -2528,7 +2596,7 @@ class Notebook(tk.Canvas):
         cv.config(width=twidth+cwidth+self.margin*3)
         cv.delete("title")
         cv.create_text(
-            twidth//2+self.margin, self.height//2,
+            twidth//2+self.margin, self.height//2+self.adjust,
             text=title, font=self.font, tag="title")
         self.draw_close(index)
 
