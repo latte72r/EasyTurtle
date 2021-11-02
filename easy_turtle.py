@@ -254,7 +254,7 @@ else:
 
 FONT = (FONT_TYPE1, EXPAND(12), "bold")
 
-__version__ = (5, 15, "0a2")
+__version__ = (5, 15, "0a1")
 
 
 class EasyTurtle:
@@ -544,7 +544,7 @@ class EasyTurtle:
             addmode = data.get("addmode", 2)
             adjust = data.get("adjust", True)
             position = data.get("position", "")
-            newtab.set_radio_value(addmode)
+            newtab.var2.set(addmode)
             newtab.chk1.set(adjust)
             newtab.ent1.delete(0, tk.END)
             newtab.ent1.insert(0, position)
@@ -788,15 +788,6 @@ download/v{joined_version}/EasyTurtle-{joined_version}-amd64.msi"
         # 画面を閉じる
         self.close_window()
 
-    def close_saved_tab(self, event=None):
-        """保存済みのタブを閉じる"""
-        unchanged: List[IndividualTab] = []
-        for tab in self.tabs:
-            if not tab.changed_or_not():
-                unchanged.append(tab)
-        for tab in unchanged:
-            tab.close_tab()
-
     def close_tab(self, event=None):
         tab = self.get_currently_selected()
         if isinstance(tab, ProgrammingTab):
@@ -962,27 +953,26 @@ download/v{joined_version}/EasyTurtle-{joined_version}-amd64.msi"
 
         # キーをバインド
         ROOT.bind('<Button-1>', self.delete_menu)
-        ROOT.bind("<Control-Shift-Key-A>", self.select_all)
         ROOT.bind("<Control-Shift-Key-C>", self.copy_selected)
-        ROOT.bind("<Control-Shift-Key-D>", self.disable_selected)
-        ROOT.bind("<Control-Shift-Key-E>", self.enable_selected)
-        ROOT.bind("<Control-Shift-Key-N>", self.new_window)
-        ROOT.bind("<Control-Shift-Key-S>", self.save_program_as)
         ROOT.bind("<Control-Shift-Key-V>", self.paste_widgets)
         ROOT.bind("<Control-Shift-Key-X>", self.cut_selected)
+        ROOT.bind("<Control-Shift-Key-A>", self.select_all)
+        ROOT.bind("<Control-Shift-Key-S>", self.save_program_as)
         ROOT.bind("<Control-Shift-Key-Z>", self.redo_change)
-        ROOT.bind("<Control-Key-d>", self.delete_selected)
-        ROOT.bind("<Control-Key-g>", self.goto_line)
-        ROOT.bind("<Control-Key-h>", self.show_recent_files)
+        ROOT.bind("<Control-Shift-Key-N>", self.new_window)
+        ROOT.bind("<Control-Shift-Key-E>", self.enable_selected)
+        ROOT.bind("<Control-Shift-Key-D>", self.disable_selected)
+        ROOT.bind("<Control-Key-z>", self.undo_change)
         ROOT.bind("<Control-Key-l>", self.clear_selected)
         ROOT.bind("<Control-Key-n>", self.new_program)
+        ROOT.bind("<Control-Key-d>", self.delete_selected)
         ROOT.bind("<Control-Key-o>", self.open_file)
+        ROOT.bind("<Control-Key-s>", self.save_program)
+        ROOT.bind("<Control-Key-g>", self.goto_line)
         ROOT.bind("<Control-Key-q>", self.close_window)
         ROOT.bind("<Control-Key-r>", self.reboot_program)
-        ROOT.bind("<Control-Key-s>", self.save_program)
-        ROOT.bind("<Control-Key-t>", self.close_saved_tab)
+        ROOT.bind("<Control-Key-h>", self.show_recent_files)
         ROOT.bind("<Control-Key-w>", self.close_tab)
-        ROOT.bind("<Control-Key-z>", self.undo_change)
         ROOT.bind("<Control-Key-comma>", self.edit_config)
         ROOT.bind("<Key-F1>", self.show_offline_document)
         ROOT.bind("<Key-F5>", self.run_standard_mode)
@@ -1020,9 +1010,6 @@ download/v{joined_version}/EasyTurtle-{joined_version}-amd64.msi"
         filemenu.add_command(
             label="現在のタブを閉じる", accelerator="Ctrl+W",
             command=self.close_tab)
-        filemenu.add_command(
-            label="保存済みのタブを閉じる", accelerator="Ctrl+T",
-            command=self.close_saved_tab)
         filemenu.add_separator()
         filemenu.add_command(
             label="再起動", accelerator="Ctrl+R", command=self.reboot_program)
@@ -1136,7 +1123,7 @@ class ConfigureTab:
     def close_tab(self, ask=True):
         """タブ終了時の定義"""
         # 保存するか確認する
-        if self.changed_or_not() and ask:
+        if CONFIG != self.get_current_data() and ask:
             res = messagebox.askyesnocancel("確認", "設定を保存しますか？")
             if res is None:
                 return
@@ -1151,13 +1138,9 @@ class ConfigureTab:
 
         return 0
 
-    def changed_or_not(self, event=None) -> bool:
-        """変更されているか確認する"""
-        return CONFIG != self.get_current_data()
-
     def close_window(self, event=None):
         """アプリ終了時の定義"""
-        if self.changed_or_not():
+        if CONFIG != self.get_current_data():
             res = messagebox.askyesnocancel("確認", "設定を保存しますか？")
             if res is None:
                 return
@@ -1440,8 +1423,6 @@ class ProgrammingTab:
         self.default_data: List[Dict[str, Any]] = []
         self.backed_up: List[Dict[str, Any]] = []
         self.canceled_changes: List[Dict[str, Any]] = []
-        self.radio2int: Dict[RadioButton, int] = {}
-        self.int2radio: Dict[int, RadioButton] = {}
         self.warning_ignore = False
         self.program_name = None
         self.center_clicked = False
@@ -1469,7 +1450,8 @@ class ProgrammingTab:
             return
 
         # 保存するか確認する
-        if self.changed_or_not() and ask:
+        data = [d.get_data(more=False) for d in self.widgets]
+        if self.default_data != data and ask:
             res = messagebox.askyesnocancel("確認", "保存しますか？")
             if res is None:
                 return 1
@@ -1490,14 +1472,10 @@ class ProgrammingTab:
 
         return 0
 
-    def changed_or_not(self, event=None) -> bool:
-        """変更されているか確認する"""
-        data = [d.get_data(more=False) for d in self.widgets]
-        return self.default_data != data
-
     def close_window(self, event=None):
         """アプリ終了時の定義"""
-        if self.changed_or_not():
+        data = [d.get_data(more=False) for d in self.widgets]
+        if self.default_data != data:
             res = messagebox.askyesnocancel("確認", "保存しますか？")
             if res is None:
                 return 1
@@ -1684,7 +1662,7 @@ class ProgrammingTab:
         """リストボックス選択時の動作"""
         before_index = self.index
 
-        mode = self.get_radio_value()
+        mode = self.var2.get()
         if mode == 1:
             index = 0
         elif mode == 2:
@@ -1712,7 +1690,7 @@ class ProgrammingTab:
         if ((mode == 1) or (mode == 3)) and (self.chk1.get()):
             self.ent1.delete(0, tk.END)
             self.ent1.insert(0, str(index + 2))
-            self.set_radio_value(3)
+            self.var2.set(3)
 
         self.redraw_widgets()
 
@@ -1968,7 +1946,7 @@ line: {index+1}, {widget.__class__.__name__}\n\
                 "index": self.index,
                 "backedup": self.backed_up,
                 "canceled": self.canceled_changes,
-                "addmode": self.get_radio_value(),
+                "addmode": self.var2.get(),
                 "adjust": self.chk1.get(),
                 "position": self.ent1.get(),
                 "name": self.program_name,
@@ -1986,7 +1964,7 @@ line: {index+1}, {widget.__class__.__name__}\n\
                 "index": self.index,
                 "backedup": self.backed_up,
                 "canceled": self.canceled_changes,
-                "addmode": self.get_radio_value(),
+                "addmode": self.var2.get(),
                 "adjust": self.chk1.get(),
                 "position": self.ent1.get(),
                 "last": self.last_checked,
@@ -2039,7 +2017,7 @@ line: {index+1}, {widget.__class__.__name__}\n\
 
         before_index = self.index
 
-        mode = self.get_radio_value()
+        mode = self.var2.get()
         if mode == 1:
             index = 0
         elif mode == 2:
@@ -2069,7 +2047,7 @@ line: {index+1}, {widget.__class__.__name__}\n\
         if ((mode == 1) or (mode == 3)) and self.chk1.get():
             self.ent1.delete(0, tk.END)
             self.ent1.insert(0, str(next_index + 1))
-            self.set_radio_value(3)
+            self.var2.set(3)
 
         self.redraw_widgets()
 
@@ -2215,12 +2193,6 @@ line: {index+1}, {widget.__class__.__name__}\n\
             self.index = line - 1
         self.redraw_widgets(change=False)
 
-    def get_radio_value(self):
-        return self.radio2int[self.var2.get()]
-
-    def set_radio_value(self, num):
-        self.var2.set(self.int2radio[num])
-
     def setup(self):
         """セットアップ"""
         # 基本ウィンドウを作成
@@ -2271,50 +2243,29 @@ line: {index+1}, {widget.__class__.__name__}\n\
                              font=(FONT_TYPE1, EXPAND(18), "bold"),
                              labelanchor=tk.N)
         lfr1.pack(side=tk.BOTTOM, pady=EXPAND(30), fill=tk.X)
-        self.var2 = RadioVar()
+        self.var2 = tk.IntVar()
+        self.var2.set(2)
         font = (FONT_TYPE1, EXPAND(16), "bold")
-        frm1 = tk.Frame(lfr1)
-        frm1.pack(anchor=tk.W, padx=EXPAND(80))
-        rad1 = RadioButton(frm1, variable=self.var2, binding=False)
-        rad1.pack(anchor=tk.W, side=tk.LEFT)
-        lab1 = tk.Label(frm1, text="プログラムの最初", font=font)
-        lab1.pack(anchor=tk.W, side=tk.LEFT)
-        rad1.bind_instead_master(frm1)
-        rad1.bind_instead_child(rad1)
-        rad1.bind_instead_child(lab1)
-        frm2 = tk.Frame(lfr1)
-        frm2.pack(anchor=tk.W, padx=EXPAND(80))
-        rad2 = RadioButton(frm2, variable=self.var2, binding=False)
-        rad2.pack(anchor=tk.W, side=tk.LEFT)
-        lab2 = tk.Label(frm2, text="プログラムの最後", font=font)
-        lab2.pack(anchor=tk.W, side=tk.LEFT)
-        rad2.bind_instead_master(frm2)
-        rad2.bind_instead_child(rad2)
-        rad2.bind_instead_child(lab2)
-        frm3 = tk.Frame(lfr1)
-        frm3.pack(anchor=tk.W, padx=EXPAND(80))
-        rad3 = RadioButton(frm3, variable=self.var2, binding=False)
+        rad1 = tk.Radiobutton(lfr1, value=1, variable=self.var2,
+                              text="プログラムの最初", font=font)
+        rad1.pack(anchor=tk.W, padx=EXPAND(80))
+        rad2 = tk.Radiobutton(lfr1, value=2, variable=self.var2,
+                              text="プログラムの最後", font=font)
+        rad2.pack(anchor=tk.W, padx=EXPAND(80))
+        frame8 = tk.Frame(lfr1)
+        frame8.pack(anchor=tk.W, padx=EXPAND(80))
+        rad3 = tk.Radiobutton(frame8, value=3, variable=self.var2,
+                              text="指定位置：", font=font)
         rad3.pack(anchor=tk.W, side=tk.LEFT)
-        lab3 = tk.Label(frm3, text="指定位置：", font=font)
-        lab3.pack(anchor=tk.W, side=tk.LEFT)
-        self.ent1 = tk.Entry(frm3, font=font, width=8)
+        self.ent1 = tk.Entry(frame8, font=font, width=8)
         self.ent1.pack(anchor=tk.W, side=tk.LEFT)
-        rad3.bind_instead_master(frm3)
-        rad3.bind_instead_child(rad3)
-        rad3.bind_instead_child(lab3)
-        frm0 = tk.Frame(lfr1)
-        frm0.pack(anchor=tk.E, padx=EXPAND(60), pady=(0, EXPAND(10)))
+        frm1 = tk.Frame(lfr1)
+        frm1.pack(anchor=tk.E, padx=EXPAND(60), pady=(0, EXPAND(10)))
         self.chk1 = CheckButton(
-            frm0, width=EXPAND(12), bg=BGCOLOR, start=True, binding=False)
+            frm1, width=EXPAND(12), bg=BGCOLOR, start=True)
         self.chk1.pack(side=tk.LEFT)
-        lab1 = tk.Label(frm0, text="位置の自動調整", font=font)
+        lab1 = tk.Label(frm1, text="位置の自動調整", font=font)
         lab1.pack(side=tk.LEFT)
-        self.chk1.bind_instead_master(frm0)
-        self.chk1.bind_instead_child(self.chk1)
-        self.chk1.bind_instead_child(lab1)
-        self.radio2int = {rad1: 1, rad2: 2, rad3: 3}
-        self.int2radio = {1: rad1, 2: rad2, 3: rad3}
-        self.set_radio_value(2)
 
         # 画面右側上段を作成
         frame7 = tk.Frame(frame3)
@@ -2338,11 +2289,10 @@ line: {index+1}, {widget.__class__.__name__}\n\
 
 class ToggleButton(tk.Canvas):
     def __init__(
-            self, master=None, /,
-            fg="white", bg1=GRAY, bg2="lightgreen",
-            radius=EXPAND(10), width=EXPAND(18), height=EXPAND(28),
-            start=False, smooth=12, outline=False, margin=EXPAND(4),
-            gray=False, binding=True, command=None):
+            self, master=None,
+            fg="white", bg1=GRAY, bg2="lightgreen", radius=EXPAND(10),
+            width=EXPAND(18), height=EXPAND(28), start=False,
+            smooth=8, outline=False, margin=EXPAND(4), command=None):
 
         self.foreground = fg
         self.background1 = bg1
@@ -2351,100 +2301,35 @@ class ToggleButton(tk.Canvas):
         self.width = width
         self.height = height
         self.current = start
-        self.smooth = smooth
-        self.outline = "silver" if outline else fg
-        self.margin = margin
-        self.binding = binding
         self.command = command
+        self.smooth = smooth
+        self.outline = "black" if outline else fg
+        self.margin = margin
 
         self.cvh = (radius*2 if radius*2 > height else height)+self.margin*2
         self.cvw = self.cvh + width
 
         if master is not None:
             tk.Canvas.__init__(
-                self, master, width=self.cvw, height=self.cvh,
-                takefocus=self.binding, highlightbackground=BGCOLOR)
+                self, master, width=self.cvw, height=self.cvh, takefocus=True)
         else:
             tk.Canvas.__init__(
-                self, width=self.cvw, height=self.cvh,
-                takefocus=self.binding, highlightbackground=BGCOLOR)
-
-        if gray:
-            self.draw_gray()
+                self, width=self.cvw, height=self.cvh, takefocus=True)
 
         self.redraw_background()
 
         self.position = self.width if self.current else 0
         self.redraw_slider()
 
-        if self.binding is True:
-            self.bind("<KeyRelease-space>", self.slider_press)
+        self.bind("<space>", self.slider_press)
 
-            self.tag_bind("background", "<Enter>", self.check_hand_enter)
-            self.tag_bind("background", "<Leave>", self.check_hand_leave)
-            self.tag_bind("background", "<ButtonPress-1>", self.slider_press)
+        self.tag_bind("background", "<Enter>", self.check_hand_enter)
+        self.tag_bind("background", "<Leave>", self.check_hand_leave)
+        self.tag_bind("background", "<ButtonPress-1>", self.slider_press)
 
-            self.tag_bind("slider", "<Enter>", self.check_hand_enter)
-            self.tag_bind("slider", "<Leave>", self.check_hand_leave)
-            self.tag_bind("slider", "<ButtonPress-1>", self.slider_press)
-
-    def bind_instead_master(self, widget: tk.Widget):
-        widget.bind("<KeyRelease-space>", self.slider_press)
-        widget.bind("<ButtonPress-1>", self.slider_press)
-        widget.configure(
-            cursor="hand2", takefocus=True,
-            highlightthickness=2,
-            highlightbackground=self.color1)
-
-    def bind_instead_child(self, widget: tk.Widget):
-        widget.bind("<ButtonPress-1>", self.slider_press)
-
-    def draw_gray(self):
-        self.delete("gray")
-        background = "silver"
-        width = 2
-        if self.radius*2 >= self.height:
-            self.create_rectangle(
-                self.radius+self.margin,
-                self.radius+self.margin-self.height//2-width,
-                self.radius+self.width+self.margin,
-                self.radius+self.margin+self.height//2+width+1,
-                width=0, fill=background, tag="gray")
-
-            self.create_arc(
-                self.radius-self.height//2+self.margin-width,
-                self.radius-self.height//2+self.margin-width,
-                self.radius+self.height//2+self.margin+width,
-                self.radius+self.height//2+self.margin+width,
-                outline=background, fill=background,
-                start=90, extent=180, tag="gray")
-
-            self.create_arc(
-                self.radius-self.height//2+self.margin+self.width-width,
-                self.radius-self.height//2+self.margin-width,
-                self.radius+self.height//2+self.margin+self.width+width,
-                self.radius+self.height//2+self.margin+width,
-                outline=background, fill=background,
-                start=-90, extent=180, tag="gray")
-        else:
-            self.create_rectangle(
-                self.height//2+self.margin, self.margin-width,
-                self.height//2+self.width+self.margin,
-                self.height+self.margin+width+1,
-                width=0, fill="gray", tag="gray")
-
-            self.create_arc(
-                self.margin-width, self.margin-width,
-                self.height+self.margin+width, self.height+self.margin+width,
-                outline="gray", fill="gray",
-                start=90, extent=180, tag="gray")
-
-            self.create_arc(
-                self.margin+self.width-width, self.margin-width,
-                self.height+self.margin+self.width+width,
-                self.height+self.margin+width,
-                outline="gray", fill="gray",
-                start=-90, extent=180, tag="gray")
+        self.tag_bind("slider", "<Enter>", self.check_hand_enter)
+        self.tag_bind("slider", "<Leave>", self.check_hand_leave)
+        self.tag_bind("slider", "<ButtonPress-1>", self.slider_press)
 
     def redraw_background(self):
         self.delete("background")
@@ -2498,16 +2383,14 @@ class ToggleButton(tk.Canvas):
                 self.margin+self.position, self.margin,
                 self.radius*2+self.margin+self.position,
                 self.radius*2+self.margin,
-                fill=self.foreground, tag="slider",
-                outline=self.outline, width=2)
+                fill=self.foreground, tag="slider", outline=self.outline)
         else:
             self.slider = self.create_oval(
                 self.height//2-self.radius+self.margin+self.position,
                 self.height//2-self.radius+self.margin,
                 self.height//2+self.radius+self.margin+self.position,
                 self.height//2+self.radius+self.margin,
-                fill=self.foreground, tag="slider",
-                outline=self.outline, width=2)
+                fill=self.foreground, tag="slider", outline=self.outline)
 
     def slider_press(self, event):
         self.frompos = self.width if self.current else 0
@@ -2560,16 +2443,15 @@ class CheckButton(tk.Canvas):
 
     def __init__(
             self, master=None, /,
-            bg=BGCOLOR, width=EXPAND(24), start=False,
-            margin=EXPAND(4), binding=True, command=None):
+            fg="#0F6FDF", bg="#F0F0F0", width=40, start=False,
+            margin=8, command=None):
 
         self.color1 = "white"
-        self.color2 = bg
+        self.color2 = fg
         self.width = width
         self.current = int(start)
-        self.margin = margin
-        self.binding = binding
         self.command = command
+        self.margin = margin
 
         self.parent_widget: CheckButton = None
         self.children_widget: CheckButton = []
@@ -2578,12 +2460,12 @@ class CheckButton(tk.Canvas):
         if master is not None:
             tk.Canvas.__init__(
                 self, master, width=width+self.margin*2,
-                height=width+self.margin*2, takefocus=self.binding,
+                height=width+self.margin*2, takefocus=True,
                 bg=bg, highlightbackground=bg)
         else:
             tk.Canvas.__init__(
                 self, width=width+self.margin*2,
-                height=width+self.margin*2, takefocus=self.binding,
+                height=width+self.margin*2, takefocus=True,
                 bg=bg, highlightbackground=bg)
 
         # Base64のDataURI
@@ -2616,24 +2498,11 @@ class CheckButton(tk.Canvas):
 
         self.redraw_check()
 
-        self.bind("<KeyRelease-space>", self.check_press)
+        self.bind("<space>", self.check_press)
 
-        if self.binding is True:
-            self.bind("<KeyRelease-space>", self.check_press)
-            self.tag_bind("check", "<Enter>", self.check_hand_enter)
-            self.tag_bind("check", "<Leave>", self.check_hand_leave)
-            self.tag_bind("check", "<ButtonPress-1>", self.check_press)
-
-    def bind_instead_master(self, widget: tk.Widget):
-        widget.bind("<KeyRelease-space>", self.check_press)
-        widget.bind("<ButtonPress-1>", self.check_press)
-        widget.configure(
-            cursor="hand2", takefocus=True,
-            highlightthickness=2,
-            highlightbackground=self.color2)
-
-    def bind_instead_child(self, widget: tk.Widget):
-        widget.bind("<ButtonPress-1>", self.check_press)
+        self.tag_bind("check", "<Enter>", self.check_hand_enter)
+        self.tag_bind("check", "<Leave>", self.check_hand_leave)
+        self.tag_bind("check", "<ButtonPress-1>", self.check_press)
 
     def redraw_check(self):
         self.delete("check")
@@ -2739,123 +2608,6 @@ class CheckButton(tk.Canvas):
 
     def get_state(self):
         return self.current
-
-
-class RadioButton(tk.Canvas):
-    def __init__(
-            self, master=None, /,
-            bg=BGCOLOR, width=EXPAND(8), variable=None,
-            radius=EXPAND(2), line=EXPAND(1), margin=EXPAND(4), binding=True):
-
-        self.color1 = bg
-        self.color2 = "black"
-        self.color3 = "white"
-        self.width = width
-        self.radius = radius
-        self.line = line
-        self.current = False
-        self.variable: RadioVar = variable
-        self.margin = margin
-        self.binding = binding
-        self.button_widget: RadioButton = []
-
-        self.variable.widgets.append(self)
-
-        if master is not None:
-            tk.Canvas.__init__(
-                self, master, width=width+self.margin*2,
-                height=width+self.margin*2, takefocus=self.binding,
-                bg=self.color1, highlightbackground=self.color1)
-        else:
-            tk.Canvas.__init__(
-                self, width=width+self.margin*2,
-                height=width+self.margin*2, takefocus=self.binding,
-                bg=self.color1, highlightbackground=self.color1)
-
-        self.redraw_check()
-
-        if self.binding is True:
-            self.bind("<KeyRelease-space>", self.check_press)
-            self.tag_bind("radio", "<Enter>", self.check_hand_enter)
-            self.tag_bind("radio", "<Leave>", self.check_hand_leave)
-            self.tag_bind("radio", "<ButtonPress-1>", self.check_press)
-
-    def bind_instead_master(self, widget: tk.Widget):
-        widget.bind("<KeyRelease-space>", self.check_press)
-        widget.bind("<ButtonPress-1>", self.check_press)
-        widget.configure(
-            cursor="hand2", takefocus=True,
-            highlightthickness=2,
-            highlightbackground=self.color1)
-
-    def bind_instead_child(self, widget: tk.Widget):
-        widget.bind("<ButtonPress-1>", self.check_press)
-
-    def redraw_check(self):
-        self.delete("radio")
-        if self.current:
-            self.create_oval(
-                self.margin, self.margin,
-                self.width+self.margin, self.width+self.margin,
-                width=self.line, fill=self.color3, tag="radio")
-            self.create_oval(
-                self.margin+self.width//2-self.radius,
-                self.margin+self.width//2-self.radius,
-                self.margin+self.width//2+self.radius,
-                self.margin+self.width//2+self.radius,
-                fill=self.color2, tag="radio")
-        else:
-            self.create_oval(
-                self.margin, self.margin,
-                self.width+self.margin, self.width+self.margin,
-                width=self.line, fill=self.color3, tag="radio")
-
-    def check_press(self, event):
-        self.variable.set(self)
-
-    def check_hand_enter(self, event):
-        self.config(cursor="hand2")
-
-    def check_hand_leave(self, event):
-        self.config(cursor="")
-
-    def set_variable(self, widget):
-        self.variable = widget
-        self.sync_variable()
-
-    def forget_variable(self):
-        self.variable = None
-
-    def set(self, value):
-        if value == self.current:
-            return
-        self.current = value
-        self.redraw_check()
-        if self.variable is not None:
-            self.variable.current = self
-
-
-class RadioVar:
-    def __init__(self):
-        self.widgets: List[RadioButton] = []
-        self.current: RadioButton = None
-        self.command = None
-
-    def set(self, widget: RadioButton):
-        if widget not in self.widgets:
-            return
-        for w in self.widgets:
-            w.set(False)
-        widget.set(True)
-        self.current = widget
-        if self.command is not None:
-            self.command()
-
-    def get(self):
-        return self.current
-
-    def set_command(self, command):
-        self.command = command
 
 
 class Notebook(tk.Canvas):
