@@ -2578,6 +2578,7 @@ class CheckButton(tk.Canvas):
         if master is not None:
             tk.Canvas.__init__(
                 self, master, width=width+self.margin*2,
+                height=width+self.margin*2, takefocus=self.binding,
                 bg=bg, highlightbackground=bg)
         else:
             tk.Canvas.__init__(
