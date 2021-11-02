@@ -2338,7 +2338,7 @@ line: {index+1}, {widget.__class__.__name__}\n\
 
 class ToggleButton(tk.Canvas):
     def __init__(
-            self, master=None, /,
+            self, master=None,
             fg="white", bg1=GRAY, bg2="lightgreen",
             radius=EXPAND(10), width=EXPAND(18), height=EXPAND(28),
             start=False, smooth=12, outline=False, margin=EXPAND(4),
@@ -2559,7 +2559,7 @@ class CheckButton(tk.Canvas):
     INDETERMINATE = 2
 
     def __init__(
-            self, master=None, /,
+            self, master=None,
             bg=BGCOLOR, width=EXPAND(24), start=False,
             margin=EXPAND(4), binding=True, command=None):
 
@@ -2743,7 +2743,7 @@ class CheckButton(tk.Canvas):
 
 class RadioButton(tk.Canvas):
     def __init__(
-            self, master=None, /,
+            self, master=None,
             bg=BGCOLOR, width=EXPAND(8), variable=None,
             radius=EXPAND(2), line=EXPAND(1), margin=EXPAND(4), binding=True):
 
