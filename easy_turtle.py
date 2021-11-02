@@ -254,7 +254,7 @@ else:
 
 FONT = (FONT_TYPE1, EXPAND(12), "bold")
 
-__version__ = (5, 15, "0a2")
+__version__ = (5, 15, 0)
 
 
 class EasyTurtle:
