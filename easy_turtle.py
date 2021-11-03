@@ -254,7 +254,7 @@ else:
 
 FONT = (FONT_TYPE1, EXPAND(12), "bold")
 
-__version__ = (5, 15, 0)
+__version__ = (5, 15, 1)
 
 
 class EasyTurtle:
@@ -5440,13 +5440,13 @@ class Write(Widget):
         list_font = (FONT_TYPE1, EXPAND(10))
 
         # タイトル
-        lab0 = tk.Label(frame0, text="Options",
-                        font=(FONT_TYPE2, EXPAND(32), "bold"))
+        lab0 = tk.Label(
+            frame0, text="Options", font=(FONT_TYPE2, EXPAND(32), "bold"))
         lab0.pack(side=tk.TOP, pady=EXPAND(10))
 
         # 決定ボタン
-        but1 = tk.Button(frame0, text="決定", font=font, width=12,
-                         command=self.decide_option)
+        but1 = tk.Button(
+            frame0, text="決定", font=font, width=12, command=self.decide_option)
         but1.pack(side=tk.BOTTOM, pady=(EXPAND(10), EXPAND(20)))
 
         # 下側のライン
@@ -5457,10 +5457,10 @@ class Write(Widget):
         self.cv1.pack()
 
         # 左側のライン
-        frame0 = tk.Frame(frame0)
-        frame0.pack(anchor=tk.NW, side=tk.LEFT, padx=(EXPAND(60), 0))
+        frame1 = tk.Frame(frame0)
+        frame1.pack(anchor=tk.NW, side=tk.LEFT, padx=(EXPAND(60), 0))
 
-        fra1 = tk.Frame(frame0)
+        fra1 = tk.Frame(frame1)
         fra1.pack(anchor=tk.W, pady=EXPAND(10))
         lab1 = tk.Label(fra1, text="text    = ", font=font)
         lab1.pack(side=tk.LEFT)
@@ -5469,7 +5469,7 @@ class Write(Widget):
         self.opt1.bind("<KeyPress>", self.preview_font)
         self.opt1.pack(side=tk.LEFT)
 
-        fra2 = tk.Frame(frame0)
+        fra2 = tk.Frame(frame1)
         fra2.pack(anchor=tk.W, pady=EXPAND(10))
         lab2 = tk.Label(fra2, text="move    = ", font=font)
         lab2.pack(side=tk.LEFT)
@@ -5481,7 +5481,7 @@ class Write(Widget):
         self.opt2.bind("<<ComboboxSelected>>", self.preview_font)
         self.opt2.pack(side=tk.LEFT)
 
-        fra3 = tk.Frame(frame0)
+        fra3 = tk.Frame(frame1)
         fra3.pack(anchor=tk.W, pady=EXPAND(10))
         lab3 = tk.Label(fra3, text="align   = ", font=font)
         lab3.pack(side=tk.LEFT)
@@ -5490,7 +5490,7 @@ class Write(Widget):
         self.opt3.bind("<KeyPress>", self.preview_font)
         self.opt3.pack(side=tk.LEFT)
 
-        fra4 = tk.Frame(frame0)
+        fra4 = tk.Frame(frame1)
         fra4.pack(anchor=tk.W, pady=EXPAND(10))
         lab4 = tk.Label(fra4, text="sideway = ", font=font)
         lab4.pack(side=tk.LEFT)
@@ -5502,7 +5502,7 @@ class Write(Widget):
         self.opt4.bind("<<ComboboxSelected>>", self.preview_font)
         self.opt4.pack(side=tk.LEFT)
 
-        fra6 = tk.Frame(frame0)
+        fra6 = tk.Frame(frame1)
         fra6.pack(anchor=tk.W, pady=EXPAND(10))
         lab6 = tk.Label(fra6, text="weight  = ", font=font)
         lab6.pack(side=tk.LEFT)
@@ -5514,7 +5514,7 @@ class Write(Widget):
         self.opt6.bind("<<ComboboxSelected>>", self.preview_font)
         self.opt6.pack(side=tk.LEFT)
 
-        fra7 = tk.Frame(frame0)
+        fra7 = tk.Frame(frame1)
         fra7.pack(anchor=tk.W, pady=EXPAND(10))
         lab7 = tk.Label(fra7, text="slant   = ", font=font)
         lab7.pack(side=tk.LEFT)
@@ -5552,13 +5552,13 @@ class Write(Widget):
         fra9.pack(anchor=tk.W, pady=EXPAND(10))
         self.font_list = self.without_atmark()
         var1 = tk.StringVar(value=self.font_list)
-        self.lsb1 = tk.Listbox(fra9, listvariable=var1, height=6,
-                               width=24, selectmode='single',
-                               font=(FONT_TYPE2, EXPAND(18)))
+        self.lsb1 = tk.Listbox(
+            fra9, listvariable=var1, height=6, width=24,
+            selectmode='single', font=(FONT_TYPE2, EXPAND(18)))
         self.lsb1.bind('<<ListboxSelect>>', self.change_font)
         self.lsb1.pack(fill=tk.Y, side=tk.LEFT)
-        scr1 = ttk.Scrollbar(fra9, orient=tk.VERTICAL,
-                             command=self.lsb1.yview)
+        scr1 = ttk.Scrollbar(
+            fra9, orient=tk.VERTICAL, command=self.lsb1.yview)
         self.lsb1['yscrollcommand'] = scr1.set
         scr1.pack(fill=tk.Y, side=tk.LEFT)
 
@@ -5771,7 +5771,7 @@ class Comment(Widget):
         self.win.wait_visibility()
         self.win.grab_set()
         lab1 = tk.Label(
-            self.win, text="Option", bfont=(FONT_TYPE2, EXPAND(30), "bold"))
+            self.win, text="Option", font=(FONT_TYPE2, EXPAND(30), "bold"))
         lab1.pack(padx=EXPAND(20), pady=EXPAND(20))
         font_scr = (FONT_TYPE1, EXPAND(16), "bold")
         self.scr1 = scrolledtext.ScrolledText(
@@ -5779,8 +5779,8 @@ class Comment(Widget):
         self.scr1.pack(padx=EXPAND(20), pady=EXPAND(0))
         self.scr1.insert("0.0", self.comment)
         but1 = tk.Button(
-            self.win, text="決定", font=FONT,
-            width=10, command=self.decide_option)
+            self.win, text="決定", font=FONT, width=10,
+            command=self.decide_option)
         but1.pack(padx=EXPAND(36), pady=EXPAND(20))
         self.win.resizable(False, False)
 
