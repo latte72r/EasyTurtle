@@ -1,5 +1,5 @@
 
-# ©2020-2021 Ryo Fujinami.
+# ©2020-2024 Latte72.
 
 import atexit
 import glob
@@ -592,7 +592,7 @@ class EasyTurtle:
 
     def get_new_release(self):
         "更新を取得"
-        url = "http://github.com/RyoFuji2005/EasyTurtle/releases/latest"
+        url = "http://github.com/latte72r/EasyTurtle/releases/latest"
         try:
             with request.urlopen(url) as f:
                 text: str = f.geturl()
@@ -611,7 +611,7 @@ class EasyTurtle:
         """詳しい情報の表示"""
         if self.running_program:
             return
-        webbrowser.open_new("https://ryofuji2005.github.io/EasyTurtle/")
+        webbrowser.open_new("https://latte72r.github.io/EasyTurtle/")
 
     def show_offline_document(self, event=None):
         """詳しい情報の表示"""
@@ -621,12 +621,12 @@ class EasyTurtle:
 
     def show_release_page(self, event=None):
         """リリースページの表示"""
-        url = "http://github.com/RyoFuji2005/EasyTurtle/releases/latest"
+        url = "http://github.com/latte72r/EasyTurtle/releases/latest"
         webbrowser.open_new(url)
 
     def show_github_page(self, event=None):
         """GitHubページの表示"""
-        url = "http://github.com/RyoFuji2005/EasyTurtle/"
+        url = "http://github.com/latte72r/EasyTurtle/"
         webbrowser.open_new(url)
 
     def update_starting(self):
@@ -704,7 +704,7 @@ class EasyTurtle:
         joined_version = '.'.join([str(n) for n in new_version])
 
         url = f"\
-https://github.com/RyoFuji2005/EasyTurtle/releases/\
+https://github.com/latte72r/EasyTurtle/releases/\
 download/v{joined_version}/EasyTurtle-{joined_version}-amd64.msi"
         file_name = os.path.join(os.environ['USERPROFILE'], "downloads",
                                  f"EasyTurtle-{joined_version}-amd64.msi")
@@ -1102,7 +1102,7 @@ download/v{joined_version}/EasyTurtle-{joined_version}-amd64.msi"
         # 背景の右下
         frame = tk.Frame(ROOT)
         frame.place(x=MIN_WIDTH - EXPAND(340), y=MIN_HEIGHT - EXPAND(50))
-        lab1 = tk.Label(frame, text='©2020-2021 Ryo Fujinami.',
+        lab1 = tk.Label(frame, text='©2020-2021 Latte72.',
                         font=(FONT_TYPE2, EXPAND(12), "italic"))
         lab1.pack(side=tk.RIGHT, padx=EXPAND(20))
         joined_version = ".".join([str(n) for n in __version__])
