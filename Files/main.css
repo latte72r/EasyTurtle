@@ -136,3 +136,43 @@ footer {
   color: #ffffff;
   background: #00aeef;
 }
+
+
+#github-logo {
+  width: 1.4em;
+  height: 1.4em;
+  display: inline-block;
+  top: 0;
+  bottom: 0;
+  margin: auto;
+}
+
+#x-black {
+  width: 1.2em;
+  height: 1.2em;
+  padding: 0.1em 0em;
+  display: inline-block;
+  top: 0;
+  bottom: 0;
+  margin: auto;
+}
+
+#sns-link {
+  display: flex;
+  gap: 0.2em;
+  font-weight: bold;
+  color: #000;
+  text-decoration: none;
+  padding: 0.3em 0.5em;
+  line-height: 1.8em;
+  margin-right: 0.4em;
+}
+
+#sns-link:hover {
+  display: flex;
+  gap: 0.2em;
+  font-weight: bold;
+  background-color: #e0f7fa;
+  color: #005f8f;
+  border-radius: 0.3em;
+}
