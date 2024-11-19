@@ -1,0 +1,174 @@
+@charset "UTF-8";
+
+/* フォントの設定 */
+body {
+  margin: 0;
+  padding: 0;
+  font-family: "Bizin Gothic Discord", sans-serif;
+  background-color: #E0E0E0;
+  color: #000;
+  transition: 0.5s;
+}
+
+@media (prefers-color-scheme: dark) {
+  body {
+    background-color: #333;
+    color: #E0E0E0;
+  }
+}
+
+/* ナビゲーション */
+.nav {
+  background-color: #00aeef;
+  overflow: hidden;
+  margin: 0 auto;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nav li {
+  list-style: none;
+}
+
+.nav li a {
+  display: block;
+  width: 180px;
+  height: 40px;
+  text-align: center;
+  color: #fff;
+  font-size: 1.2em;
+  line-height: 2.8;
+  background: #00aeef;
+  text-decoration: none;
+  border-right: 1px solid #eee;
+  box-sizing: border-box;
+  transition: color 0.3s, background-color 0.3s;
+}
+
+.nav>li:hover>a {
+  color: #005f8f;
+  background-color: #e0f7fa;
+}
+
+.nav li ul {
+  display: none;
+  position: absolute;
+}
+
+.nav>li li:hover>a {
+  color: #6363bb;
+}
+
+.nav li ul li a {
+  border-top: 1px solid #eee;
+}
+
+/* コンテンツ */
+.content {
+  max-width: 1200px;
+  background: #FFF;
+  margin: 1em auto;
+  padding: 1em;
+  text-align: left;
+  box-sizing: border-box;
+  border-radius: 0.4em;
+  box-shadow: 0 0.2em 0.4em rgba(0, 0, 0, 0.2);
+}
+
+@media (prefers-color-scheme: dark) {
+  .content {
+    background: #000;
+    box-shadow: 0 0.2em 0.4em rgba(0, 0, 0, 0.4);
+  }
+}
+
+/* タイトル */
+h1 {
+  color: #2980b9;
+  font-size: 2.5em;
+  font-family: serif;
+  text-align: center;
+  background-position: top center;
+}
+
+h2 {
+  color: #2980b9;
+  font-size: 1.8em;
+  border-bottom: 0.1em solid #2980b9;
+  padding: 0.1em 1.0em;
+  margin: 0.6em 0em;
+  display: inline-block;
+}
+
+@media (prefers-color-scheme: dark) {
+  h1, h2 {
+    color: #84d0f7;
+  }
+}
+
+/* タイトルセクション */
+.title {
+  font-size: 1.6em;
+  border-left: 10px solid #000000;
+  color: #000000;
+  padding-left: 1em;
+  margin-bottom: 2em;
+}
+
+@media (prefers-color-scheme: dark) {
+  .title {
+    color: #E0E0E0;
+    border-left-color: #84d0f7;
+  }
+}
+
+/* コード */
+code {
+  background-color: #eee;
+  border-radius: 3px;
+  font-family: monospace;
+  padding: 0 0.3em;
+}
+
+@media (prefers-color-scheme: dark) {
+  code {
+    background-color: #333;
+  }
+}
+
+/* フッター */
+footer {
+  text-align: center;
+  color: #FFF;
+  background: #00aeef;
+  padding: 1em 0;
+}
+
+/* SNSリンク */
+#sns-link {
+  display: flex;
+  gap: 0.2em;
+  font-weight: bold;
+  color: #000;
+  text-decoration: none;
+  padding: 0.3em 0.5em;
+  line-height: 1.8em;
+}
+
+#sns-link:hover {
+  background-color: #e0f7fa;
+  color: #005f8f;
+  border-radius: 0.3em;
+}
+
+@media (prefers-color-scheme: dark) {
+  #sns-link {
+    color: #E0E0E0;
+  }
+  #sns-link:hover {
+    background-color: #18282a;
+    color: #84d0f7;
+  }
+}
